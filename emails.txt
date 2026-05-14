@@ -1,0 +1,149 @@
+WEROL — Zoznam emailov na oslovenie spolupráce
+================================================
+
+SK / CZ RETAILERS (priorita)
+----------------------------
+info@footshop.cz
+partnership@footshop.cz
+shop@queens.sk
+info@freshment.sk
+sklep@sizeer.sk
+partnership@alza.cz
+partners@mall.sk
+info@hervis.sk
+info@sportisimo.sk
+naulici@naulici.sk
+info@carbon-collective.com
+info@a4store.sk
+hello@mottowear.com
+info@pepejeans.sk
+info@gant.sk
+info@boyish.cz
+
+
+EU RETAILERS
+------------
+partner.relations@zalando.com
+press@aboutyou.com
+partners@aboutyou.com
+partnersuk@asos.com
+press@endclothing.com
+press@mrporter.com
+press@farfetch.com
+press@ssense.com
+hello@24s.com
+sns@sneakersnstuff.com
+info@nakedcph.com
+
+
+MARKETPLACES / RESALE
+---------------------
+api-team@stockx.com
+press@stockx.com
+partnerships@goat.com
+partnerships@grailed.com
+press@vinted.com
+hello@klekt.com
+
+
+BRANDY (priamo)
+---------------
+press@nike.com
+media.eu@nike.com
+press@adidas.com
+press-uk@newbalance.co.uk
+press@carhartt-wip.com
+press@stussy.com
+info@thrashermagazine.com
+press@ripndipclothing.com
+europe@patagonia.com
+europe.press@vfc.com
+press@vans.com
+
+
+AFFILIATE SIETE (registrácia)
+------------------------------
+newpublishers@awin.com
+info@dognet.sk
+partner@heureka.sk
+partners@tradedoubler.com
+
+
+================================================
+COMMA-SEPARATED (pre BCC v emaili / hromadný send)
+================================================
+
+SK/CZ:
+info@footshop.cz, shop@queens.sk, info@freshment.sk, sklep@sizeer.sk, partnership@alza.cz, partners@mall.sk, info@hervis.sk, info@sportisimo.sk, naulici@naulici.sk, info@carbon-collective.com, info@a4store.sk, hello@mottowear.com, info@pepejeans.sk, info@gant.sk, info@boyish.cz
+
+EU:
+partner.relations@zalando.com, partners@aboutyou.com, partnersuk@asos.com, press@endclothing.com, press@mrporter.com, press@farfetch.com, press@ssense.com, hello@24s.com, sns@sneakersnstuff.com, info@nakedcph.com
+
+Marketplace + Brand:
+api-team@stockx.com, partnerships@goat.com, partnerships@grailed.com, press@vinted.com, hello@klekt.com, media.eu@nike.com, press@adidas.com, press-uk@newbalance.co.uk, press@carhartt-wip.com, press@stussy.com, info@thrashermagazine.com, press@ripndipclothing.com, europe@patagonia.com, europe.press@vfc.com, press@vans.com
+
+Affiliate siete:
+newpublishers@awin.com, info@dognet.sk, partner@heureka.sk, partners@tradedoubler.com
+
+
+================================================
+EMAIL ŠABLÓNA — SK (skopíruj a vyplň {shop_name})
+================================================
+
+Predmet: Spolupráca s WEROL — affiliate / partnership
+
+Dobrý deň,
+
+volám sa Matúš Kačmár a som zakladateľ aplikácie WEROL (github.com/mtskcm/we-roll) — mobilnej platformy ktorá agreguje produkty z viacerých e-shopov do jedného feedu v štýle TikToku. Užívatelia objavujú produkty, lajkujú, ukladajú si ich a tlačidlom "Take it" sú presmerovaní priamo na váš e-shop.
+
+Rád by som nadviazal affiliate spoluprácu alebo partnership — produkty z {shop_name} sú vo WEROL feede a každé presmerovanie na váš web by mohlo byť trackované cez váš affiliate program.
+
+Aktuálne v appke:
+- 22 produktov z 8 e-shopov vrátane {shop_name}
+- 4 plnohodnotné taby (Feed, Search, Notifikácie, Profil)
+- Launch plánovaný na máj 2026
+
+Bol by som vďačný za info o vašom affiliate programe, alebo za predstavenie možností integrácie. Veľmi rád si dohodnem aj krátky online hovor.
+
+S pozdravom,
+Matúš Kačmár
+mkacmar1@gmail.com
+github.com/mtskcm/we-roll
+
+
+================================================
+EMAIL ŠABLÓNA — EN (for international shops)
+================================================
+
+Subject: Partnership inquiry — WEROL fashion discovery app
+
+Hi,
+
+I'm Matúš, founder of WEROL (github.com/mtskcm/we-roll), a mobile app that aggregates products from multiple e-commerce shops into a unified TikTok-style discovery feed. Users browse, like, save and tap "Take it" to be redirected to your store.
+
+I'd love to explore an affiliate / partnership opportunity with {shop_name} — your products would be featured in the WEROL feed, with every redirect trackable via your affiliate program (or through Awin / Rakuten / CJ).
+
+Current state of the app:
+- 22 products from 8 shops including {shop_name}
+- 4 native tabs (Feed, Search, Notifications, Profile)
+- Launch planned for May 2026 (SK/CZ first, EU later)
+
+Could you share details about your affiliate program, or point me to the right contact for partnership? Happy to jump on a quick call any time.
+
+Best,
+Matúš Kačmár
+mkacmar1@gmail.com
+github.com/mtskcm/we-roll
+
+
+================================================
+ODPORÚČANÝ POSTUP
+================================================
+
+Týždeň 1: Zaregistruj sa do Awin + Dognet + Heureka Partner (zadarmo, schvaľovanie 3-7 dní)
+Týždeň 2: Pošli 15 SK/CZ emailov — najvyššia šanca na odpoveď
+Týždeň 3-4: Email EU shopy (ASOS, Zalando, Farfetch, …)
+Týždeň 5+: Marketplace + brandy priamo
+
+Tip: Najlepší conversion rate majú emaily v utorok-štvrtok 10:00-12:00.
+Follow-up po 7 dňoch ak neodpovedia.
