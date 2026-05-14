@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "WEROL",
+    "slug": "werol-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "werol",
+    "newArchEnabled": true,
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0c0c0a"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.werol.app"
+    },
+    "android": {
+      "package": "com.werol.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0c0c0a"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-asset",
+      "expo-font"
+    ]
+  }
+}
