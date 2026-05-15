@@ -5,7 +5,9 @@ import { BottomNav } from '../components/BottomNav';
 import { FeedScreen } from '../screens/FeedScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { MessagesScreen } from '../screens/MessagesScreen';
+import { OutfitBuilderScreen } from '../screens/OutfitBuilderScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
+import { SavedScreen } from '../screens/SavedScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { useSettingsStore } from '../store/settingsStore';
 import { useUserStore } from '../store/userStore';
@@ -40,9 +42,15 @@ export function RootNavigator() {
           tabBar={(props) => <BottomNav {...props} />}
         >
           <Tab.Screen name="Home" component={FeedScreen} />
-          <Tab.Screen name="Search" component={SearchScreen} />
+          <Tab.Screen name="Outfit" component={OutfitBuilderScreen} />
+          <Tab.Screen name="Saved" component={SavedScreen} />
           <Tab.Screen name="Messages" component={MessagesScreen} />
           <Tab.Screen name="Profile" component={ProfileScreen} />
+          <Tab.Screen
+            name="Search"
+            component={SearchScreen}
+            options={{ tabBarButton: () => null }}
+          />
         </Tab.Navigator>
       )}
     </NavigationContainer>

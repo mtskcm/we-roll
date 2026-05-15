@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { USER } from '../data/profile';
-import type { UserProfile } from '../types';
+import type { Outfit, OutfitSlotId, SlotMap, UserProfile } from '../types';
 
 export type Sizes = {
   top: string | null;
@@ -16,6 +16,8 @@ type State = {
   email: string | null;
   sizes: Sizes;
   followedBrands: string[];
+  draftOutfit: SlotMap;
+  savedOutfits: Outfit[];
 };
 
 type Actions = {
@@ -24,6 +26,10 @@ type Actions = {
   logout: () => void;
   setSize: (key: keyof Sizes, value: string | null) => void;
   toggleBrand: (brand: string) => void;
+  setSlot: (slot: OutfitSlotId, productId: string | undefined) => void;
+  clearDraftOutfit: () => void;
+  saveOutfit: (name?: string) => void;
+  deleteOutfit: (id: string) => void;
 };
 
 export const useUserStore = create<State & Actions>()(
@@ -34,6 +40,8 @@ export const useUserStore = create<State & Actions>()(
       email: null,
       sizes: { top: 'M', bottom: '32', shoes: '43' },
       followedBrands: ['Nike', 'Carhartt WIP', 'Stüssy'],
+      draftOutfit: {},
+      savedOutfits: [],
       login: (email) => set({ isAuthenticated: true, email }),
       register: (email, name) => {
         const trimmed = name.trim();
@@ -67,6 +75,30 @@ export const useUserStore = create<State & Actions>()(
             ? s.followedBrands.filter((b) => b !== brand)
             : [...s.followedBrands, brand],
         })),
+      setSlot: (slot, productId) =>
+        set((s) => {
+          const next = { ...s.draftOutfit };
+          if (productId === undefined) delete next[slot];
+          else next[slot] = productId;
+          return { draftOutfit: next };
+        }),
+      clearDraftOutfit: () => set({ draftOutfit: {} }),
+      saveOutfit: (name) =>
+        set((s) => {
+          const slots = s.draftOutfit;
+          const count = Object.keys(slots).length;
+          if (count === 0) return s;
+          const num = s.savedOutfits.length + 1;
+          const outfit: Outfit = {
+            id: `fit-${Date.now()}`,
+            name: name?.trim() || `FIT N°${num}`,
+            slots: { ...slots },
+            createdAt: Date.now(),
+          };
+          return { savedOutfits: [outfit, ...s.savedOutfits], draftOutfit: {} };
+        }),
+      deleteOutfit: (id) =>
+        set((s) => ({ savedOutfits: s.savedOutfits.filter((o) => o.id !== id) })),
     }),
     {
       name: 'werol-user-v1',

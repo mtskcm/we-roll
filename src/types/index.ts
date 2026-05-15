@@ -61,3 +61,14 @@ export type Friend = {
   handle: string;
   avatar: string;
 };
+
+export type OutfitSlotId = 'head' | 'top' | 'mid' | 'bottom' | 'feet';
+
+export type SlotMap = Partial<Record<OutfitSlotId, string>>;
+
+export type Outfit = {
+  id: string;
+  name: string;
+  slots: SlotMap;
+  createdAt: number;
+};

@@ -1,8 +1,16 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { COLORS, SHOP_COLORS } from '../theme/colors';
 import { RADII, SPACING } from '../theme/spacing';
-import { TEXT_STYLES } from '../theme/typography';
+import { FONTS, TEXT_STYLES } from '../theme/typography';
 import type { Product } from '../types';
 import { useT } from '../i18n';
 import { useFeedStore, useIsLiked, useIsSaved } from '../store/feedStore';
@@ -36,11 +44,38 @@ export function ProductCard({ product, height }: Props) {
 
   const imageHeight = Math.round(height * 0.58);
 
+  const watching = useMemo(
+    () => 12 + ((product.likes * 7 + product.id.charCodeAt(0)) % 240),
+    [product.id, product.likes],
+  );
+
+  const pulse = useSharedValue(0);
+  useEffect(() => {
+    pulse.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 700, easing: Easing.out(Easing.ease) }),
+        withTiming(0, { duration: 900, easing: Easing.in(Easing.ease) }),
+      ),
+      -1,
+      false,
+    );
+  }, [pulse]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    opacity: 0.45 + pulse.value * 0.55,
+    transform: [{ scale: 0.9 + pulse.value * 0.3 }],
+  }));
+
   return (
     <View style={[styles.card, { height }]}>
       <View style={styles.imageRow}>
         <View style={[styles.imageFrame, { height: imageHeight }]}>
           <Image source={product.image} style={styles.image} resizeMode="contain" />
+          <View style={styles.liveBadge}>
+            <Animated.View style={[styles.liveDot, pulseStyle]} />
+            <Text style={styles.liveText}>{watching}</Text>
+            <Text style={styles.liveLabel}>WATCHING</Text>
+          </View>
         </View>
         <View style={styles.sideActions}>
           <ActionButton
@@ -122,5 +157,35 @@ const styles = StyleSheet.create({
   productName: {
     ...TEXT_STYLES.productName,
     marginTop: 2,
+  },
+  liveBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    borderRadius: 99,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.liveGreen,
+  },
+  liveText: {
+    fontFamily: FONTS.spaceMonoBold,
+    fontSize: 10,
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  liveLabel: {
+    fontFamily: FONTS.spaceMonoRegular,
+    fontSize: 8,
+    color: '#A0A0A6',
+    letterSpacing: 1.2,
   },
 });

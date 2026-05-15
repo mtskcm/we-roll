@@ -13,7 +13,8 @@ type IconName = keyof typeof Ionicons.glyphMap;
 
 const ICONS: Record<string, { active: IconName; inactive: IconName; labelKey: TKey }> = {
   Home: { active: 'home', inactive: 'home-outline', labelKey: 'tab.feed' },
-  Search: { active: 'search', inactive: 'search-outline', labelKey: 'tab.search' },
+  Outfit: { active: 'shirt', inactive: 'shirt-outline', labelKey: 'tab.outfit' },
+  Saved: { active: 'bookmark', inactive: 'bookmark-outline', labelKey: 'tab.saved' },
   Messages: {
     active: 'notifications',
     inactive: 'notifications-outline',
@@ -27,9 +28,13 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
   const unread = useUnreadCount();
   const t = useT();
 
+  // Hide search route from tab bar entirely
+  const visibleRoutes = state.routes.filter((r) => r.name !== 'Search');
+
   return (
     <View style={[styles.root, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-      {state.routes.map((route, index) => {
+      {visibleRoutes.map((route) => {
+        const index = state.routes.findIndex((r) => r.key === route.key);
         const isFocused = state.index === index;
         const meta = ICONS[route.name] ?? ICONS.Home;
         const color = isFocused ? COLORS.teal : COLORS.dim;
