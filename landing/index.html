@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="sk">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>WEROL — Streetwear feed launching soon</title>
+    <meta name="description" content="WEROL — kurátorovaný streetwear feed z najlepších e-shopov. Spúšťame leto 2026." />
+    <meta name="theme-color" content="#0c0c0a" />
+
+    <meta property="og:title" content="WEROL — Streetwear feed" />
+    <meta property="og:description" content="Kurátorovaný streetwear feed z najlepších e-shopov. Spúšťame leto 2026." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://werol.app" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href="https://werol.app" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=DM+Sans:wght@400;500&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --ink: #0c0c0a;
+        --ink2: #141412;
+        --ink3: #1c1c1a;
+        --ink4: #262622;
+        --cream: #f0ebe1;
+        --cream2: #e2dbd0;
+        --cream3: #c8c1b4;
+        --teal: #2ec4a0;
+        --stone: #3a3a36;
+        --dim: #484844;
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--ink);
+        color: var(--cream);
+        font-family: 'DM Sans', system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+        scroll-behavior: smooth;
+      }
+
+      body {
+        min-height: 100dvh;
+        background:
+          radial-gradient(900px 600px at 80% -10%, rgba(46, 196, 160, 0.08), transparent 60%),
+          radial-gradient(700px 500px at -10% 110%, rgba(232, 200, 74, 0.04), transparent 60%),
+          var(--ink);
+      }
+
+      .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+      /* === NAV === */
+      .nav {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        background: rgba(12,12,10,0.7);
+        border-bottom: 1px solid var(--ink3);
+      }
+      .nav-inner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 24px;
+        max-width: 1080px;
+        margin: 0 auto;
+      }
+      .logo {
+        font-family: 'Cormorant Garamond', serif;
+        font-weight: 300;
+        font-size: 28px;
+        letter-spacing: -1px;
+        user-select: none;
+      }
+      .logo .o { font-style: italic; color: var(--teal); font-weight: 400; }
+      .nav-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: 'Space Mono', monospace;
+        font-size: 10px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--cream3);
+      }
+      .nav-status::before {
+        content: '';
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: var(--teal);
+        box-shadow: 0 0 12px var(--teal);
+        animation: pulse 2.2s ease-in-out infinite;
+      }
+      @keyframes pulse { 0%,100% {opacity:1;transform:scale(1)} 50% {opacity:0.5;transform:scale(0.85)} }
+
+      /* === HERO === */
+      .hero {
+        padding: 80px 24px 60px;
+        text-align: center;
+      }
+      .wordmark {
+        font-family: 'Cormorant Garamond', serif;
+        font-weight: 300;
+        font-size: clamp(72px, 16vw, 156px);
+        letter-spacing: -4px;
+        line-height: 1;
+        margin: 0;
+        user-select: none;
+      }
+      .wordmark .o { font-style: italic; color: var(--teal); font-weight: 400; }
+      .tagline {
+        font-family: 'Cormorant Garamond', serif;
+        font-weight: 400;
+        font-size: clamp(20px, 3.2vw, 30px);
+        letter-spacing: -0.5px;
+        line-height: 1.35;
+        max-width: 600px;
+        margin: 36px auto 12px;
+        color: var(--cream2);
+      }
+      .sub {
+        font-size: 15px;
+        color: var(--cream3);
+        max-width: 520px;
+        margin: 0 auto;
+        line-height: 1.6;
+      }
+      .badge {
+        margin-top: 36px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 18px;
+        border: 1px solid var(--ink3);
+        border-radius: 999px;
+        background: rgba(20,20,18,0.5);
+        backdrop-filter: blur(8px);
+        font-family: 'Space Mono', monospace;
+        font-size: 11px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--cream2);
+      }
+      .badge-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 10px var(--teal); }
+
+      /* === SIGNUP === */
+      .signup {
+        margin: 32px auto 0;
+        display: flex;
+        gap: 8px;
+        max-width: 460px;
+      }
+      .signup input {
+        flex: 1;
+        padding: 14px 18px;
+        border-radius: 12px;
+        border: 1px solid var(--ink3);
+        background: var(--ink2);
+        color: var(--cream);
+        font-family: inherit;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      .signup input::placeholder { color: var(--stone); }
+      .signup input:focus { border-color: var(--teal); }
+      .signup button {
+        padding: 14px 22px;
+        border-radius: 12px;
+        border: none;
+        background: var(--cream);
+        color: var(--ink);
+        font-family: 'DM Sans', sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        cursor: pointer;
+        transition: transform 0.12s, opacity 0.18s;
+      }
+      .signup button:active { transform: scale(0.97); opacity: 0.85; }
+      .signup-msg {
+        margin-top: 14px;
+        min-height: 18px;
+        font-size: 12px;
+        color: var(--teal);
+        font-family: 'Space Mono', monospace;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .signup-msg.show { opacity: 1; }
+      .signup-msg.error { color: #e57373; }
+      .honeypot {
+        position: absolute !important;
+        left: -9999px !important;
+        width: 1px !important;
+        height: 1px !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+      }
+
+      /* === FEATURES === */
+      .section {
+        padding: 80px 0;
+        position: relative;
+      }
+      .section-eyebrow {
+        font-family: 'Space Mono', monospace;
+        font-size: 11px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--teal);
+        margin: 0 0 12px;
+      }
+      .section-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-weight: 400;
+        font-size: clamp(32px, 5vw, 48px);
+        letter-spacing: -1px;
+        line-height: 1.1;
+        margin: 0 0 24px;
+        max-width: 640px;
+      }
+      .section-lead {
+        font-size: 16px;
+        color: var(--cream3);
+        line-height: 1.65;
+        max-width: 560px;
+        margin: 0 0 48px;
+      }
+
+      .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+      }
+      .feature {
+        background: var(--ink2);
+        border: 1px solid var(--ink3);
+        border-radius: 20px;
+        padding: 28px;
+        transition: transform 0.25s, border-color 0.25s;
+      }
+      .feature:hover {
+        transform: translateY(-4px);
+        border-color: var(--teal);
+      }
+      .feature-icon {
+        width: 44px; height: 44px;
+        border-radius: 12px;
+        background: rgba(46, 196, 160, 0.12);
+        border: 1px solid rgba(46, 196, 160, 0.3);
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 20px;
+        font-size: 22px;
+      }
+      .feature-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-weight: 400;
+        font-size: 22px;
+        margin: 0 0 8px;
+        letter-spacing: -0.3px;
+      }
+      .feature-body {
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--cream3);
+        margin: 0;
+      }
+
+      /* === PARTNERS MARQUEE === */
+      .partners {
+        background: var(--ink2);
+        border-top: 1px solid var(--ink3);
+        border-bottom: 1px solid var(--ink3);
+        padding: 56px 0;
+        overflow: hidden;
+      }
+      .partners-title {
+        text-align: center;
+        font-family: 'Space Mono', monospace;
+        font-size: 11px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--cream3);
+        margin: 0 0 36px;
+      }
+      .marquee {
+        overflow: hidden;
+        mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
+        -webkit-mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
+      }
+      .marquee-track {
+        display: flex;
+        gap: 56px;
+        width: max-content;
+        animation: scroll 40s linear infinite;
+      }
+      @keyframes scroll {
+        from { transform: translateX(0); }
+        to { transform: translateX(-50%); }
+      }
+      .partner {
+        font-family: 'Cormorant Garamond', serif;
+        font-weight: 400;
+        font-size: 28px;
+        color: var(--cream2);
+        white-space: nowrap;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+      }
+      .partner:hover { opacity: 1; color: var(--teal); }
+
+      /* === FOOTER CTA === */
+      .cta {
+        text-align: center;
+        padding: 100px 24px;
+      }
+
+      /* === FOOTER === */
+      .footer {
+        border-top: 1px solid var(--ink3);
+        padding: 32px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: 'Space Mono', monospace;
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--stone);
+        max-width: 1080px;
+        margin: 0 auto;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      .footer a {
+        color: var(--cream3);
+        text-decoration: none;
+        transition: color 0.2s;
+        margin-left: 18px;
+      }
+      .footer a:first-child { margin-left: 0; }
+      .footer a:hover { color: var(--teal); }
+
+      @media (max-width: 600px) {
+        .hero { padding: 56px 20px 40px; }
+        .section { padding: 56px 0; }
+        .signup { flex-direction: column; }
+        .signup button { width: 100%; }
+        .footer { flex-direction: column; align-items: flex-start; text-align: left; }
+        .footer-links a { margin-left: 0; margin-right: 18px; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="nav">
+      <div class="nav-inner">
+        <span class="logo">WER<span class="o">O</span>L</span>
+        <span class="nav-status">Launching soon</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <h1 class="wordmark">WER<span class="o">O</span>L</h1>
+        <p class="tagline">Kurátorovaný streetwear feed z najlepších e-shopov.</p>
+        <p class="sub">
+          Footshop, Queens, Freshment, Sizeer a 20+ ďalších — na jednom mieste.
+          Skroluj, sleduj creatorov, ulož si kúsky, kupuj jedným tap-om.
+        </p>
+
+        <div class="badge">
+          <span class="badge-dot"></span>
+          <span>Leto 2026</span>
+        </div>
+
+        <form class="signup" id="signup" data-source="hero">
+          <input type="email" name="email" required placeholder="tvoj@email.sk" autocomplete="email" />
+          <input type="text" name="website" class="honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          <button type="submit">Daj mi vedieť</button>
+        </form>
+        <p class="signup-msg" id="msg">Ďakujem — ozvem sa pri spustení.</p>
+      </section>
+
+      <section class="section">
+        <div class="container">
+          <p class="section-eyebrow">Čo dostaneš</p>
+          <h2 class="section-title">Streetwear ako TikTok feed — len lepšie.</h2>
+          <p class="section-lead">
+            Žiadne nekonečné scrollovanie cez 12 e-shopov. WEROL ti ukáže to najlepšie zo všetkých na jednom mieste, v rytme ktorý už poznáš.
+          </p>
+
+          <div class="features">
+            <div class="feature">
+              <div class="feature-icon">📱</div>
+              <h3 class="feature-title">Live feed</h3>
+              <p class="feature-body">
+                Vertikálny full-screen feed cez všetky tvoje obľúbené e-shopy.
+                Lajkuj, ulož, zdieľaj. Take it → otvorí ti shop priamo na danom kúsku.
+              </p>
+            </div>
+            <div class="feature">
+              <div class="feature-icon">👔</div>
+              <h3 class="feature-title">Outfit Builder</h3>
+              <p class="feature-body">
+                Skombinuj uložené kúsky do outfitov. Zdieľaj ako image cez IG/Stories.
+                Pozri si čo nosia top SK/CZ creatori.
+              </p>
+            </div>
+            <div class="feature">
+              <div class="feature-icon">🔔</div>
+              <h3 class="feature-title">Price alerty</h3>
+              <p class="feature-body">
+                Sleduj konkrétny produkt → notifikácia keď klesne cena alebo
+                sa objaví restock. Najprv ty, potom všetci ostatní.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="partners">
+        <p class="partners-title">Partner shops</p>
+        <div class="marquee">
+          <div class="marquee-track">
+            <span class="partner">Footshop</span>
+            <span class="partner">Queens.sk</span>
+            <span class="partner">Freshment</span>
+            <span class="partner">Sizeer</span>
+            <span class="partner">The Streets</span>
+            <span class="partner">Supersklep</span>
+            <span class="partner">freshlabels.sk</span>
+            <span class="partner">Shooos.sk</span>
+            <span class="partner">gap.sk</span>
+            <span class="partner">jdsports.sk</span>
+            <span class="partner">stylovej.sk</span>
+            <span class="partner">glami.sk</span>
+            <span class="partner">sneakerstore.cz</span>
+            <span class="partner">buzzsneakers.sk</span>
+            <span class="partner">adsport.sk</span>
+            <span class="partner">cartoon-shop.cz</span>
+            <span class="partner">forsize.sk</span>
+            <span class="partner">boardparadise.sk</span>
+            <span class="partner">Life is Porno</span>
+            <span class="partner">CryforMercy</span>
+            <span class="partner">Never Enough</span>
+            <span class="partner">H0vado</span>
+            <span class="partner">Nine Viper</span>
+            <!-- Duplicate for seamless loop -->
+            <span class="partner">Footshop</span>
+            <span class="partner">Queens.sk</span>
+            <span class="partner">Freshment</span>
+            <span class="partner">Sizeer</span>
+            <span class="partner">The Streets</span>
+            <span class="partner">Supersklep</span>
+            <span class="partner">freshlabels.sk</span>
+            <span class="partner">Shooos.sk</span>
+            <span class="partner">gap.sk</span>
+            <span class="partner">jdsports.sk</span>
+            <span class="partner">stylovej.sk</span>
+            <span class="partner">glami.sk</span>
+            <span class="partner">sneakerstore.cz</span>
+            <span class="partner">buzzsneakers.sk</span>
+            <span class="partner">adsport.sk</span>
+            <span class="partner">cartoon-shop.cz</span>
+            <span class="partner">forsize.sk</span>
+            <span class="partner">boardparadise.sk</span>
+            <span class="partner">Life is Porno</span>
+            <span class="partner">CryforMercy</span>
+            <span class="partner">Never Enough</span>
+            <span class="partner">H0vado</span>
+            <span class="partner">Nine Viper</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta">
+        <p class="section-eyebrow">Be first</p>
+        <h2 class="section-title" style="margin-left: auto; margin-right: auto;">Spúšťame leto 2026.</h2>
+        <p class="section-lead" style="margin-left: auto; margin-right: auto;">
+          Nechaj nám email a budeš medzi prvými 100 testermi. Žiadny spam.
+        </p>
+        <form class="signup" id="signup2" data-source="cta">
+          <input type="email" name="email" required placeholder="tvoj@email.sk" autocomplete="email" />
+          <input type="text" name="website" class="honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          <button type="submit">Daj mi vedieť</button>
+        </form>
+        <p class="signup-msg" id="msg2">Ďakujem — ozvem sa pri spustení.</p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>© 2026 WEROL</span>
+      <div class="footer-links">
+        <a href="mailto:hello@werol.app">hello@werol.app</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+      </div>
+    </footer>
+
+    <script>
+      const SUPABASE_URL = 'https://hcrccagnnjeslnpmfdky.supabase.co';
+      const SUPABASE_ANON =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcmNjYWdubmplc2xucG1mZGt5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTAyMjAsImV4cCI6MjA5NDkyNjIyMH0.9k6gCQnr2dHuzMxiRcL9j3WTYmLsGOqB9elWU2S-5fI';
+
+      const formLoadedAt = Date.now();
+
+      async function submitSignup(email, source) {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/signups`, {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_ANON,
+            Authorization: `Bearer ${SUPABASE_ANON}`,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          },
+          body: JSON.stringify({
+            email,
+            source: source || 'landing',
+            user_agent: (navigator.userAgent || '').slice(0, 200),
+          }),
+        });
+        // 201 = new signup, 409 = already signed up (still success from UX POV)
+        return res.ok || res.status === 409;
+      }
+
+      function showMsg(msgEl, text, isError) {
+        msgEl.textContent = text;
+        msgEl.classList.toggle('error', !!isError);
+        msgEl.classList.add('show');
+        setTimeout(() => msgEl.classList.remove('show'), 4500);
+      }
+
+      function attachSignup(formId, msgId) {
+        const form = document.getElementById(formId);
+        const msg = document.getElementById(msgId);
+        if (!form) return;
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const email = (form.email.value || '').trim();
+          const honeypot = (form.website && form.website.value) || '';
+          const elapsedMs = Date.now() - formLoadedAt;
+          const btn = form.querySelector('button');
+
+          // Anti-bot: honeypot filled OR form submitted within 1.5s of page load
+          if (honeypot || elapsedMs < 1500) {
+            showMsg(msg, 'Ďakujem — ozvem sa pri spustení.', false);
+            form.reset();
+            return;
+          }
+
+          if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            showMsg(msg, 'Neplatný email.', true);
+            return;
+          }
+
+          btn.disabled = true;
+          const original = btn.textContent;
+          btn.textContent = 'Posielam…';
+          try {
+            const ok = await submitSignup(email, form.dataset.source);
+            if (ok) {
+              showMsg(msg, 'Ďakujem — ozvem sa pri spustení.', false);
+              form.reset();
+            } else {
+              showMsg(msg, 'Niečo nevyšlo. Skús to neskôr.', true);
+            }
+          } catch {
+            showMsg(msg, 'Sieť nie je dostupná.', true);
+          } finally {
+            btn.disabled = false;
+            btn.textContent = original;
+          }
+        });
+      }
+
+      attachSignup('signup', 'msg');
+      attachSignup('signup2', 'msg2');
+    </script>
+  </body>
+</html>
