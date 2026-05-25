@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
@@ -9,6 +8,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
+import ArrowRightIcon from '../assets/icons/arrow_right.svg';
 import { COLORS } from '../theme/colors';
 import { FONTS } from '../theme/typography';
 
@@ -45,7 +45,9 @@ export function SwipeHint() {
   return (
     <Animated.View pointerEvents="none" style={[styles.root, animStyle]}>
       <View style={styles.circle}>
-        <Ionicons name="chevron-up" size={14} color={COLORS.cream} />
+        <View style={styles.iconRotate}>
+          <ArrowRightIcon width={14} height={14} stroke={COLORS.cream} strokeWidth={2} fill="none" />
+        </View>
       </View>
       <Text style={styles.label}>Scroll</Text>
     </Animated.View>
@@ -69,10 +71,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  iconRotate: {
+    transform: [{ rotate: '-90deg' }],
+  },
   label: {
-    fontFamily: FONTS.spaceMonoRegular,
+    fontFamily: FONTS.jetbrainsMono,
     fontSize: 9,
-    letterSpacing: 1,
+    letterSpacing: 1.5,
     color: COLORS.cream2,
     textTransform: 'uppercase',
   },

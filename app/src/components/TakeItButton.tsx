@@ -1,12 +1,12 @@
-import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useT } from '../i18n';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import ArrowRightIcon from '../assets/icons/arrow_right.svg';
+import { useT } from '../i18n';
 import { RADII } from '../theme/spacing';
 import { TEXT_STYLES } from '../theme/typography';
 
@@ -55,7 +55,9 @@ export function TakeItButton({ url, bg, textColor }: Props) {
           {opening ? t('product.opening') : t('product.takeIt')}
         </Text>
         {!opening && (
-          <Ionicons name="arrow-forward" size={16} color={textColor} style={styles.arrow} />
+          <View style={styles.arrow}>
+            <ArrowRightIcon width={16} height={16} stroke={textColor} strokeWidth={2} fill="none" />
+          </View>
         )}
       </View>
     </AnimatedPressable>

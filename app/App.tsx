@@ -1,17 +1,21 @@
 import 'react-native-gesture-handler';
 import {
-  CormorantGaramond_300Light,
-  CormorantGaramond_400Regular,
-  CormorantGaramond_400Regular_Italic,
-} from '@expo-google-fonts/cormorant-garamond';
+  Archivo_400Regular,
+  Archivo_500Medium,
+  Archivo_800ExtraBold,
+  Archivo_900Black,
+} from '@expo-google-fonts/archivo';
 import {
-  DMSans_400Regular,
-  DMSans_500Medium,
-} from '@expo-google-fonts/dm-sans';
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
 import {
-  SpaceMono_400Regular,
-  SpaceMono_700Bold,
-} from '@expo-google-fonts/space-mono';
+  JetBrainsMono_400Regular,
+  JetBrainsMono_500Medium,
+  JetBrainsMono_700Bold,
+} from '@expo-google-fonts/jetbrains-mono';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
@@ -42,13 +46,20 @@ function AppShell() {
 
 export default function App() {
   const [loaded] = useFonts({
-    CormorantGaramond_300Light,
-    CormorantGaramond_400Regular,
-    CormorantGaramond_400Regular_Italic,
-    DMSans_400Regular,
-    DMSans_500Medium,
-    SpaceMono_400Regular,
-    SpaceMono_700Bold,
+    // Display
+    Archivo_400Regular,
+    Archivo_500Medium,
+    Archivo_800ExtraBold,
+    Archivo_900Black,
+    // Body
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    // Technical
+    JetBrainsMono_400Regular,
+    JetBrainsMono_500Medium,
+    JetBrainsMono_700Bold,
   });
 
   if (!loaded) return null;

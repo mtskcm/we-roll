@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="sk">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy Policy — WEROL</title>
+    <meta name="theme-color" content="#0A0A0C" />
+    <link rel="icon" type="image/svg+xml" href="/assets/logos/monogram-white.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;800;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --pitch: #0A0A0C; --paper: #FFFFFF; --lime: #D6FF3D;
+        --concrete: #16161A; --line: #1F1F22; --muted: #A0A0A6; --muted2: #6E6E73;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0; padding: 0; background: var(--pitch); color: var(--paper);
+        font-family: 'Inter', system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .container { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+      .nav {
+        position: sticky; top: 0; z-index: 50;
+        background: rgba(10,10,12,0.8); backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--line);
+      }
+      .nav-inner {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 16px 24px; max-width: 760px; margin: 0 auto;
+      }
+      .nav-logo img { height: 28px; width: auto; }
+      .nav-back {
+        font-family: 'JetBrains Mono', monospace; font-size: 11px;
+        font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase;
+        color: var(--muted); text-decoration: none;
+        transition: color 0.2s;
+      }
+      .nav-back:hover { color: var(--lime); }
+      main { padding: 80px 24px 120px; }
+      .eyebrow {
+        font-family: 'JetBrains Mono', monospace; font-weight: 500;
+        font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase;
+        color: var(--lime); margin: 0 0 16px;
+      }
+      h1 {
+        font-family: 'Archivo', sans-serif; font-weight: 900;
+        font-size: clamp(40px, 6vw, 64px); letter-spacing: -0.045em;
+        line-height: 1.05; margin: 0 0 32px;
+      }
+      h2 {
+        font-family: 'Archivo', sans-serif; font-weight: 800;
+        font-size: 24px; letter-spacing: -0.03em;
+        margin: 48px 0 16px;
+      }
+      p, li {
+        font-family: 'Inter', sans-serif; font-size: 16px;
+        line-height: 1.7; color: var(--muted);
+      }
+      p strong { color: var(--paper); }
+      a { color: var(--lime); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .placeholder {
+        background: var(--concrete); border: 1px solid var(--line);
+        border-radius: 16px; padding: 32px; margin: 32px 0;
+      }
+      .placeholder p { margin: 0 0 8px; }
+      .footer {
+        border-top: 1px solid var(--line); padding: 32px 24px;
+        max-width: 760px; margin: 80px auto 0;
+        font-family: 'JetBrains Mono', monospace; font-size: 11px;
+        letter-spacing: 0.15em; text-transform: uppercase;
+        color: var(--muted2);
+        display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+      }
+      .footer a { color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="nav-inner">
+        <a href="/" class="nav-logo"><img src="/assets/logos/monogram-white.svg" alt="WEROL" /></a>
+        <a href="/" class="nav-back">← Späť na WEROL</a>
+      </div>
+    </header>
+
+    <main class="container">
+      <p class="eyebrow">Last updated · 25.5.2026</p>
+      <h1>Privacy Policy</h1>
+
+      <div class="placeholder">
+        <p><strong>Working draft.</strong></p>
+        <p>Full GDPR-compliant Privacy Policy v príprave (cez termly.io generátor).</p>
+        <p>Aktuálne táto stránka slúži ako placeholder. Verzia 1.0 príde pred App Store launch (leto 2026).</p>
+      </div>
+
+      <h2>Aké dáta zbierame</h2>
+      <p>
+        Aktuálne (waitlist fáza) zbierame iba <strong>email adresu</strong>, ktorú nám dobrovoľne pošlete cez signup formulár na <a href="https://werol.app">werol.app</a>. K nej ukladáme: čas registrácie, user-agent (typ prehliadača), a zdroj registrácie (hero / cta).
+      </p>
+
+      <h2>Načo dáta používame</h2>
+      <p>
+        Iba na <strong>jeden účel</strong>: oznámiť vám launch WEROL appky (leto 2026). Žiadny iný marketing, žiadne predaje tretím stranám.
+      </p>
+
+      <h2>Kde sú dáta uložené</h2>
+      <p>
+        Supabase (Postgres, EU región — Frankfurt). Šifrované za pohybe (TLS) aj v pokoji (AES-256).
+      </p>
+
+      <h2>Tvoje práva (GDPR)</h2>
+      <ul>
+        <li><strong>Export dát</strong> — napíš na <a href="mailto:info@werol.app">info@werol.app</a> a do 30 dní ti pošleme všetko čo o tebe vieme.</li>
+        <li><strong>Zmazanie účtu</strong> — rovnaký kontakt, do 30 dní hard delete.</li>
+        <li><strong>Oprava údajov</strong> — rovnaký kontakt.</li>
+      </ul>
+
+      <h2>Cookies</h2>
+      <p>
+        Aktuálne nevyužívame žiadne cookies. Po launchi pridáme cookie consent banner pre analytics.
+      </p>
+
+      <h2>Tretie strany</h2>
+      <ul>
+        <li><strong>Supabase</strong> (Postgres hosting, EU)</li>
+        <li><strong>Resend</strong> (email delivery, EU)</li>
+        <li><strong>Cloudflare</strong> (DNS + Pages hosting)</li>
+        <li><strong>Trello</strong> (interný PM — emaily sa kopírujú do tímového Trello workspace pre tracking)</li>
+      </ul>
+
+      <h2>Kontakt</h2>
+      <p>
+        Pre akékoľvek otázky o privacy: <a href="mailto:info@werol.app">info@werol.app</a>
+      </p>
+    </main>
+
+    <footer class="footer">
+      <span>© 2026 WEROL</span>
+      <div>
+        <a href="/">werol.app</a> &nbsp;·&nbsp; <a href="/terms.html">Terms</a>
+      </div>
+    </footer>
+  </body>
+</html>

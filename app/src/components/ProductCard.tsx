@@ -8,13 +8,16 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { COLORS, SHOP_COLORS } from '../theme/colors';
-import { RADII, SPACING } from '../theme/spacing';
-import { FONTS, TEXT_STYLES } from '../theme/typography';
-import type { Product } from '../types';
+import BookmarkIcon from '../assets/icons/bookmark.svg';
+import HeartIcon from '../assets/icons/heart.svg';
+import ShareIcon from '../assets/icons/share.svg';
 import { useT } from '../i18n';
 import { useFeedStore, useIsLiked, useIsSaved } from '../store/feedStore';
 import { useShareStore } from '../store/shareStore';
+import { COLORS, SHOP_COLORS, WEROL_TOKENS } from '../theme/colors';
+import { RADII, SPACING } from '../theme/spacing';
+import { FONTS, TEXT_STYLES } from '../theme/typography';
+import type { Product } from '../types';
 import { ActionButton } from './ActionButton';
 import { PriceTag } from './PriceTag';
 import { TakeItButton } from './TakeItButton';
@@ -79,18 +82,18 @@ export function ProductCard({ product, height }: Props) {
         </View>
         <View style={styles.sideActions}>
           <ActionButton
-            icon="heart-outline"
-            iconActive="heart"
+            Icon={HeartIcon}
+            IconActive={HeartIcon}
             activeColor={COLORS.likeRed}
             label={formatLikes(product.likes, liked)}
             active={liked}
             onPress={() => toggleLike(product.id)}
           />
-          <ActionButton icon="share-social-outline" label={t('product.share')} onPress={handleShare} />
+          <ActionButton Icon={ShareIcon} label={t('product.share')} onPress={handleShare} />
           <ActionButton
-            icon="bookmark-outline"
-            iconActive="bookmark"
-            activeColor={COLORS.teal}
+            Icon={BookmarkIcon}
+            IconActive={BookmarkIcon}
+            activeColor={WEROL_TOKENS.lime}
             label={t('product.save')}
             active={saved}
             onPress={() => toggleSaved(product.id)}
@@ -177,15 +180,15 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.liveGreen,
   },
   liveText: {
-    fontFamily: FONTS.spaceMonoBold,
+    fontFamily: FONTS.jetbrainsMonoBold,
     fontSize: 10,
-    color: '#FFFFFF',
+    color: WEROL_TOKENS.paper,
     letterSpacing: 0.5,
   },
   liveLabel: {
-    fontFamily: FONTS.spaceMonoRegular,
+    fontFamily: FONTS.jetbrainsMono,
     fontSize: 8,
-    color: '#A0A0A6',
-    letterSpacing: 1.2,
+    color: WEROL_TOKENS.muted,
+    letterSpacing: 1.5,
   },
 });

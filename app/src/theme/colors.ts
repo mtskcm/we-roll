@@ -1,34 +1,40 @@
+// WEROL — Brand color tokens (Edition 01 · 2026 · Maroš)
+// Keys preserved for backward-compat with existing components.
+// New canonical names available via `WEROL_TOKENS` for explicit usage.
+
 export const DARK_COLORS = {
-  ink: '#000000',
-  ink2: '#0A0A0C',
-  ink3: '#161618',
-  ink4: '#1F1F22',
-  stone: '#2A2A2E',
-  cream: '#FFFFFF',
-  cream2: '#A0A0A6',
-  cream3: '#6E6E73',
-  teal: '#D6FF3D',
-  teal2: '#B8E61F',
-  liveGreen: '#22C55E',
+  // Mapped to new Maroš tokens
+  ink: '#0A0A0C',          // pitch — primary canvas
+  ink2: '#0A0A0C',          // pitch (alias)
+  ink3: '#1F1F22',          // line — hairline / divider
+  ink4: '#2A2A2E',          // line2 — emphasized hairline
+  stone: '#16161A',         // concrete — secondary surface
+  cream: '#FFFFFF',         // paper — primary light text
+  cream2: '#A0A0A6',        // muted — body on dark
+  cream3: '#6E6E73',        // muted2 — caption / chrome
+  teal: '#D6FF3D',          // lime — signal · CTA · accent
+  teal2: '#B8DD1A',         // lime pressed
+  liveGreen: '#22C55E',     // live indicator (separate from CTA)
   dim: '#4A4A4E',
   dimmer: '#1A1A1C',
   likeRed: '#FF4757',
   glassBg: 'rgba(10,10,12,0.65)',
   glassBorder: 'rgba(255,255,255,0.08)',
   glassActive: 'rgba(214,255,61,0.18)',
-  imagePlaceholder: '#F5F1EA',
+  imagePlaceholder: '#16161A', // concrete (dark frame, replaces old cream bg)
 } as const;
 
 export const LIGHT_COLORS = {
-  ink: '#F5F1EA',
+  // Light mode (paper canvas) — for future use, not active yet
+  ink: '#FFFFFF',
   ink2: '#FFFFFF',
   ink3: '#E8E3D8',
   ink4: '#D6CFBF',
-  stone: '#9C958C',
+  stone: '#F5F1EA',
   cream: '#0A0A0C',
   cream2: '#4A4A4E',
   cream3: '#6E6E73',
-  teal: '#5BB000',
+  teal: '#5BB000',          // darker lime for light mode contrast
   teal2: '#3F8800',
   liveGreen: '#16A34A',
   dim: '#8B8780',
@@ -42,6 +48,27 @@ export const LIGHT_COLORS = {
 
 export const COLORS = DARK_COLORS;
 
+// Canonical WEROL tokens (use directly when adding new code)
+export const WEROL_TOKENS = {
+  pitch: '#0A0A0C',
+  paper: '#FFFFFF',
+  lime: '#D6FF3D',
+  limePressed: '#B8DD1A',
+  concrete: '#16161A',
+  line: '#1F1F22',
+  line2: '#2A2A2E',
+  muted: '#A0A0A6',
+  muted2: '#6E6E73',
+  // Partner tints
+  tintOrange: '#FF6B2C',
+  tintRed: '#E63946',
+  tintYellow: '#F2C94C',
+  tintSunset: '#FF7A2B',
+  tintMagenta: '#FF3D8A',
+  tintViolet: '#A78BFA',
+  tintCyan: '#22D3EE',
+} as const;
+
 export type ShopKey =
   | 'Footshop'
   | 'Queens.sk'
@@ -52,13 +79,14 @@ export type ShopKey =
   | 'Hervis'
   | 'StockX';
 
+// Mapped to Maroš's partner tint palette (accent-only)
 export const SHOP_COLORS: Record<ShopKey, { bg: string; text: string }> = {
-  Footshop: { bg: '#E8C84A', text: '#1A1700' },
-  'Queens.sk': { bg: '#4A90E2', text: '#F0EBE1' },
-  Freshment: { bg: '#C8E87A', text: '#1A2800' },
-  Sizeer: { bg: '#8B8FA3', text: '#F0EBE1' },
-  Zalando: { bg: '#FF6900', text: '#0C0C0A' },
-  'About You': { bg: '#F5B800', text: '#0C0C0A' },
-  Hervis: { bg: '#C8102E', text: '#F0EBE1' },
-  StockX: { bg: '#006F42', text: '#F0EBE1' },
+  Footshop: { bg: '#FF6B2C', text: '#0A0A0C' },    // T-01 orange
+  'Queens.sk': { bg: '#E63946', text: '#FFFFFF' }, // T-02 red
+  Freshment: { bg: '#F2C94C', text: '#0A0A0C' },   // T-03 yellow
+  Sizeer: { bg: '#FF7A2B', text: '#0A0A0C' },      // T-04 sunset
+  Zalando: { bg: '#FF3D8A', text: '#FFFFFF' },     // T-05 magenta
+  'About You': { bg: '#A78BFA', text: '#0A0A0C' }, // T-06 violet
+  Hervis: { bg: '#22D3EE', text: '#0A0A0C' },      // T-07 cyan
+  StockX: { bg: '#FFFFFF', text: '#0A0A0C' },      // paper
 };

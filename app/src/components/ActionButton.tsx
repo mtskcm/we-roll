@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -7,14 +6,22 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { COLORS } from '../theme/colors';
+import { COLORS, WEROL_TOKENS } from '../theme/colors';
 import { TEXT_STYLES } from '../theme/typography';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+type IconComponent = React.FC<{
+  width?: number;
+  height?: number;
+  stroke?: string;
+  fill?: string;
+  strokeWidth?: number;
+}>;
+
 type Props = {
-  icon: keyof typeof Ionicons.glyphMap;
-  iconActive?: keyof typeof Ionicons.glyphMap;
+  Icon: IconComponent;
+  IconActive?: IconComponent;
   activeColor?: string;
   label: string;
   active?: boolean;
@@ -22,9 +29,9 @@ type Props = {
 };
 
 export function ActionButton({
-  icon,
-  iconActive,
-  activeColor = COLORS.cream,
+  Icon,
+  IconActive,
+  activeColor = WEROL_TOKENS.lime,
   label,
   active = false,
   onPress,
@@ -39,6 +46,9 @@ export function ActionButton({
   const overlayStyle = useAnimatedStyle(() => ({
     opacity: bg.value,
   }));
+
+  const RenderIcon = active && IconActive ? IconActive : Icon;
+  const iconColor = active ? activeColor : COLORS.cream;
 
   return (
     <View style={styles.wrap}>
@@ -56,10 +66,12 @@ export function ActionButton({
       >
         <BlurView intensity={28} tint="dark" style={StyleSheet.absoluteFill} />
         <Animated.View style={[styles.overlay, overlayStyle]} />
-        <Ionicons
-          name={active && iconActive ? iconActive : icon}
-          size={20}
-          color={active ? activeColor : COLORS.cream}
+        <RenderIcon
+          width={20}
+          height={20}
+          stroke={iconColor}
+          fill={active ? iconColor : 'none'}
+          strokeWidth={1.8}
         />
       </AnimatedPressable>
       <Text style={[TEXT_STYLES.actionCount, styles.label]} numberOfLines={1}>
@@ -72,7 +84,7 @@ export function ActionButton({
 const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   btn: {
     width: 44,

@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
@@ -7,6 +6,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import SearchIcon from '../assets/icons/search.svg';
+import WordmarkOnDark from '../assets/logos/wordmark-on-dark.svg';
 import { COLORS, SHOP_COLORS } from '../theme/colors';
 import { SPACING } from '../theme/spacing';
 import { TEXT_STYLES } from '../theme/typography';
@@ -47,11 +48,9 @@ export function TopNav({ product, onSearch }: Props) {
   }));
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top + 6 }]}>
+    <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
       <View style={styles.logoRow}>
-        <Text style={TEXT_STYLES.wordmark}>WER</Text>
-        <Text style={TEXT_STYLES.wordmarkAccent}>O</Text>
-        <Text style={TEXT_STYLES.wordmark}>L</Text>
+        <WordmarkOnDark width={132} height={28} />
       </View>
 
       <Animated.View style={[styles.shopPill, animPillBg]}>
@@ -81,7 +80,7 @@ export function TopNav({ product, onSearch }: Props) {
             { opacity: pressed ? 0.7 : 1, borderColor: 'rgba(0,0,0,0.25)' },
           ]}
         >
-          <Ionicons name="search" size={16} color={shop.text} />
+          <SearchIcon width={16} height={16} stroke={shop.text} strokeWidth={2} />
         </Pressable>
       </Animated.View>
     </View>
@@ -98,6 +97,7 @@ const styles = StyleSheet.create({
   logoRow: {
     alignSelf: 'center',
     flexDirection: 'row',
+    alignItems: 'center',
   },
   shopPill: {
     flexDirection: 'row',

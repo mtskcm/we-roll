@@ -1,0 +1,45 @@
+/* ─────────────────────────────────────────────────────────────────
+   WEROL — BRAND COLOR TOKENS
+   Edition 01 · 2026
+   ─────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── CORE ─────────────────────────────────────────── */
+  --werol-pitch:    #0A0A0C;  /* primary canvas / dark */
+  --werol-paper:    #FFFFFF;  /* primary canvas / light */
+  --werol-lime:     #D6FF3D;  /* signal · CTA · accent (lime) */
+  --werol-concrete: #16161A;  /* secondary surface (dark) */
+
+  /* ── NEUTRALS (dark surface) ──────────────────────── */
+  --werol-line:     #1F1F22;  /* hairline / divider */
+  --werol-line2:    #2A2A2E;  /* hairline emphasized */
+  --werol-muted:    #A0A0A6;  /* body text on dark */
+  --werol-muted2:   #6E6E73;  /* caption / chrome on dark */
+
+  /* ── PARTNER TINT TOKENS (accent use only) ────────── */
+  --werol-tint-1:   #FF6B2C;  /* T-01 · orange  */
+  --werol-tint-2:   #E63946;  /* T-02 · red     */
+  --werol-tint-3:   #F2C94C;  /* T-03 · yellow  */
+  --werol-tint-4:   #FF7A2B;  /* T-04 · sunset  */
+  --werol-tint-5:   #FF3D8A;  /* T-05 · magenta */
+  --werol-tint-6:   #A78BFA;  /* T-06 · violet  */
+  --werol-tint-7:   #22D3EE;  /* T-07 · cyan    */
+}
+
+/* ── REFERENCE MAP (for non-CSS environments) ─────────
+   Pitch        #0A0A0C  R10  G10  B12   — primary dark canvas
+   Paper        #FFFFFF  R255 G255 B255  — primary light canvas
+   Lime         #D6FF3D  R214 G255 B61   — signal / accent
+   Concrete     #16161A  R22  G22  B26   — secondary dark surface
+
+   Tint-01      #FF6B2C  R255 G107 B44
+   Tint-02      #E63946  R230 G57  B70
+   Tint-03      #F2C94C  R242 G201 B76
+   Tint-04      #FF7A2B  R255 G122 B43
+   Tint-05      #FF3D8A  R255 G61  B138
+   Tint-06      #A78BFA  R167 G139 B250
+   Tint-07      #22D3EE  R34  G211 B238
+
+   Rule: partner tints are ACCENT only — never wash the full UI.
+   Use lime as the signal layer; pitch as the canvas; paper for inverts.
+   ───────────────────────────────────────────────────── */

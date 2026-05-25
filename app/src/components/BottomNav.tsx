@@ -1,26 +1,27 @@
-import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import BellIcon from '../assets/icons/bell.svg';
+import BookmarkIcon from '../assets/icons/bookmark.svg';
+import HangerIcon from '../assets/icons/hanger.svg';
+import HeartIcon from '../assets/icons/heart.svg';
+import SearchIcon from '../assets/icons/search.svg';
 import { useT, type TKey } from '../i18n';
-import { COLORS } from '../theme/colors';
-import { SPACING } from '../theme/spacing';
-import { TEXT_STYLES } from '../theme/typography';
 import { useUnreadCount } from '../store/messagesStore';
+import { COLORS, WEROL_TOKENS } from '../theme/colors';
+import { SPACING } from '../theme/spacing';
+import { FONTS, TEXT_STYLES } from '../theme/typography';
 
-type IconName = keyof typeof Ionicons.glyphMap;
+type IconComponent = React.FC<{ width?: number; height?: number; stroke?: string; strokeWidth?: number; fill?: string }>;
 
-const ICONS: Record<string, { active: IconName; inactive: IconName; labelKey: TKey }> = {
-  Home: { active: 'home', inactive: 'home-outline', labelKey: 'tab.feed' },
-  Outfit: { active: 'shirt', inactive: 'shirt-outline', labelKey: 'tab.outfit' },
-  Saved: { active: 'bookmark', inactive: 'bookmark-outline', labelKey: 'tab.saved' },
-  Messages: {
-    active: 'notifications',
-    inactive: 'notifications-outline',
-    labelKey: 'tab.notifications',
-  },
-  Profile: { active: 'person', inactive: 'person-outline', labelKey: 'tab.profile' },
+// Map tab routes → Maroš SVG icon
+const ICONS: Record<string, { Icon: IconComponent; labelKey: TKey }> = {
+  Home: { Icon: HeartIcon, labelKey: 'tab.feed' },
+  Outfit: { Icon: HangerIcon, labelKey: 'tab.outfit' },
+  Saved: { Icon: BookmarkIcon, labelKey: 'tab.saved' },
+  Messages: { Icon: BellIcon, labelKey: 'tab.notifications' },
+  Profile: { Icon: SearchIcon, labelKey: 'tab.profile' }, // TODO: replace with profile icon
 };
 
 export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps) {
@@ -28,7 +29,6 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
   const unread = useUnreadCount();
   const t = useT();
 
-  // Hide search route from tab bar entirely
   const visibleRoutes = state.routes.filter((r) => r.name !== 'Search');
 
   return (
@@ -37,7 +37,7 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
         const index = state.routes.findIndex((r) => r.key === route.key);
         const isFocused = state.index === index;
         const meta = ICONS[route.name] ?? ICONS.Home;
-        const color = isFocused ? COLORS.teal : COLORS.dim;
+        const color = isFocused ? WEROL_TOKENS.lime : COLORS.dim;
         const { options } = descriptors[route.key];
 
         const onPress = () => {
@@ -51,6 +51,8 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
           }
         };
 
+        const { Icon } = meta;
+
         return (
           <Pressable
             key={route.key}
@@ -61,11 +63,7 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
             style={styles.tab}
           >
             <View style={styles.iconWrap}>
-              <Ionicons
-                name={isFocused ? meta.active : meta.inactive}
-                size={22}
-                color={color}
-              />
+              <Icon width={22} height={22} stroke={color} strokeWidth={1.8} fill="none" />
               {route.name === 'Messages' && unread > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{unread > 9 ? '9+' : unread}</Text>
@@ -83,16 +81,16 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
 const styles = StyleSheet.create({
   root: {
     flexDirection: 'row',
-    backgroundColor: COLORS.ink2,
+    backgroundColor: WEROL_TOKENS.pitch,
     borderTopWidth: 1,
-    borderTopColor: COLORS.ink3,
+    borderTopColor: WEROL_TOKENS.line,
     paddingTop: SPACING.lg,
     paddingHorizontal: SPACING.sm,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
     paddingVertical: 4,
   },
   iconWrap: {
@@ -105,17 +103,17 @@ const styles = StyleSheet.create({
     minWidth: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: COLORS.teal,
+    backgroundColor: WEROL_TOKENS.lime,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 5,
     borderWidth: 2,
-    borderColor: COLORS.ink2,
+    borderColor: WEROL_TOKENS.pitch,
   },
   badgeText: {
-    fontFamily: 'SpaceMono_700Bold',
+    fontFamily: FONTS.jetbrainsMonoBold,
     fontSize: 10,
-    color: COLORS.ink,
+    color: WEROL_TOKENS.pitch,
     lineHeight: 12,
   },
 });
