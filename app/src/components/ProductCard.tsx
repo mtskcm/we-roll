@@ -1,7 +1,8 @@
 // ProductCard — Maroš v2 design.
-// Layout: hero image (top ~50%), right-edge action bar overlay,
-// brand+live tag, big product name, price, LIME BUY button + DETAILS.
+// Full-bleed product image; right-edge action bar; bottom overlay
+// (gradient backdrop) with brand chip, live badge, name, price, BUY + DETAILS.
 
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
@@ -18,10 +19,9 @@ import CartIcon from '../assets/icons/cart.svg';
 import HangerIcon from '../assets/icons/hanger.svg';
 import HeartIcon from '../assets/icons/heart.svg';
 import ShareIcon from '../assets/icons/share.svg';
-import { useT } from '../i18n';
 import { useFeedStore, useIsLiked, useIsSaved } from '../store/feedStore';
 import { useShareStore } from '../store/shareStore';
-import { COLORS, WEROL_TOKENS } from '../theme/colors';
+import { WEROL_TOKENS } from '../theme/colors';
 import { RADII, SPACING } from '../theme/spacing';
 import { FONTS } from '../theme/typography';
 import type { Product } from '../types';
@@ -37,14 +37,12 @@ function watchingFor(product: Product): number {
 }
 
 export function ProductCard({ product, height, onBuy }: Props) {
-  const t = useT();
   const liked = useIsLiked(product.id);
   const saved = useIsSaved(product.id);
   const toggleLike = useFeedStore((s) => s.toggleLike);
   const toggleSaved = useFeedStore((s) => s.toggleSaved);
   const openShare = useShareStore((s) => s.openShare);
 
-  const imageHeight = Math.round(height * 0.5);
   const watching = useMemo(() => watchingFor(product), [product]);
 
   const pulse = useSharedValue(0);
@@ -66,9 +64,16 @@ export function ProductCard({ product, height, onBuy }: Props) {
 
   return (
     <View style={[styles.card, { height }]}>
-      {/* Hero image */}
-      <View style={[styles.imageWrap, { height: imageHeight }]}>
+      <View style={styles.imageWrap}>
         <Image source={product.image} style={styles.image} resizeMode="cover" />
+
+        {/* Bottom gradient for overlay legibility */}
+        <LinearGradient
+          colors={['rgba(10,10,12,0)', 'rgba(10,10,12,0.55)', 'rgba(10,10,12,0.95)']}
+          locations={[0, 0.45, 1]}
+          style={styles.gradient}
+          pointerEvents="none"
+        />
 
         {/* Right-edge action bar */}
         <View style={styles.actionBar}>
@@ -97,57 +102,53 @@ export function ProductCard({ product, height, onBuy }: Props) {
             onPress={() => {}}
           />
         </View>
-      </View>
 
-      {/* Info card */}
-      <View style={styles.info}>
-        {/* Brand + live row */}
-        <View style={styles.brandRow}>
-          <View style={styles.brandTag}>
-            <View style={styles.brandDot} />
-            <Text style={styles.brandText}>{product.brand.toUpperCase()}</Text>
+        {/* Bottom overlay info */}
+        <View style={styles.info} pointerEvents="box-none">
+          <View style={styles.brandRow}>
+            <View style={styles.brandTag}>
+              <View style={styles.brandDot} />
+              <Text style={styles.brandText}>{product.brand.toUpperCase()}</Text>
+            </View>
+            <View style={styles.liveBadge}>
+              <Animated.View style={[styles.liveDot, pulseStyle]} />
+              <Text style={styles.liveText}>{watching.toLocaleString()} WATCHING</Text>
+            </View>
           </View>
-          <View style={styles.liveBadge}>
-            <Animated.View style={[styles.liveDot, pulseStyle]} />
-            <Text style={styles.liveText}>{watching.toLocaleString()} WATCHING</Text>
-          </View>
-        </View>
 
-        <Text style={styles.productName} numberOfLines={2}>
-          {product.name.toUpperCase()}
-        </Text>
-
-        {/* Optional color/variant subtitle — show if available */}
-        <Text style={styles.colorText}>{product.shop.name.toUpperCase()}</Text>
-
-        {/* Price */}
-        <View style={styles.priceRow}>
-          <Text style={styles.price}>
-            {product.price.current} {product.price.currency}
+          <Text style={styles.productName} numberOfLines={2}>
+            {product.name.toUpperCase()}
           </Text>
-          {product.price.original !== undefined && (
-            <Text style={styles.priceOld}>
-              {product.price.original} {product.price.currency}
-            </Text>
-          )}
-        </View>
 
-        {/* CTA row */}
-        <View style={styles.ctaRow}>
-          <Pressable
-            onPress={onBuy}
-            style={({ pressed }) => [styles.buyBtn, pressed && { opacity: 0.85 }]}
-          >
-            <CartIcon width={14} height={14} stroke={WEROL_TOKENS.pitch} strokeWidth={2} fill="none" />
-            <Text style={styles.buyText}>BUY ON {product.shop.name.toUpperCase()}</Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.detailsBtn, pressed && { opacity: 0.6 }]}
-            onPress={() => {}}
-          >
-            <Text style={styles.detailsText}>DETAILS</Text>
-            <ArrowRightIcon width={12} height={12} stroke={WEROL_TOKENS.paper} strokeWidth={2} fill="none" />
-          </Pressable>
+          <Text style={styles.colorText}>{product.shop.name.toUpperCase()}</Text>
+
+          <View style={styles.priceRow}>
+            <Text style={styles.price}>
+              {product.price.current} {product.price.currency}
+            </Text>
+            {product.price.original !== undefined && (
+              <Text style={styles.priceOld}>
+                {product.price.original} {product.price.currency}
+              </Text>
+            )}
+          </View>
+
+          <View style={styles.ctaRow}>
+            <Pressable
+              onPress={onBuy}
+              style={({ pressed }) => [styles.buyBtn, pressed && { opacity: 0.85 }]}
+            >
+              <CartIcon width={14} height={14} stroke={WEROL_TOKENS.pitch} strokeWidth={2} fill="none" />
+              <Text style={styles.buyText}>BUY ON {product.shop.name.toUpperCase()}</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.detailsBtn, pressed && { opacity: 0.6 }]}
+              onPress={() => {}}
+            >
+              <Text style={styles.detailsText}>DETAILS</Text>
+              <ArrowRightIcon width={12} height={12} stroke={WEROL_TOKENS.paper} strokeWidth={2} fill="none" />
+            </Pressable>
+          </View>
         </View>
       </View>
     </View>
@@ -193,10 +194,11 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     backgroundColor: WEROL_TOKENS.pitch,
-    paddingTop: SPACING.sm,
+    paddingHorizontal: SPACING.section,
+    paddingVertical: SPACING.sm,
   },
   imageWrap: {
-    marginHorizontal: SPACING.section,
+    flex: 1,
     backgroundColor: WEROL_TOKENS.concrete,
     borderRadius: RADII.lg,
     overflow: 'hidden',
@@ -206,11 +208,18 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  // Right-edge action bar — overlaid on image right side
+  gradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '55%',
+  },
+  // Right-edge action bar — vertically centered on image
   actionBar: {
     position: 'absolute',
-    right: 12,
-    top: '40%',
+    right: 10,
+    top: '32%',
     gap: 14,
     alignItems: 'center',
   },
@@ -233,10 +242,13 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   info: {
-    flex: 1,
-    paddingHorizontal: SPACING.section,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.md,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.lg,
+    paddingTop: SPACING.md,
     gap: 8,
   },
   brandRow: {
@@ -248,15 +260,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255,107,44,0.18)',
+    backgroundColor: 'rgba(255,107,44,0.85)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
   },
   brandDot: {
-    width: 8,
-    height: 8,
-    backgroundColor: WEROL_TOKENS.tintOrange,
+    width: 6,
+    height: 6,
+    backgroundColor: WEROL_TOKENS.paper,
   },
   brandText: {
     fontFamily: FONTS.jetbrainsMonoBold,
@@ -268,7 +280,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(214,255,61,0.14)',
+    backgroundColor: 'rgba(214,255,61,0.18)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
@@ -287,9 +299,9 @@ const styles = StyleSheet.create({
   },
   productName: {
     fontFamily: FONTS.archivo,
-    fontSize: 28,
+    fontSize: 30,
     letterSpacing: -1.2,
-    lineHeight: 30,
+    lineHeight: 32,
     color: WEROL_TOKENS.paper,
     marginTop: 4,
   },
@@ -304,7 +316,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 8,
-    marginTop: 4,
+    marginTop: 2,
   },
   price: {
     fontFamily: FONTS.archivo,
@@ -321,7 +333,7 @@ const styles = StyleSheet.create({
   ctaRow: {
     flexDirection: 'row',
     gap: 8,
-    marginTop: 12,
+    marginTop: 10,
   },
   buyBtn: {
     flex: 1,
@@ -348,7 +360,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     borderRadius: RADII.pill,
     borderWidth: 1,
-    borderColor: WEROL_TOKENS.line2,
+    borderColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(10,10,12,0.4)',
   },
   detailsText: {
     fontFamily: FONTS.archivoBold,
@@ -357,6 +370,3 @@ const styles = StyleSheet.create({
     color: WEROL_TOKENS.paper,
   },
 });
-
-// Keep COLORS import used for backward-compat
-const _ = COLORS;
