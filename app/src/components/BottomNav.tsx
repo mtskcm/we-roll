@@ -1,6 +1,12 @@
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddIcon from '../assets/icons/add.svg';
 import BellIcon from '../assets/icons/bell.svg';
@@ -10,6 +16,7 @@ import HomeIcon from '../assets/icons/home.svg';
 import UserIcon from '../assets/icons/user.svg';
 import { useT, type TKey } from '../i18n';
 import { useUnreadCount } from '../store/messagesStore';
+import { useUiStore } from '../store/uiStore';
 import { WEROL_TOKENS } from '../theme/colors';
 import { FONTS } from '../theme/typography';
 
@@ -35,18 +42,33 @@ const TAB_ORDER = ['Home', 'Outfit', 'Fit', 'Saved', 'Messages', 'Profile'];
 export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const unread = useUnreadCount();
-  const t = useT();
+  const chromeHidden = useUiStore((s) => s.chromeHidden);
+  // useT kept for future label re-introduction; currently icon-only.
+  useT();
 
   const orderedRoutes = TAB_ORDER
     .map((name) => state.routes.find((r) => r.name === name))
     .filter((r): r is NonNullable<typeof r> => !!r);
+
+  const translateY = useSharedValue(0);
+  useEffect(() => {
+    translateY.value = withTiming(chromeHidden ? 110 : 0, {
+      duration: chromeHidden ? 280 : 360,
+      easing: chromeHidden ? Easing.in(Easing.cubic) : Easing.out(Easing.cubic),
+    });
+  }, [chromeHidden, translateY]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+    opacity: 1 - Math.min(1, translateY.value / 110) * 0.85,
+  }));
 
   return (
     <View
       pointerEvents="box-none"
       style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 12) }]}
     >
-      <View style={styles.pill}>
+      <Animated.View style={[styles.pill, animatedStyle]}>
         {orderedRoutes.map((route) => {
           const index = state.routes.findIndex((r) => r.key === route.key);
           const isFocused = state.index === index;
@@ -98,16 +120,11 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
                     </View>
                   )}
                 </View>
-                {isFocused && (
-                  <Text style={styles.label} numberOfLines={1}>
-                    {t(meta.labelKey)}
-                  </Text>
-                )}
               </View>
             </Pressable>
           );
         })}
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -159,12 +176,6 @@ const styles = StyleSheet.create({
   },
   iconWrap: {
     position: 'relative',
-  },
-  label: {
-    fontFamily: FONTS.archivoBold,
-    fontSize: 11,
-    letterSpacing: 0.4,
-    color: WEROL_TOKENS.pitch,
   },
   badge: {
     position: 'absolute',

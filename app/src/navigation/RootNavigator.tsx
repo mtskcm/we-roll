@@ -3,6 +3,7 @@ import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import { BottomNav } from '../components/BottomNav';
+import { TabSwipeWrapper } from '../components/TabSwipeWrapper';
 import { FeedScreen } from '../screens/FeedScreen';
 import { MessagesScreen } from '../screens/MessagesScreen';
 import { OutfitBuilderScreen } from '../screens/OutfitBuilderScreen';
@@ -106,12 +107,24 @@ export function RootNavigator() {
           screenOptions={{ headerShown: false }}
           tabBar={(props) => <BottomNav {...props} />}
         >
-          <Tab.Screen name="Home" component={HomeStack} />
-          <Tab.Screen name="Outfit" component={OutfitsFeedScreen} />
-          <Tab.Screen name="Fit" component={OutfitBuilderScreen} />
-          <Tab.Screen name="Saved" component={SavedScreen} />
-          <Tab.Screen name="Messages" component={MessagesScreen} />
-          <Tab.Screen name="Profile" component={ProfileScreen} />
+          <Tab.Screen name="Home">
+            {() => <TabSwipeWrapper><HomeStack /></TabSwipeWrapper>}
+          </Tab.Screen>
+          <Tab.Screen name="Outfit">
+            {() => <TabSwipeWrapper><OutfitsFeedScreen /></TabSwipeWrapper>}
+          </Tab.Screen>
+          <Tab.Screen name="Fit">
+            {() => <TabSwipeWrapper><OutfitBuilderScreen /></TabSwipeWrapper>}
+          </Tab.Screen>
+          <Tab.Screen name="Saved">
+            {() => <TabSwipeWrapper><SavedScreen /></TabSwipeWrapper>}
+          </Tab.Screen>
+          <Tab.Screen name="Messages">
+            {() => <TabSwipeWrapper><MessagesScreen /></TabSwipeWrapper>}
+          </Tab.Screen>
+          <Tab.Screen name="Profile">
+            {() => <TabSwipeWrapper><ProfileScreen /></TabSwipeWrapper>}
+          </Tab.Screen>
           <Tab.Screen
             name="Search"
             component={SearchScreen}

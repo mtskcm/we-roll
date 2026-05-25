@@ -9,6 +9,7 @@ import { SwipeHint } from '../components/SwipeHint';
 import { TopNav } from '../components/TopNav';
 import { PRODUCTS } from '../data/products';
 import { useFeedStore } from '../store/feedStore';
+import { useUiStore } from '../store/uiStore';
 import { WEROL_TOKENS } from '../theme/colors';
 import type { Product } from '../types';
 
@@ -26,6 +27,7 @@ export function FeedScreen() {
   const swipeHintDismissed = useFeedStore((s) => s.swipeHintDismissed);
   const dismissSwipeHint = useFeedStore((s) => s.dismissSwipeHint);
   const consumePendingFeedIndex = useFeedStore((s) => s.consumePendingFeedIndex);
+  const setChromeHidden = useUiStore((s) => s.setChromeHidden);
 
   const [activeProduct, setActiveProduct] = useState<Product>(
     PRODUCTS[currentIndex] ?? PRODUCTS[0],
@@ -33,7 +35,7 @@ export function FeedScreen() {
   const [buyTarget, setBuyTarget] = useState<Product | null>(null);
 
   useEffect(() => {
-    const unsub = navigation.addListener('focus', () => {
+    const unsubFocus = navigation.addListener('focus', () => {
       const idx = consumePendingFeedIndex();
       if (idx !== null && idx >= 0 && idx < PRODUCTS.length) {
         setCurrentIndex(idx);
@@ -43,8 +45,12 @@ export function FeedScreen() {
         });
       }
     });
-    return unsub;
-  }, [navigation, consumePendingFeedIndex, setCurrentIndex]);
+    const unsubBlur = navigation.addListener('blur', () => setChromeHidden(false));
+    return () => {
+      unsubFocus();
+      unsubBlur();
+    };
+  }, [navigation, consumePendingFeedIndex, setCurrentIndex, setChromeHidden]);
 
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     const first = viewableItems[0];
@@ -89,7 +95,12 @@ export function FeedScreen() {
         getItemLayout={getItemLayout}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
-        onScrollBeginDrag={dismissSwipeHint}
+        onScrollBeginDrag={() => {
+          dismissSwipeHint();
+          setChromeHidden(true);
+        }}
+        onScrollEndDrag={() => setChromeHidden(false)}
+        onMomentumScrollEnd={() => setChromeHidden(false)}
         initialScrollIndex={currentIndex}
         initialNumToRender={2}
         windowSize={3}
