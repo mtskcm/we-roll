@@ -3,7 +3,6 @@
 
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BellIcon from '../assets/icons/bell.svg';
 import SearchIcon from '../assets/icons/search.svg';
 import WordmarkOnDark from '../assets/logos/wordmark-on-dark.svg';
@@ -23,9 +22,8 @@ function pad2(n: number): string {
 }
 
 export function TopNav({ currentIndex, total, onSearch, onNotifications }: Props) {
-  const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.root, { paddingTop: insets.top + 8 }]}>
+    <View style={styles.root}>
       <View style={styles.logoArea}>
         <WordmarkOnDark width={108} height={20} />
       </View>
@@ -60,9 +58,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: WEROL_TOKENS.pitch,
     paddingHorizontal: SPACING.section,
-    paddingBottom: SPACING.lg,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.md,
     gap: SPACING.md,
   },
   logoArea: {

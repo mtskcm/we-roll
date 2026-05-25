@@ -18,9 +18,9 @@ export function FeedScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const listRef = useRef<FlatList<Product>>(null);
-  const [topNavHeight, setTopNavHeight] = useState(110);
 
-  const itemHeight = winHeight - insets.bottom - BOTTOM_NAV_HEIGHT - topNavHeight;
+  // Image fills the full available height — TopNav floats on top as overlay.
+  const itemHeight = winHeight - insets.bottom - BOTTOM_NAV_HEIGHT;
 
   const currentIndex = useFeedStore((s) => s.currentIndex);
   const setCurrentIndex = useFeedStore((s) => s.setCurrentIndex);
@@ -28,7 +28,7 @@ export function FeedScreen() {
   const dismissSwipeHint = useFeedStore((s) => s.dismissSwipeHint);
   const consumePendingFeedIndex = useFeedStore((s) => s.consumePendingFeedIndex);
 
-  const [activeProduct, setActiveProduct] = useState<Product>(
+  const [, setActiveProduct] = useState<Product>(
     PRODUCTS[currentIndex] ?? PRODUCTS[0],
   );
 
@@ -68,10 +68,33 @@ export function FeedScreen() {
 
   return (
     <View style={styles.root}>
-      <View
-        style={styles.headerWrap}
-        onLayout={(e) => setTopNavHeight(e.nativeEvent.layout.height)}
-      >
+      <FlatList
+        ref={listRef}
+        data={PRODUCTS}
+        keyExtractor={(p) => p.id}
+        renderItem={({ item }) => (
+          <ProductCard
+            product={item}
+            height={itemHeight}
+            onBuy={() => Linking.openURL(item.takeItUrl).catch(() => {})}
+          />
+        )}
+        pagingEnabled
+        snapToInterval={itemHeight}
+        snapToAlignment="start"
+        decelerationRate="fast"
+        showsVerticalScrollIndicator={false}
+        getItemLayout={getItemLayout}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
+        onScrollBeginDrag={dismissSwipeHint}
+        initialScrollIndex={currentIndex}
+        initialNumToRender={2}
+        windowSize={3}
+        maxToRenderPerBatch={2}
+      />
+      {/* TopNav floats on top of the image */}
+      <View style={[styles.topOverlay, { paddingTop: insets.top }]} pointerEvents="box-none">
         <TopNav
           currentIndex={currentIndex}
           total={PRODUCTS.length}
@@ -79,38 +102,11 @@ export function FeedScreen() {
           onNotifications={() => navigation.navigate('Messages')}
         />
       </View>
-      <View style={styles.feedWrap}>
-        <FlatList
-          ref={listRef}
-          data={PRODUCTS}
-          keyExtractor={(p) => p.id}
-          renderItem={({ item }) => (
-            <ProductCard
-              product={item}
-              height={itemHeight}
-              onBuy={() => Linking.openURL(item.takeItUrl).catch(() => {})}
-            />
-          )}
-          pagingEnabled
-          snapToInterval={itemHeight}
-          snapToAlignment="start"
-          decelerationRate="fast"
-          showsVerticalScrollIndicator={false}
-          getItemLayout={getItemLayout}
-          onViewableItemsChanged={onViewableItemsChanged}
-          viewabilityConfig={viewabilityConfig}
-          onScrollBeginDrag={dismissSwipeHint}
-          initialScrollIndex={currentIndex}
-          initialNumToRender={2}
-          windowSize={3}
-          maxToRenderPerBatch={2}
-        />
-        {!swipeHintDismissed && (
-          <View pointerEvents="none" style={styles.hintHolder}>
-            <SwipeHint />
-          </View>
-        )}
-      </View>
+      {!swipeHintDismissed && (
+        <View pointerEvents="none" style={styles.hintHolder}>
+          <SwipeHint />
+        </View>
+      )}
     </View>
   );
 }
@@ -118,21 +114,19 @@ export function FeedScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    flexDirection: 'column',
     backgroundColor: WEROL_TOKENS.pitch,
   },
-  headerWrap: {
-    backgroundColor: WEROL_TOKENS.pitch,
-  },
-  feedWrap: {
-    flex: 1,
-    overflow: 'hidden',
+  topOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
   },
   hintHolder: {
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 20,
+    bottom: 90,
     alignItems: 'center',
   },
 });

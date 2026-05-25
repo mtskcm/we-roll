@@ -24,11 +24,13 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ShareSheet } from './src/components/ShareSheet';
 import { Toast } from './src/components/Toast';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { SplashScreen } from './src/screens/SplashScreen';
 import { useShareStore } from './src/store/shareStore';
 import { useLiveMessages } from './src/store/useLiveMessages';
 
 function AppShell() {
   useLiveMessages();
+  const [splashDone, setSplashDone] = React.useState(false);
   const product = useShareStore((s) => s.product);
   const closeShare = useShareStore((s) => s.closeShare);
   const showToast = useShareStore((s) => s.showToast);
@@ -40,6 +42,7 @@ function AppShell() {
       <RootNavigator />
       <ShareSheet product={product} onClose={closeShare} onSent={showToast} />
       <Toast visible={!!toastMessage} message={toastMessage ?? ''} onHide={hideToast} />
+      {!splashDone && <SplashScreen onFinish={() => setSplashDone(true)} />}
     </>
   );
 }

@@ -194,13 +194,10 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     backgroundColor: WEROL_TOKENS.pitch,
-    paddingHorizontal: SPACING.section,
-    paddingVertical: SPACING.sm,
   },
   imageWrap: {
     flex: 1,
     backgroundColor: WEROL_TOKENS.concrete,
-    borderRadius: RADII.lg,
     overflow: 'hidden',
     position: 'relative',
   },
