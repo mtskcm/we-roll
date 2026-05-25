@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AddIcon from '../assets/icons/add.svg';
 import BellIcon from '../assets/icons/bell.svg';
 import BookmarkIcon from '../assets/icons/bookmark.svg';
 import HangerIcon from '../assets/icons/hanger.svg';
@@ -30,11 +31,11 @@ type IconComponent = React.FC<{
 
 const ICONS: Record<string, { Icon: IconComponent; labelKey: TKey }> = {
   Home: { Icon: HeartIcon, labelKey: 'tab.feed' },
-  Outfit: { Icon: HangerIcon, labelKey: 'tab.outfit' },
-  Fit: { Icon: TrendIcon, labelKey: 'tab.fit' },
+  Outfit: { Icon: HangerIcon, labelKey: 'tab.outfit' },     // FITS — other people's outfits
+  Fit: { Icon: AddIcon, labelKey: 'tab.fit' },              // FIT — outfit builder
   Saved: { Icon: BookmarkIcon, labelKey: 'tab.saved' },
   Messages: { Icon: BellIcon, labelKey: 'tab.notifications' },
-  Profile: { Icon: TrendIcon, labelKey: 'tab.profile' }, // TODO dedicated ME icon
+  Profile: { Icon: TrendIcon, labelKey: 'tab.profile' },    // TODO dedicated user.svg from Maroš
 };
 
 const TAB_ORDER = ['Home', 'Outfit', 'Fit', 'Saved', 'Messages', 'Profile'];

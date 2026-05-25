@@ -17,6 +17,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StoryShareSheet } from '../components/StoryShareSheet';
 import { useShareStore } from '../store/shareStore';
 import { useUserStore } from '../store/userStore';
 import { OUTFIT_SLOTS, SLOT_BY_ID } from '../data/outfitSlots';
@@ -40,6 +41,7 @@ export function OutfitBuilderScreen() {
   const showToast = useShareStore((sh) => sh.showToast);
 
   const [pickerSlot, setPickerSlot] = useState<OutfitSlotId | null>(null);
+  const [storyOpen, setStoryOpen] = useState(false);
 
   const stageSize = Math.min(winWidth - SPACING.section * 2, 360);
 
@@ -57,6 +59,12 @@ export function OutfitBuilderScreen() {
     saveOutfit();
     showToast(`FIT uložený · ${pieceCount} kúskov`);
   };
+
+  const heroImage = useMemo(() => {
+    const firstFilled = Object.values(draftOutfit).find((pid): pid is string => !!pid);
+    if (!firstFilled) return undefined;
+    return PRODUCTS.find((p) => p.id === firstFilled)?.image;
+  }, [draftOutfit]);
 
   return (
     <View style={[s.root, { paddingTop: insets.top + SPACING.lg }]}>
@@ -115,18 +123,32 @@ export function OutfitBuilderScreen() {
           </View>
         </View>
 
-        <Pressable
-          onPress={handleSave}
-          disabled={pieceCount === 0}
-          style={({ pressed }) => [
-            s.saveBtn,
-            pieceCount === 0 && { opacity: 0.4 },
-            pressed && pieceCount > 0 && { opacity: 0.85 },
-          ]}
-        >
-          <Ionicons name="bookmark" size={16} color={C.ink} />
-          <Text style={s.saveBtnText}>Save FIT</Text>
-        </Pressable>
+        <View style={s.ctaRow}>
+          <Pressable
+            onPress={handleSave}
+            disabled={pieceCount === 0}
+            style={({ pressed }) => [
+              s.saveBtn,
+              pieceCount === 0 && { opacity: 0.4 },
+              pressed && pieceCount > 0 && { opacity: 0.85 },
+            ]}
+          >
+            <Ionicons name="bookmark" size={16} color={C.ink} />
+            <Text style={s.saveBtnText}>SAVE FIT</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => pieceCount > 0 && setStoryOpen(true)}
+            disabled={pieceCount === 0}
+            style={({ pressed }) => [
+              s.shareBtn,
+              pieceCount === 0 && { opacity: 0.4 },
+              pressed && pieceCount > 0 && { opacity: 0.7 },
+            ]}
+          >
+            <Ionicons name="share-outline" size={16} color={C.cream} />
+            <Text style={s.shareBtnText}>SHARE STORY</Text>
+          </Pressable>
+        </View>
       </View>
 
       <SlotPickerSheet
@@ -141,6 +163,18 @@ export function OutfitBuilderScreen() {
           setPickerSlot(null);
         }}
         C={C}
+      />
+
+      <StoryShareSheet
+        visible={storyOpen}
+        outfit={{
+          pieceCount,
+          totalPrice,
+          currency: '€',
+          heroImage,
+        }}
+        onClose={() => setStoryOpen(false)}
+        onCopied={() => showToast('Link copied')}
       />
     </View>
   );
@@ -355,19 +389,42 @@ function makeStyles(C: ReturnType<typeof useColors>) {
       alignSelf: 'stretch',
       backgroundColor: C.ink3,
     },
+    ctaRow: {
+      flexDirection: 'row',
+      gap: 8,
+    },
     saveBtn: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       gap: 8,
       backgroundColor: C.teal,
       borderRadius: RADII.md,
-      paddingVertical: 16,
+      paddingVertical: 14,
     },
     saveBtnText: {
-      fontFamily: FONTS.interSemibold,
-      fontSize: 15,
+      fontFamily: FONTS.archivoBold,
+      fontSize: 13,
       color: C.ink,
+      letterSpacing: 0.5,
+    },
+    shareBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: 'transparent',
+      borderRadius: RADII.md,
+      paddingVertical: 14,
+      borderWidth: 1,
+      borderColor: C.ink4,
+    },
+    shareBtnText: {
+      fontFamily: FONTS.archivoBold,
+      fontSize: 13,
+      color: C.cream,
       letterSpacing: 0.5,
     },
   });

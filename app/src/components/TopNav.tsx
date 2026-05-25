@@ -39,14 +39,14 @@ export function TopNav({ currentIndex, total, onSearch, onNotifications }: Props
           onPress={onSearch}
           style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.6 }]}
         >
-          <SearchIcon width={18} height={18} stroke={WEROL_TOKENS.paper} strokeWidth={1.8} fill="none" />
+          <SearchIcon width={20} height={20} stroke={WEROL_TOKENS.paper} strokeWidth={1.8} fill="none" />
         </Pressable>
         <Pressable
           accessibilityLabel="Notifications"
           onPress={onNotifications}
           style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.6 }]}
         >
-          <BellIcon width={18} height={18} stroke={WEROL_TOKENS.paper} strokeWidth={1.8} fill="none" />
+          <BellIcon width={20} height={20} stroke={WEROL_TOKENS.paper} strokeWidth={1.8} fill="none" />
         </Pressable>
       </View>
     </View>

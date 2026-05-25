@@ -22,7 +22,7 @@ import { useT } from '../i18n';
 import { useFeedStore } from '../store/feedStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useUserStore, type Sizes } from '../store/userStore';
-import { COLORS } from '../theme/colors';
+import { COLORS, WEROL_TOKENS } from '../theme/colors';
 import { RADII, SPACING } from '../theme/spacing';
 import { FONTS, TEXT_STYLES } from '../theme/typography';
 import type { Product } from '../types';
@@ -262,8 +262,8 @@ export function ProfileScreen() {
 
 const ORDER_STATUS_COLOR: Record<OrderStatus, string> = {
   delivered: COLORS.teal,
-  shipped: '#4a90e2',
-  processing: '#e8c84a',
+  shipped: WEROL_TOKENS.tintCyan,
+  processing: WEROL_TOKENS.tintYellow,
 };
 
 function OrderRow({ order, t }: { order: Order; t: ReturnType<typeof useT> }) {

@@ -86,6 +86,7 @@ export function FeedScreen() {
             height={itemHeight}
             bottomSafeArea={insets.bottom}
             onBuy={() => setBuyTarget(item)}
+            onDetails={() => navigation.navigate('ProductDetails', { productId: item.id })}
           />
         )}
         pagingEnabled

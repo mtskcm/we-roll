@@ -1,5 +1,5 @@
-// SplashScreen — full-bleed WEROL. wordmark with decorative "AR" backdrop.
-// Fades + scales out after ~1.5s into the next screen (auth or tabs).
+// SplashScreen — WEROL. wordmark fades in, then "WEAR · ALL" types letter by letter,
+// then everything fades into the next screen (~2.2s total).
 
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -17,31 +17,51 @@ import { FONTS } from '../theme/typography';
 
 type Props = { onFinish: () => void };
 
+const SLOGAN = ['W', 'E', 'A', 'R', ' ', '·', ' ', 'A', 'L', 'L'];
+const LETTER_STEP = 85;        // ms between letters
+const LETTER_DUR = 220;        // ms each letter fade-in
+const SLOGAN_START = 380;      // when the first letter appears (after wordmark fade-in)
+const HOLD_AFTER = 550;        // time to read after last letter
+const OUTRO_DUR = 380;         // final fade-out
+
 export function SplashScreen({ onFinish }: Props) {
-  const opacity = useSharedValue(0);
-  const scale = useSharedValue(0.92);
+  const wordmarkOpacity = useSharedValue(0);
+  const wordmarkScale = useSharedValue(0.92);
   const periodPulse = useSharedValue(0);
+  const outroOpacity = useSharedValue(1);
 
   useEffect(() => {
-    opacity.value = withSequence(
-      withTiming(1, { duration: 450, easing: Easing.out(Easing.cubic) }),
-      withDelay(900, withTiming(0, { duration: 350, easing: Easing.in(Easing.cubic) }, () => {
+    wordmarkOpacity.value = withTiming(1, {
+      duration: 450,
+      easing: Easing.out(Easing.cubic),
+    });
+    wordmarkScale.value = withTiming(1, {
+      duration: 550,
+      easing: Easing.out(Easing.cubic),
+    });
+    periodPulse.value = withDelay(
+      180,
+      withTiming(1, { duration: 420, easing: Easing.out(Easing.cubic) }),
+    );
+
+    const sloganFinish = SLOGAN_START + SLOGAN.length * LETTER_STEP + LETTER_DUR;
+    outroOpacity.value = withSequence(
+      withDelay(sloganFinish + HOLD_AFTER, withTiming(0, {
+        duration: OUTRO_DUR,
+        easing: Easing.in(Easing.cubic),
+      }, () => {
         runOnJS(onFinish)();
       })),
     );
-    scale.value = withSequence(
-      withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) }),
-      withDelay(700, withTiming(1.05, { duration: 400, easing: Easing.in(Easing.cubic) })),
-    );
-    periodPulse.value = withDelay(
-      200,
-      withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) }),
-    );
-  }, [opacity, scale, periodPulse, onFinish]);
+  }, [wordmarkOpacity, wordmarkScale, periodPulse, outroOpacity, onFinish]);
 
-  const containerStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ scale: scale.value }],
+  const rootStyle = useAnimatedStyle(() => ({
+    opacity: outroOpacity.value,
+  }));
+
+  const wordmarkStyle = useAnimatedStyle(() => ({
+    opacity: wordmarkOpacity.value,
+    transform: [{ scale: wordmarkScale.value }],
   }));
 
   const periodStyle = useAnimatedStyle(() => ({
@@ -50,19 +70,48 @@ export function SplashScreen({ onFinish }: Props) {
   }));
 
   return (
-    <View style={styles.root}>
-      {/* Decorative AR backdrop */}
+    <Animated.View style={[styles.root, rootStyle]}>
       <Text style={styles.backdropAR} pointerEvents="none">AR</Text>
 
-      <Animated.View style={[styles.center, containerStyle]}>
-        <View style={styles.wordmarkRow}>
+      <View style={styles.center}>
+        <Animated.View style={[styles.wordmarkRow, wordmarkStyle]}>
           <Text style={styles.wordmark}>WEROL</Text>
           <Animated.View style={[styles.period, periodStyle]} />
+        </Animated.View>
+
+        <View style={styles.sloganRow}>
+          {SLOGAN.map((ch, i) => (
+            <SloganLetter key={i} char={ch} index={i} />
+          ))}
         </View>
-        <Text style={styles.tagline}>WEAR · ALL</Text>
-      </Animated.View>
-    </View>
+      </View>
+    </Animated.View>
   );
+}
+
+function SloganLetter({ char, index }: { char: string; index: number }) {
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(8);
+
+  useEffect(() => {
+    const delay = SLOGAN_START + index * LETTER_STEP;
+    opacity.value = withDelay(
+      delay,
+      withTiming(1, { duration: LETTER_DUR, easing: Easing.out(Easing.cubic) }),
+    );
+    translateY.value = withDelay(
+      delay,
+      withTiming(0, { duration: LETTER_DUR, easing: Easing.out(Easing.cubic) }),
+    );
+  }, [opacity, translateY, index]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  if (char === ' ') return <View style={styles.sloganSpace} />;
+  return <Animated.Text style={[styles.sloganChar, style]}>{char}</Animated.Text>;
 }
 
 const styles = StyleSheet.create({
@@ -84,7 +133,7 @@ const styles = StyleSheet.create({
   },
   center: {
     alignItems: 'center',
-    gap: 14,
+    gap: 18,
   },
   wordmarkRow: {
     flexDirection: 'row',
@@ -104,10 +153,17 @@ const styles = StyleSheet.create({
     backgroundColor: WEROL_TOKENS.lime,
     marginBottom: 8,
   },
-  tagline: {
+  sloganRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sloganChar: {
     fontFamily: FONTS.jetbrainsMonoBold,
     fontSize: 13,
     letterSpacing: 4,
     color: WEROL_TOKENS.lime,
+  },
+  sloganSpace: {
+    width: 6,
   },
 });

@@ -122,15 +122,21 @@ export function BuyRedirectSheet({ product, onClose }: Props) {
             </Pressable>
             <Pressable
               onPress={handleContinue}
-              style={({ pressed }) => [styles.continueBtn, pressed && { opacity: 0.85 }]}
+              style={({ pressed }) => [
+                styles.continueBtn,
+                { borderColor: shop.bg },
+                pressed && { opacity: 0.85 },
+              ]}
             >
-              <CartIcon
-                width={14}
-                height={14}
-                stroke={WEROL_TOKENS.pitch}
-                strokeWidth={2}
-                fill="none"
-              />
+              <View style={[styles.continueChip, { backgroundColor: shop.bg }]}>
+                <CartIcon
+                  width={12}
+                  height={12}
+                  stroke={shop.text}
+                  strokeWidth={2}
+                  fill="none"
+                />
+              </View>
               <Text style={styles.continueText}>CONTINUE ON {product.shop.name.toUpperCase()}</Text>
             </Pressable>
           </View>
@@ -260,10 +266,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: WEROL_TOKENS.lime,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    backgroundColor: WEROL_TOKENS.paper,
+    paddingLeft: 6,
+    paddingRight: 12,
+    paddingVertical: 10,
     borderRadius: RADII.pill,
+    borderWidth: 1,
+  },
+  continueChip: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   continueText: {
     fontFamily: FONTS.archivoBold,

@@ -4,9 +4,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import { BottomNav } from '../components/BottomNav';
 import { FeedScreen } from '../screens/FeedScreen';
-import { FitScreen } from '../screens/FitScreen';
 import { MessagesScreen } from '../screens/MessagesScreen';
 import { OutfitBuilderScreen } from '../screens/OutfitBuilderScreen';
+import { OutfitsFeedScreen } from '../screens/OutfitsFeedScreen';
+import { ProductDetailsScreen } from '../screens/ProductDetailsScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { SavedScreen } from '../screens/SavedScreen';
 import { SearchScreen } from '../screens/SearchScreen';
@@ -19,6 +20,7 @@ import { useColors } from '../theme/useColors';
 
 const Tab = createBottomTabNavigator();
 const AuthStack = createNativeStackNavigator();
+const HomeStackNav = createNativeStackNavigator();
 
 function AuthFlow() {
   return (
@@ -56,6 +58,21 @@ function AuthFlow() {
   );
 }
 
+function HomeStack() {
+  return (
+    <HomeStackNav.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: '#0A0A0C' },
+        animation: 'slide_from_right',
+      }}
+    >
+      <HomeStackNav.Screen name="Feed" component={FeedScreen} />
+      <HomeStackNav.Screen name="ProductDetails" component={ProductDetailsScreen} />
+    </HomeStackNav.Navigator>
+  );
+}
+
 export function RootNavigator() {
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
   const themeMode = useSettingsStore((s) => s.theme);
@@ -82,9 +99,9 @@ export function RootNavigator() {
           screenOptions={{ headerShown: false }}
           tabBar={(props) => <BottomNav {...props} />}
         >
-          <Tab.Screen name="Home" component={FeedScreen} />
-          <Tab.Screen name="Outfit" component={OutfitBuilderScreen} />
-          <Tab.Screen name="Fit" component={FitScreen} />
+          <Tab.Screen name="Home" component={HomeStack} />
+          <Tab.Screen name="Outfit" component={OutfitsFeedScreen} />
+          <Tab.Screen name="Fit" component={OutfitBuilderScreen} />
           <Tab.Screen name="Saved" component={SavedScreen} />
           <Tab.Screen name="Messages" component={MessagesScreen} />
           <Tab.Screen name="Profile" component={ProfileScreen} />

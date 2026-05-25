@@ -21,10 +21,11 @@ import HeartIcon from '../assets/icons/heart.svg';
 import ShareIcon from '../assets/icons/share.svg';
 import { useFeedStore, useIsLiked, useIsSaved } from '../store/feedStore';
 import { useShareStore } from '../store/shareStore';
-import { WEROL_TOKENS } from '../theme/colors';
+import { DARK_COLORS, SHOP_COLORS, WEROL_TOKENS } from '../theme/colors';
 import { RADII, SPACING } from '../theme/spacing';
 import { FONTS } from '../theme/typography';
 import type { Product } from '../types';
+import { getPartnerMark } from './partnerMarks';
 
 type Props = {
   product: Product;
@@ -32,6 +33,7 @@ type Props = {
   /** Height reserved for the bottom nav + safe-area inset, so info sits above it. */
   bottomSafeArea?: number;
   onBuy?: () => void;
+  onDetails?: () => void;
 };
 
 const BOTTOM_NAV_HEIGHT = 78;
@@ -40,8 +42,10 @@ function watchingFor(product: Product): number {
   return 200 + ((product.likes * 7 + product.id.charCodeAt(0)) % 1400);
 }
 
-export function ProductCard({ product, height, bottomSafeArea = 0, onBuy }: Props) {
+export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDetails }: Props) {
   const infoBottomOffset = BOTTOM_NAV_HEIGHT + bottomSafeArea + 8;
+  const shop = SHOP_COLORS[product.shop.name];
+  const PartnerMark = getPartnerMark(product.shop.name);
   const liked = useIsLiked(product.id);
   const saved = useIsSaved(product.id);
   const toggleLike = useFeedStore((s) => s.toggleLike);
@@ -118,9 +122,15 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy }: Prop
         {/* Bottom overlay info — sits above the BottomNav */}
         <View style={[styles.info, { bottom: infoBottomOffset }]} pointerEvents="box-none">
           <View style={styles.brandRow}>
-            <View style={styles.brandTag}>
-              <View style={styles.brandDot} />
-              <Text style={styles.brandText}>{product.brand.toUpperCase()}</Text>
+            <View style={[styles.brandTag, { backgroundColor: shop.bg }]}>
+              {PartnerMark ? (
+                <PartnerMark width={10} height={10} />
+              ) : (
+                <View style={styles.brandDot} />
+              )}
+              <Text style={[styles.brandText, { color: shop.text }]}>
+                {product.brand.toUpperCase()}
+              </Text>
             </View>
             <View style={styles.liveBadge}>
               <Animated.View style={[styles.liveDot, pulseStyle]} />
@@ -150,12 +160,14 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy }: Prop
               onPress={onBuy}
               style={({ pressed }) => [styles.buyBtn, pressed && { opacity: 0.85 }]}
             >
-              <CartIcon width={14} height={14} stroke={WEROL_TOKENS.pitch} strokeWidth={2} fill="none" />
+              <View style={[styles.buyChip, { backgroundColor: shop.bg }]}>
+                <CartIcon width={12} height={12} stroke={shop.text} strokeWidth={2} fill="none" />
+              </View>
               <Text style={styles.buyText}>BUY ON {product.shop.name.toUpperCase()}</Text>
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.detailsBtn, pressed && { opacity: 0.6 }]}
-              onPress={() => {}}
+              onPress={onDetails}
             >
               <Text style={styles.detailsText}>DETAILS</Text>
               <ArrowRightIcon width={12} height={12} stroke={WEROL_TOKENS.paper} strokeWidth={2} fill="none" />
@@ -188,8 +200,8 @@ function SideAction({
     >
       <View style={styles.sideIcon}>
         <Icon
-          width={18}
-          height={18}
+          width={20}
+          height={20}
           stroke={color}
           fill={active ? color : 'none'}
           strokeWidth={1.8}
@@ -293,7 +305,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(214,255,61,0.18)',
+    backgroundColor: 'rgba(34,197,94,0.18)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
@@ -302,13 +314,13 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: WEROL_TOKENS.lime,
+    backgroundColor: DARK_COLORS.liveGreen,
   },
   liveText: {
     fontFamily: FONTS.jetbrainsMonoBold,
     fontSize: 9,
     letterSpacing: 1.2,
-    color: WEROL_TOKENS.lime,
+    color: DARK_COLORS.liveGreen,
   },
   productName: {
     fontFamily: FONTS.archivo,
@@ -354,9 +366,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: WEROL_TOKENS.lime,
-    paddingVertical: 14,
+    backgroundColor: WEROL_TOKENS.paper,
+    paddingLeft: 6,
+    paddingRight: 14,
+    paddingVertical: 10,
     borderRadius: RADII.pill,
+  },
+  buyChip: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buyText: {
     fontFamily: FONTS.archivoBold,
