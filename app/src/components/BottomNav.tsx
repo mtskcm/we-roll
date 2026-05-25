@@ -1,6 +1,12 @@
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BellIcon from '../assets/icons/bell.svg';
 import BookmarkIcon from '../assets/icons/bookmark.svg';
@@ -9,9 +15,10 @@ import HeartIcon from '../assets/icons/heart.svg';
 import TrendIcon from '../assets/icons/trend.svg';
 import { useT, type TKey } from '../i18n';
 import { useUnreadCount } from '../store/messagesStore';
+import { useUiStore } from '../store/uiStore';
 import { WEROL_TOKENS } from '../theme/colors';
 import { SPACING } from '../theme/spacing';
-import { FONTS, TEXT_STYLES } from '../theme/typography';
+import { FONTS } from '../theme/typography';
 
 type IconComponent = React.FC<{
   width?: number;
@@ -27,7 +34,7 @@ const ICONS: Record<string, { Icon: IconComponent; labelKey: TKey }> = {
   Fit: { Icon: TrendIcon, labelKey: 'tab.fit' },
   Saved: { Icon: BookmarkIcon, labelKey: 'tab.saved' },
   Messages: { Icon: BellIcon, labelKey: 'tab.notifications' },
-  Profile: { Icon: TrendIcon, labelKey: 'tab.profile' }, // TODO real ME icon
+  Profile: { Icon: TrendIcon, labelKey: 'tab.profile' }, // TODO dedicated ME icon
 };
 
 const TAB_ORDER = ['Home', 'Outfit', 'Fit', 'Saved', 'Messages', 'Profile'];
@@ -36,19 +43,33 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
   const insets = useSafeAreaInsets();
   const unread = useUnreadCount();
   const t = useT();
+  const chromeHidden = useUiStore((s) => s.chromeHidden);
 
-  // Hide Search route from tab bar; preserve order per TAB_ORDER
+  const translateY = useSharedValue(0);
+  useEffect(() => {
+    translateY.value = withTiming(chromeHidden ? 130 : 0, {
+      duration: chromeHidden ? 360 : 420,
+      easing: chromeHidden ? Easing.in(Easing.cubic) : Easing.out(Easing.cubic),
+    });
+  }, [chromeHidden, translateY]);
+
+  const hideStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+    opacity: 1 - Math.min(1, translateY.value / 130),
+  }));
+
   const orderedRoutes = TAB_ORDER
     .map((name) => state.routes.find((r) => r.name === name))
     .filter((r): r is NonNullable<typeof r> => !!r);
 
   return (
-    <View style={[styles.root, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+    <Animated.View style={[styles.root, { paddingBottom: Math.max(insets.bottom, 10) }, hideStyle]}>
       {orderedRoutes.map((route) => {
         const index = state.routes.findIndex((r) => r.key === route.key);
         const isFocused = state.index === index;
         const meta = ICONS[route.name] ?? ICONS.Home;
-        const color = isFocused ? WEROL_TOKENS.lime : WEROL_TOKENS.muted2;
+        const iconColor = isFocused ? WEROL_TOKENS.pitch : WEROL_TOKENS.muted2;
+        const labelColor = isFocused ? WEROL_TOKENS.pitch : WEROL_TOKENS.muted2;
         const { options } = descriptors[route.key];
 
         const onPress = () => {
@@ -73,25 +94,34 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
             onPress={onPress}
             style={styles.tab}
           >
-            <View style={styles.iconWrap}>
-              <Icon
-                width={20}
-                height={20}
-                stroke={color}
-                strokeWidth={1.8}
-                fill={isFocused ? color : 'none'}
-              />
-              {route.name === 'Messages' && unread > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{unread > 9 ? '9+' : unread}</Text>
-                </View>
-              )}
+            <View
+              style={[
+                styles.tabInner,
+                isFocused && styles.tabInnerActive,
+              ]}
+            >
+              <View style={styles.iconWrap}>
+                <Icon
+                  width={18}
+                  height={18}
+                  stroke={iconColor}
+                  strokeWidth={1.8}
+                  fill={isFocused ? iconColor : 'none'}
+                />
+                {route.name === 'Messages' && unread > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{unread > 9 ? '9+' : unread}</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={[styles.label, { color: labelColor }]}>
+                {t(meta.labelKey)}
+              </Text>
             </View>
-            <Text style={[TEXT_STYLES.navLabel, { color }]}>{t(meta.labelKey)}</Text>
           </Pressable>
         );
       })}
-    </View>
+    </Animated.View>
   );
 }
 
@@ -101,36 +131,50 @@ const styles = StyleSheet.create({
     backgroundColor: WEROL_TOKENS.pitch,
     borderTopWidth: 1,
     borderTopColor: WEROL_TOKENS.line,
-    paddingTop: SPACING.lg,
-    paddingHorizontal: SPACING.sm,
+    paddingTop: SPACING.md,
+    paddingHorizontal: 6,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
-    gap: 6,
     paddingVertical: 4,
+  },
+  tabInner: {
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  tabInnerActive: {
+    backgroundColor: WEROL_TOKENS.lime,
   },
   iconWrap: {
     position: 'relative',
+  },
+  label: {
+    fontFamily: FONTS.jetbrainsMonoBold,
+    fontSize: 9,
+    letterSpacing: 1.2,
   },
   badge: {
     position: 'absolute',
     top: -6,
     right: -10,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: WEROL_TOKENS.lime,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#E63946',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 5,
+    paddingHorizontal: 4,
     borderWidth: 2,
     borderColor: WEROL_TOKENS.pitch,
   },
   badgeText: {
     fontFamily: FONTS.jetbrainsMonoBold,
-    fontSize: 10,
-    color: WEROL_TOKENS.pitch,
-    lineHeight: 12,
+    fontSize: 9,
+    color: WEROL_TOKENS.paper,
+    lineHeight: 11,
   },
 });

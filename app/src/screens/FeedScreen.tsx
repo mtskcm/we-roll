@@ -1,17 +1,17 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Linking, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { FlatList, StyleSheet, View, useWindowDimensions } from 'react-native';
 import type { ViewToken } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BuyRedirectSheet } from '../components/BuyRedirectSheet';
 import { ProductCard } from '../components/ProductCard';
 import { SwipeHint } from '../components/SwipeHint';
 import { TopNav } from '../components/TopNav';
 import { PRODUCTS } from '../data/products';
 import { useFeedStore } from '../store/feedStore';
+import { useUiStore } from '../store/uiStore';
 import { WEROL_TOKENS } from '../theme/colors';
 import type { Product } from '../types';
-
-const BOTTOM_NAV_HEIGHT = 78;
 
 export function FeedScreen() {
   const { height: winHeight } = useWindowDimensions();
@@ -19,18 +19,20 @@ export function FeedScreen() {
   const navigation = useNavigation<any>();
   const listRef = useRef<FlatList<Product>>(null);
 
-  // Image fills the full available height — TopNav floats on top as overlay.
-  const itemHeight = winHeight - insets.bottom - BOTTOM_NAV_HEIGHT;
+  // Each card fills the full screen — BottomNav overlays + auto-hides on scroll.
+  const itemHeight = winHeight;
 
   const currentIndex = useFeedStore((s) => s.currentIndex);
   const setCurrentIndex = useFeedStore((s) => s.setCurrentIndex);
   const swipeHintDismissed = useFeedStore((s) => s.swipeHintDismissed);
   const dismissSwipeHint = useFeedStore((s) => s.dismissSwipeHint);
   const consumePendingFeedIndex = useFeedStore((s) => s.consumePendingFeedIndex);
+  const setChromeHidden = useUiStore((s) => s.setChromeHidden);
 
-  const [, setActiveProduct] = useState<Product>(
+  const [activeProduct, setActiveProduct] = useState<Product>(
     PRODUCTS[currentIndex] ?? PRODUCTS[0],
   );
+  const [buyTarget, setBuyTarget] = useState<Product | null>(null);
 
   useEffect(() => {
     const unsub = navigation.addListener('focus', () => {
@@ -45,6 +47,12 @@ export function FeedScreen() {
     });
     return unsub;
   }, [navigation, consumePendingFeedIndex, setCurrentIndex]);
+
+  // Make sure chrome is visible when leaving the screen.
+  useEffect(() => {
+    const unsub = navigation.addListener('blur', () => setChromeHidden(false));
+    return unsub;
+  }, [navigation, setChromeHidden]);
 
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     const first = viewableItems[0];
@@ -76,7 +84,8 @@ export function FeedScreen() {
           <ProductCard
             product={item}
             height={itemHeight}
-            onBuy={() => Linking.openURL(item.takeItUrl).catch(() => {})}
+            bottomSafeArea={insets.bottom}
+            onBuy={() => setBuyTarget(item)}
           />
         )}
         pagingEnabled
@@ -87,13 +96,17 @@ export function FeedScreen() {
         getItemLayout={getItemLayout}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
-        onScrollBeginDrag={dismissSwipeHint}
+        onScrollBeginDrag={() => {
+          dismissSwipeHint();
+          setChromeHidden(true);
+        }}
+        onScrollEndDrag={() => setChromeHidden(false)}
+        onMomentumScrollEnd={() => setChromeHidden(false)}
         initialScrollIndex={currentIndex}
         initialNumToRender={2}
         windowSize={3}
         maxToRenderPerBatch={2}
       />
-      {/* TopNav floats on top of the image */}
       <View style={[styles.topOverlay, { paddingTop: insets.top }]} pointerEvents="box-none">
         <TopNav
           currentIndex={currentIndex}
@@ -107,6 +120,7 @@ export function FeedScreen() {
           <SwipeHint />
         </View>
       )}
+      <BuyRedirectSheet product={buyTarget} onClose={() => setBuyTarget(null)} />
     </View>
   );
 }
@@ -126,7 +140,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 90,
+    bottom: 120,
     alignItems: 'center',
   },
 });

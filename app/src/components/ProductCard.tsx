@@ -29,14 +29,19 @@ import type { Product } from '../types';
 type Props = {
   product: Product;
   height: number;
+  /** Height reserved for the bottom nav + safe-area inset, so info sits above it. */
+  bottomSafeArea?: number;
   onBuy?: () => void;
 };
+
+const BOTTOM_NAV_HEIGHT = 78;
 
 function watchingFor(product: Product): number {
   return 200 + ((product.likes * 7 + product.id.charCodeAt(0)) % 1400);
 }
 
-export function ProductCard({ product, height, onBuy }: Props) {
+export function ProductCard({ product, height, bottomSafeArea = 0, onBuy }: Props) {
+  const infoBottomOffset = BOTTOM_NAV_HEIGHT + bottomSafeArea + 8;
   const liked = useIsLiked(product.id);
   const saved = useIsSaved(product.id);
   const toggleLike = useFeedStore((s) => s.toggleLike);
@@ -67,16 +72,23 @@ export function ProductCard({ product, height, onBuy }: Props) {
       <View style={styles.imageWrap}>
         <Image source={product.image} style={styles.image} resizeMode="cover" />
 
-        {/* Bottom gradient for overlay legibility */}
+        {/* Top gradient — fades the image into the TopNav overlay area */}
+        <LinearGradient
+          colors={['rgba(10,10,12,0.65)', 'rgba(10,10,12,0)']}
+          locations={[0, 1]}
+          style={styles.topGradient}
+          pointerEvents="none"
+        />
+        {/* Bottom gradient for overlay info legibility */}
         <LinearGradient
           colors={['rgba(10,10,12,0)', 'rgba(10,10,12,0.55)', 'rgba(10,10,12,0.95)']}
-          locations={[0, 0.45, 1]}
-          style={styles.gradient}
+          locations={[0, 0.5, 1]}
+          style={[styles.bottomGradient, { height: infoBottomOffset + 320 }]}
           pointerEvents="none"
         />
 
-        {/* Right-edge action bar */}
-        <View style={styles.actionBar}>
+        {/* Right-edge action bar — vertically near the middle of the visible area */}
+        <View style={[styles.actionBar, { bottom: infoBottomOffset + 220 }]}>
           <SideAction
             Icon={HeartIcon}
             active={liked}
@@ -103,8 +115,8 @@ export function ProductCard({ product, height, onBuy }: Props) {
           />
         </View>
 
-        {/* Bottom overlay info */}
-        <View style={styles.info} pointerEvents="box-none">
+        {/* Bottom overlay info — sits above the BottomNav */}
+        <View style={[styles.info, { bottom: infoBottomOffset }]} pointerEvents="box-none">
           <View style={styles.brandRow}>
             <View style={styles.brandTag}>
               <View style={styles.brandDot} />
@@ -205,18 +217,23 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  gradient: {
+  topGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 140,
+  },
+  bottomGradient: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    height: '55%',
   },
   // Right-edge action bar — vertically centered on image
   actionBar: {
     position: 'absolute',
     right: 10,
-    top: '32%',
     gap: 14,
     alignItems: 'center',
   },
@@ -242,9 +259,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 0,
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.lg,
+    paddingBottom: SPACING.sm,
     paddingTop: SPACING.md,
     gap: 8,
   },
