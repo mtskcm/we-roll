@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { FlatList, Linking, StyleSheet, View, useWindowDimensions } from 'react-native';
 import type { ViewToken } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProductCard } from '../components/ProductCard';
@@ -8,7 +8,7 @@ import { SwipeHint } from '../components/SwipeHint';
 import { TopNav } from '../components/TopNav';
 import { PRODUCTS } from '../data/products';
 import { useFeedStore } from '../store/feedStore';
-import { COLORS } from '../theme/colors';
+import { WEROL_TOKENS } from '../theme/colors';
 import type { Product } from '../types';
 
 const BOTTOM_NAV_HEIGHT = 78;
@@ -72,14 +72,25 @@ export function FeedScreen() {
         style={styles.headerWrap}
         onLayout={(e) => setTopNavHeight(e.nativeEvent.layout.height)}
       >
-        <TopNav product={activeProduct} onSearch={() => navigation.navigate('Search')} />
+        <TopNav
+          currentIndex={currentIndex}
+          total={PRODUCTS.length}
+          onSearch={() => navigation.navigate('Search')}
+          onNotifications={() => navigation.navigate('Messages')}
+        />
       </View>
       <View style={styles.feedWrap}>
         <FlatList
           ref={listRef}
           data={PRODUCTS}
           keyExtractor={(p) => p.id}
-          renderItem={({ item }) => <ProductCard product={item} height={itemHeight} />}
+          renderItem={({ item }) => (
+            <ProductCard
+              product={item}
+              height={itemHeight}
+              onBuy={() => Linking.openURL(item.takeItUrl).catch(() => {})}
+            />
+          )}
           pagingEnabled
           snapToInterval={itemHeight}
           snapToAlignment="start"
@@ -108,10 +119,10 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     flexDirection: 'column',
-    backgroundColor: COLORS.ink,
+    backgroundColor: WEROL_TOKENS.pitch,
   },
   headerWrap: {
-    backgroundColor: COLORS.ink,
+    backgroundColor: WEROL_TOKENS.pitch,
   },
   feedWrap: {
     flex: 1,

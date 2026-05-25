@@ -3,14 +3,13 @@
 --
 -- ⚠️ PRED SPUSTENÍM: Nahraď placeholder reálnym kľúčom:
 --   YOUR_RESEND_API_KEY  — z https://resend.com/api-keys (formát: re_xxxxxxxxxxxxx)
---   YOUR_FROM_EMAIL      — overený sender (napr. support@werol.app)
 --
 -- Predpoklady:
--- 1. Resend account vytvorený
--- 2. Doména werol.app overená v Resend (DNS records pridané v Cloudflare)
--- 3. API key vygenerovaný
+-- 1. Resend account vytvorený, doména werol.app verified
+-- 2. landing/assets/email/wordmark-white.png deployed na werol.app
+--    (image: Maroš Asset 48, biely wordmark s lime bodkou na transparent bg)
 --
--- Edition: Maroš design (Archivo + Inter + JetBrains Mono, lime accent)
+-- Edition: Maroš design v2 (Archivo + Inter + JetBrains Mono, lime accent, image hero)
 
 create or replace function public.send_welcome_email()
 returns trigger
@@ -24,39 +23,38 @@ declare
   email_html   text;
   request_id   bigint;
 begin
-  -- Welcome email HTML (matching new WEROL landing page design — Archivo + lime)
   email_html := '<!doctype html><html lang="sk"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>WEROL — Ďakujeme</title></head>'
     || '<body style="margin:0;padding:0;background:#0A0A0C;font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;color:#FFFFFF;">'
     || '<div style="display:none;max-height:0;overflow:hidden;color:transparent;height:0;opacity:0;">Budeš medzi prvými keď spustíme WEROL leto 2026.</div>'
-    || '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0A0A0C;"><tr><td align="center" style="padding:48px 20px 32px 20px;">'
+    || '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0A0A0C;"><tr><td align="center" style="padding:56px 20px 32px 20px;">'
     || '<table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;">'
-    || '<tr><td align="center" style="padding:24px 0 16px 0;">'
-    || '<span style="font-family:Archivo,Helvetica,Arial,sans-serif;font-weight:900;font-size:64px;letter-spacing:-0.045em;color:#FFFFFF;line-height:1;">WEROL</span>'
-    || '<span style="display:inline-block;width:16px;height:16px;background:#D6FF3D;margin-left:8px;vertical-align:middle;"></span>'
+    || '<tr><td align="center" style="padding:0 0 40px 0;">'
+    || '<img src="https://werol.app/assets/email/wordmark-white.png" alt="WEROL" width="240" height="41" style="display:block;width:240px;height:auto;max-width:240px;" />'
     || '</td></tr>'
-    || '<tr><td align="center" style="padding:8px 24px 36px 24px;"><p style="font-family:JetBrains Mono,monospace;font-size:11px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:#A0A0A6;margin:0;">Streetwear feed · Leto 2026</p></td></tr>'
     || '<tr><td style="padding:0 24px;"><div style="border-top:1px solid #1F1F22;line-height:1;font-size:0;">&nbsp;</div></td></tr>'
-    || '<tr><td style="padding:48px 24px 24px 24px;">'
-    || '<h1 style="font-family:Archivo,Helvetica,Arial,sans-serif;font-weight:800;font-size:32px;letter-spacing:-0.035em;line-height:1.1;color:#FFFFFF;margin:0 0 24px 0;">Ďakujeme — uvidíme sa pri spustení.</h1>'
-    || '<p style="font-family:Inter,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;color:#FFFFFF;margin:0 0 16px 0;">Ahoj 👋</p>'
-    || '<p style="font-family:Inter,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;color:#A0A0A6;margin:0 0 16px 0;">Vďaka že si sa zapísal/a na WEROL waitlist. Sme malý tím ktorý chce streetwear discovery zjednodušiť — žiadne nekonečné scrollovanie cez 20+ e-shopov.</p>'
-    || '<p style="font-family:Inter,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;color:#A0A0A6;margin:0 0 16px 0;">Spúšťame <strong style="color:#FFFFFF;">leto 2026</strong>. Ozveme sa hneď ako pôjde app live — budeš medzi prvými 100 testermi.</p>'
+    || '<tr><td style="padding:48px 24px 8px 24px;">'
+    || '<p style="font-family:JetBrains Mono,monospace;font-size:11px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:#D6FF3D;margin:0 0 16px 0;">You''re on the list</p>'
+    || '<h1 style="font-family:Archivo,Helvetica,Arial,sans-serif;font-weight:800;font-size:36px;letter-spacing:-0.04em;line-height:1.05;color:#FFFFFF;margin:0 0 28px 0;">Ďakujeme — uvidíme sa pri spustení.</h1>'
+    || '<p style="font-family:Inter,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;color:#FFFFFF;margin:0 0 20px 0;">Ahoj 👋</p>'
+    || '<p style="font-family:Inter,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;color:#A0A0A6;margin:0 0 20px 0;">Vďaka že si sa zapísal/a na WEROL waitlist. Sme malý tím ktorý chce streetwear discovery zjednodušiť — žiadne nekonečné scrollovanie cez 20+ e-shopov.</p>'
+    || '<p style="font-family:Inter,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;color:#A0A0A6;margin:0 0 20px 0;">Spúšťame <strong style="color:#FFFFFF;font-weight:600;">leto 2026</strong>. Ozveme sa hneď ako pôjde app live — budeš medzi prvými 100 testermi.</p>'
     || '</td></tr>'
-    || '<tr><td align="center" style="padding:16px 24px 40px 24px;">'
+    || '<tr><td align="center" style="padding:24px 24px 48px 24px;">'
     || '<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="background:#D6FF3D;border-radius:12px;">'
-    || '<a href="https://instagram.com/werol.app" target="_blank" style="display:inline-block;padding:14px 28px;font-family:Archivo,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;color:#0A0A0C;text-decoration:none;letter-spacing:0.02em;text-transform:uppercase;">Sleduj nás na Instagrame →</a>'
+    || '<a href="https://instagram.com/werol.app" target="_blank" style="display:inline-block;padding:16px 32px;font-family:Archivo,Helvetica,Arial,sans-serif;font-size:13px;font-weight:800;color:#0A0A0C;text-decoration:none;letter-spacing:0.04em;text-transform:uppercase;">Sleduj nás na Instagrame →</a>'
     || '</td></tr></table></td></tr>'
-    || '<tr><td style="padding:32px 24px;background:#16161A;border-radius:16px;">'
-    || '<p style="font-family:JetBrains Mono,monospace;font-size:11px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:#6E6E73;margin:0 0 16px 0;text-align:center;">Partner shops</p>'
-    || '<p style="font-family:Archivo,Helvetica,Arial,sans-serif;font-weight:700;font-size:14px;line-height:1.7;color:#A0A0A6;margin:0;text-align:center;letter-spacing:-0.01em;">FOOTSHOP · QUEENS · ZALANDO · ABOUT YOU<br/>ANSWEAR · SUPERSKLEP · FRESHMENT<br/><span style="color:#6E6E73;font-family:JetBrains Mono,monospace;font-size:10px;font-weight:500;letter-spacing:0.2em;">+ 15 ĎALŠÍCH</span></p>'
-    || '</td></tr>'
-    || '<tr><td style="padding:40px 24px 24px 24px;"><div style="border-top:1px solid #1F1F22;line-height:1;font-size:0;">&nbsp;</div></td></tr>'
-    || '<tr><td align="center" style="padding:0 24px 32px 24px;">'
-    || '<p style="font-family:JetBrains Mono,monospace;font-size:10px;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:#6E6E73;margin:0 0 8px 0;">© 2026 WEROL</p>'
-    || '<p style="font-family:Inter,Helvetica,Arial,sans-serif;font-size:11px;color:#6E6E73;margin:0;"><a href="https://werol.app" style="color:#6E6E73;text-decoration:none;">werol.app</a> · <a href="mailto:hello@werol.app" style="color:#6E6E73;text-decoration:none;">hello@werol.app</a></p>'
+    || '<tr><td style="padding:0 24px;">'
+    || '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#16161A;border-radius:16px;"><tr><td style="padding:32px 24px;">'
+    || '<p style="font-family:JetBrains Mono,monospace;font-size:11px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:#6E6E73;margin:0 0 20px 0;text-align:center;">Partner shops</p>'
+    || '<p style="font-family:Archivo,Helvetica,Arial,sans-serif;font-weight:800;font-size:14px;line-height:1.9;color:#FFFFFF;margin:0;text-align:center;letter-spacing:-0.01em;">FOOTSHOP &nbsp;·&nbsp; QUEENS &nbsp;·&nbsp; ZALANDO<br/>ABOUT YOU &nbsp;·&nbsp; ANSWEAR &nbsp;·&nbsp; SUPERSKLEP<br/>FRESHMENT &nbsp;·&nbsp; SIZEER &nbsp;·&nbsp; SHOOOS</p>'
+    || '<p style="font-family:JetBrains Mono,monospace;font-size:10px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;color:#6E6E73;margin:16px 0 0 0;text-align:center;">+ 15 ďalších</p>'
+    || '</td></tr></table></td></tr>'
+    || '<tr><td style="padding:56px 24px 24px 24px;"><div style="border-top:1px solid #1F1F22;line-height:1;font-size:0;">&nbsp;</div></td></tr>'
+    || '<tr><td align="center" style="padding:0 24px 40px 24px;">'
+    || '<p style="font-family:JetBrains Mono,monospace;font-size:10px;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:#6E6E73;margin:0 0 12px 0;">© 2026 WEROL</p>'
+    || '<p style="font-family:Inter,Helvetica,Arial,sans-serif;font-size:12px;color:#6E6E73;margin:0;"><a href="https://werol.app" style="color:#A0A0A6;text-decoration:none;">werol.app</a> · <a href="mailto:info@werol.app" style="color:#A0A0A6;text-decoration:none;">info@werol.app</a></p>'
     || '</td></tr></table></td></tr></table></body></html>';
 
-  -- Async HTTP POST na Resend
   select net.http_post(
     url := 'https://api.resend.com/emails',
     body := jsonb_build_object(
@@ -76,13 +74,8 @@ begin
 end;
 $$;
 
--- Pripni trigger (vedľa Trello triggeru — oba sa spustia paralelne)
 drop trigger if exists on_signup_send_email on public.signups;
 create trigger on_signup_send_email
   after insert on public.signups
   for each row
   execute function public.send_welcome_email();
-
--- Debug: pozri posledné HTTP responses
--- select id, status_code, content::text::jsonb -> 'id' as resend_or_trello_id, error_msg
--- from net._http_response order by id desc limit 10;

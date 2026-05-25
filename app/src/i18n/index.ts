@@ -4,12 +4,13 @@ type Dict = Record<string, string>;
 
 const SK: Dict = {
   // Tabs
-  'tab.feed': 'FEED',
-  'tab.outfit': 'FIT',
-  'tab.saved': 'ULOŽENÉ',
+  'tab.feed': 'HOME',
+  'tab.outfit': 'FITS',
+  'tab.fit': 'FIT',
+  'tab.saved': 'SAVED',
   'tab.search': 'HĽADAJ',
   'tab.notifications': 'INBOX',
-  'tab.profile': 'PROFIL',
+  'tab.profile': 'ME',
 
   // Search
   'search.title': 'Hľadaj',
@@ -118,8 +119,9 @@ const SK: Dict = {
 
 const EN: Dict = {
   // Tabs
-  'tab.feed': 'FEED',
-  'tab.outfit': 'FIT',
+  'tab.feed': 'HOME',
+  'tab.outfit': 'FITS',
+  'tab.fit': 'FIT',
   'tab.saved': 'SAVED',
   'tab.search': 'SEARCH',
   'tab.notifications': 'INBOX',

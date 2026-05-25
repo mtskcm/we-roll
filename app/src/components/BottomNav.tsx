@@ -6,38 +6,49 @@ import BellIcon from '../assets/icons/bell.svg';
 import BookmarkIcon from '../assets/icons/bookmark.svg';
 import HangerIcon from '../assets/icons/hanger.svg';
 import HeartIcon from '../assets/icons/heart.svg';
-import SearchIcon from '../assets/icons/search.svg';
+import TrendIcon from '../assets/icons/trend.svg';
 import { useT, type TKey } from '../i18n';
 import { useUnreadCount } from '../store/messagesStore';
-import { COLORS, WEROL_TOKENS } from '../theme/colors';
+import { WEROL_TOKENS } from '../theme/colors';
 import { SPACING } from '../theme/spacing';
 import { FONTS, TEXT_STYLES } from '../theme/typography';
 
-type IconComponent = React.FC<{ width?: number; height?: number; stroke?: string; strokeWidth?: number; fill?: string }>;
+type IconComponent = React.FC<{
+  width?: number;
+  height?: number;
+  stroke?: string;
+  strokeWidth?: number;
+  fill?: string;
+}>;
 
-// Map tab routes → Maroš SVG icon
 const ICONS: Record<string, { Icon: IconComponent; labelKey: TKey }> = {
   Home: { Icon: HeartIcon, labelKey: 'tab.feed' },
   Outfit: { Icon: HangerIcon, labelKey: 'tab.outfit' },
+  Fit: { Icon: TrendIcon, labelKey: 'tab.fit' },
   Saved: { Icon: BookmarkIcon, labelKey: 'tab.saved' },
   Messages: { Icon: BellIcon, labelKey: 'tab.notifications' },
-  Profile: { Icon: SearchIcon, labelKey: 'tab.profile' }, // TODO: replace with profile icon
+  Profile: { Icon: TrendIcon, labelKey: 'tab.profile' }, // TODO real ME icon
 };
+
+const TAB_ORDER = ['Home', 'Outfit', 'Fit', 'Saved', 'Messages', 'Profile'];
 
 export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const unread = useUnreadCount();
   const t = useT();
 
-  const visibleRoutes = state.routes.filter((r) => r.name !== 'Search');
+  // Hide Search route from tab bar; preserve order per TAB_ORDER
+  const orderedRoutes = TAB_ORDER
+    .map((name) => state.routes.find((r) => r.name === name))
+    .filter((r): r is NonNullable<typeof r> => !!r);
 
   return (
     <View style={[styles.root, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-      {visibleRoutes.map((route) => {
+      {orderedRoutes.map((route) => {
         const index = state.routes.findIndex((r) => r.key === route.key);
         const isFocused = state.index === index;
         const meta = ICONS[route.name] ?? ICONS.Home;
-        const color = isFocused ? WEROL_TOKENS.lime : COLORS.dim;
+        const color = isFocused ? WEROL_TOKENS.lime : WEROL_TOKENS.muted2;
         const { options } = descriptors[route.key];
 
         const onPress = () => {
@@ -63,7 +74,13 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
             style={styles.tab}
           >
             <View style={styles.iconWrap}>
-              <Icon width={22} height={22} stroke={color} strokeWidth={1.8} fill="none" />
+              <Icon
+                width={20}
+                height={20}
+                stroke={color}
+                strokeWidth={1.8}
+                fill={isFocused ? color : 'none'}
+              />
               {route.name === 'Messages' && unread > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{unread > 9 ? '9+' : unread}</Text>
