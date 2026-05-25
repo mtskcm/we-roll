@@ -9,7 +9,6 @@ import { SwipeHint } from '../components/SwipeHint';
 import { TopNav } from '../components/TopNav';
 import { PRODUCTS } from '../data/products';
 import { useFeedStore } from '../store/feedStore';
-import { useUiStore } from '../store/uiStore';
 import { WEROL_TOKENS } from '../theme/colors';
 import type { Product } from '../types';
 
@@ -27,7 +26,6 @@ export function FeedScreen() {
   const swipeHintDismissed = useFeedStore((s) => s.swipeHintDismissed);
   const dismissSwipeHint = useFeedStore((s) => s.dismissSwipeHint);
   const consumePendingFeedIndex = useFeedStore((s) => s.consumePendingFeedIndex);
-  const setChromeHidden = useUiStore((s) => s.setChromeHidden);
 
   const [activeProduct, setActiveProduct] = useState<Product>(
     PRODUCTS[currentIndex] ?? PRODUCTS[0],
@@ -47,12 +45,6 @@ export function FeedScreen() {
     });
     return unsub;
   }, [navigation, consumePendingFeedIndex, setCurrentIndex]);
-
-  // Make sure chrome is visible when leaving the screen.
-  useEffect(() => {
-    const unsub = navigation.addListener('blur', () => setChromeHidden(false));
-    return unsub;
-  }, [navigation, setChromeHidden]);
 
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     const first = viewableItems[0];
@@ -97,12 +89,7 @@ export function FeedScreen() {
         getItemLayout={getItemLayout}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
-        onScrollBeginDrag={() => {
-          dismissSwipeHint();
-          setChromeHidden(true);
-        }}
-        onScrollEndDrag={() => setChromeHidden(false)}
-        onMomentumScrollEnd={() => setChromeHidden(false)}
+        onScrollBeginDrag={dismissSwipeHint}
         initialScrollIndex={currentIndex}
         initialNumToRender={2}
         windowSize={3}
