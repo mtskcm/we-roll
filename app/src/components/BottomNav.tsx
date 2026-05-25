@@ -12,8 +12,8 @@ import AddIcon from '../assets/icons/add.svg';
 import BellIcon from '../assets/icons/bell.svg';
 import BookmarkIcon from '../assets/icons/bookmark.svg';
 import HangerIcon from '../assets/icons/hanger.svg';
-import HeartIcon from '../assets/icons/heart.svg';
-import TrendIcon from '../assets/icons/trend.svg';
+import HomeIcon from '../assets/icons/home.svg';
+import UserIcon from '../assets/icons/user.svg';
 import { useT, type TKey } from '../i18n';
 import { useUnreadCount } from '../store/messagesStore';
 import { useUiStore } from '../store/uiStore';
@@ -30,12 +30,12 @@ type IconComponent = React.FC<{
 }>;
 
 const ICONS: Record<string, { Icon: IconComponent; labelKey: TKey }> = {
-  Home: { Icon: HeartIcon, labelKey: 'tab.feed' },
+  Home: { Icon: HomeIcon, labelKey: 'tab.feed' },
   Outfit: { Icon: HangerIcon, labelKey: 'tab.outfit' },     // FITS — other people's outfits
   Fit: { Icon: AddIcon, labelKey: 'tab.fit' },              // FIT — outfit builder
   Saved: { Icon: BookmarkIcon, labelKey: 'tab.saved' },
   Messages: { Icon: BellIcon, labelKey: 'tab.notifications' },
-  Profile: { Icon: TrendIcon, labelKey: 'tab.profile' },    // TODO dedicated user.svg from Maroš
+  Profile: { Icon: UserIcon, labelKey: 'tab.profile' },
 };
 
 const TAB_ORDER = ['Home', 'Outfit', 'Fit', 'Saved', 'Messages', 'Profile'];
@@ -103,11 +103,11 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
             >
               <View style={styles.iconWrap}>
                 <Icon
-                  width={18}
-                  height={18}
+                  width={19}
+                  height={19}
                   stroke={iconColor}
                   strokeWidth={1.8}
-                  fill={isFocused ? iconColor : 'none'}
+                  fill="none"
                 />
                 {route.name === 'Messages' && unread > 0 && (
                   <View style={styles.badge}>

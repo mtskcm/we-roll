@@ -19,12 +19,14 @@ import CartIcon from '../assets/icons/cart.svg';
 import HangerIcon from '../assets/icons/hanger.svg';
 import HeartIcon from '../assets/icons/heart.svg';
 import ShareIcon from '../assets/icons/share.svg';
+import { OUTFIT_SLOTS } from '../data/outfitSlots';
 import { useFeedStore, useIsLiked, useIsSaved } from '../store/feedStore';
 import { useShareStore } from '../store/shareStore';
+import { useUserStore } from '../store/userStore';
 import { DARK_COLORS, SHOP_COLORS, WEROL_TOKENS } from '../theme/colors';
 import { RADII, SPACING } from '../theme/spacing';
 import { FONTS } from '../theme/typography';
-import type { Product } from '../types';
+import type { OutfitSlotId, Product } from '../types';
 import { getPartnerMark } from './partnerMarks';
 
 type Props = {
@@ -42,6 +44,11 @@ function watchingFor(product: Product): number {
   return 200 + ((product.likes * 7 + product.id.charCodeAt(0)) % 1400);
 }
 
+function findSlotForProduct(category: Product['category']): OutfitSlotId | null {
+  const slot = OUTFIT_SLOTS.find((s) => s.categories.includes(category));
+  return slot?.id ?? null;
+}
+
 export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDetails }: Props) {
   const infoBottomOffset = BOTTOM_NAV_HEIGHT + bottomSafeArea + 8;
   const shop = SHOP_COLORS[product.shop.name];
@@ -51,6 +58,31 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDeta
   const toggleLike = useFeedStore((s) => s.toggleLike);
   const toggleSaved = useFeedStore((s) => s.toggleSaved);
   const openShare = useShareStore((s) => s.openShare);
+  const showToast = useShareStore((s) => s.showToast);
+  const setSlot = useUserStore((u) => u.setSlot);
+  const draftOutfit = useUserStore((u) => u.draftOutfit);
+
+  const slotForProduct = useMemo(() => findSlotForProduct(product.category), [product.category]);
+  const inFit = slotForProduct ? draftOutfit[slotForProduct] === product.id : false;
+
+  const fitFlash = useSharedValue(0);
+  const handleAddToFit = () => {
+    if (!slotForProduct) {
+      showToast('Tento kúsok zatiaľ nemá FIT slot');
+      return;
+    }
+    setSlot(slotForProduct, product.id);
+    showToast(`Pridané do FIT-u · ${slotForProduct.toUpperCase()}`);
+    fitFlash.value = withSequence(
+      withTiming(1, { duration: 180, easing: Easing.out(Easing.cubic) }),
+      withTiming(0, { duration: 380, easing: Easing.in(Easing.cubic) }),
+    );
+  };
+
+  const fitFlashStyle = useAnimatedStyle(() => ({
+    opacity: fitFlash.value,
+    transform: [{ scale: 0.4 + fitFlash.value * 1.2 }],
+  }));
 
   const watching = useMemo(() => watchingFor(product), [product]);
 
@@ -112,11 +144,18 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDeta
             label="SHARE"
             onPress={() => openShare(product)}
           />
-          <SideAction
-            Icon={HangerIcon}
-            label="FIT"
-            onPress={() => {}}
-          />
+          <View>
+            <SideAction
+              Icon={HangerIcon}
+              label="FIT"
+              active={inFit}
+              activeColor={WEROL_TOKENS.lime}
+              onPress={handleAddToFit}
+            />
+            <Animated.View pointerEvents="none" style={[styles.fitFlash, fitFlashStyle]}>
+              <Text style={styles.fitFlashText}>+1</Text>
+            </Animated.View>
+          </View>
         </View>
 
         {/* Bottom overlay info — sits above the BottomNav */}
@@ -266,6 +305,23 @@ const styles = StyleSheet.create({
     fontSize: 8,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
+  },
+  fitFlash: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: WEROL_TOKENS.lime,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fitFlashText: {
+    fontFamily: FONTS.archivoBold,
+    fontSize: 11,
+    color: WEROL_TOKENS.pitch,
+    letterSpacing: -0.4,
   },
   info: {
     position: 'absolute',

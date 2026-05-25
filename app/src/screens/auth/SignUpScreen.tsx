@@ -12,6 +12,7 @@ import AppleIcon from '../../assets/auth/apple.svg';
 import EmailIcon from '../../assets/auth/email.svg';
 import GoogleIcon from '../../assets/auth/google.svg';
 import { AuthFrame } from '../../components/AuthFrame';
+import { useShareStore } from '../../store/shareStore';
 import { useUserStore } from '../../store/userStore';
 import { WEROL_TOKENS } from '../../theme/colors';
 import { RADII } from '../../theme/spacing';
@@ -24,6 +25,9 @@ type Props = {
 
 export function SignUpScreen({ onSignIn }: Props) {
   const register = useUserStore((s) => s.register);
+  const showToast = useShareStore((s) => s.showToast);
+  const ssoStub = (provider: string) => () =>
+    showToast(`${provider} sign-up — coming soon. Use email for now.`);
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -55,12 +59,12 @@ export function SignUpScreen({ onSignIn }: Props) {
             <AuthButton
               icon={<AppleIcon width={20} height={22} color={WEROL_TOKENS.pitch} />}
               label="CONTINUE WITH APPLE"
-              onPress={() => setShowEmailForm(true)}
+              onPress={ssoStub('Apple')}
             />
             <AuthButton
               icon={<GoogleIcon width={20} height={20} />}
               label="CONTINUE WITH GOOGLE"
-              onPress={() => setShowEmailForm(true)}
+              onPress={ssoStub('Google')}
             />
             <AuthButton
               icon={<EmailIcon width={20} height={20} color={WEROL_TOKENS.pitch} />}

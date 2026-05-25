@@ -1,3 +1,6 @@
+// SearchScreen — Maroš v2: title + search bar + ONE filter row,
+// then TRENDING NOW (by likes) + FOR YOU (recommended) horizontal carousels.
+
 import { useNavigation } from '@react-navigation/native';
 import React, { useMemo, useState } from 'react';
 import {
@@ -21,23 +24,16 @@ import { PRODUCTS } from '../data/products';
 import { buildRecommendations } from '../data/recommendations';
 import { useT } from '../i18n';
 import { useFeedStore } from '../store/feedStore';
-import { COLORS, SHOP_COLORS, WEROL_TOKENS, type ShopKey } from '../theme/colors';
+import { COLORS, WEROL_TOKENS } from '../theme/colors';
 import { RADII, SPACING } from '../theme/spacing';
 import { FONTS, TEXT_STYLES } from '../theme/typography';
 import type { Product } from '../types';
-
-type ShopFilter = 'all' | ShopKey;
-const SHOP_FILTERS: ShopFilter[] = [
-  'all', 'Footshop', 'Queens.sk', 'Freshment', 'Sizeer',
-  'Zalando', 'About You', 'Hervis', 'StockX',
-];
 
 export function SearchScreen() {
   const insets = useSafeAreaInsets();
   const { width: winWidth } = useWindowDimensions();
   const navigation = useNavigation<any>();
   const t = useT();
-  const requestFeedIndex = useFeedStore((s) => s.requestFeedIndex);
   const liked = useFeedStore((s) => s.liked);
   const saved = useFeedStore((s) => s.saved);
   const recentSearches = useFeedStore((s) => s.recentSearches);
@@ -48,14 +44,12 @@ export function SearchScreen() {
   const miniSize = Math.round(winWidth * 0.46);
 
   const [query, setQuery] = useState('');
-  const [shop, setShop] = useState<ShopFilter>('all');
   const [category, setCategory] = useState<CategoryId | null>(null);
   const [focused, setFocused] = useState(false);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     return PRODUCTS.filter((p) => {
-      if (shop !== 'all' && p.shop.name !== shop) return false;
       if (category && p.category !== category) return false;
       if (!q) return true;
       return (
@@ -64,22 +58,40 @@ export function SearchScreen() {
         p.shop.name.toLowerCase().includes(q)
       );
     });
-  }, [query, shop, category]);
+  }, [query, category]);
 
-  const recommendations = useMemo(() => buildRecommendations(liked, saved), [liked, saved]);
+  const trendingNow = useMemo(
+    () => [...PRODUCTS].sort((a, b) => b.likes - a.likes).slice(0, 8),
+    [],
+  );
+
+  const forYou = useMemo(() => {
+    const buckets = buildRecommendations(liked, saved);
+    const flat: Product[] = [];
+    const seen = new Set<string>();
+    for (const b of buckets) {
+      for (const p of b.products) {
+        if (!seen.has(p.id)) {
+          flat.push(p);
+          seen.add(p.id);
+        }
+      }
+    }
+    // Fall back to lower-liked products if nothing matched.
+    if (flat.length === 0) {
+      return [...PRODUCTS].sort((a, b) => a.likes - b.likes).slice(0, 8);
+    }
+    return flat.slice(0, 8);
+  }, [liked, saved]);
 
   const openProduct = (p: Product) => {
-    const idx = PRODUCTS.findIndex((x) => x.id === p.id);
-    requestFeedIndex(idx);
-    navigation.jumpTo('Home');
+    navigation.navigate('Home', {
+      screen: 'ProductDetails',
+      params: { productId: p.id },
+    });
   };
 
-  const filterActive = category !== null || shop !== 'all';
-  const clearFilters = () => {
-    setCategory(null);
-    setShop('all');
-  };
-
+  const filterActive = category !== null;
   const hasInput = query.trim().length > 0 || filterActive;
   const iconColor = focused ? WEROL_TOKENS.lime : WEROL_TOKENS.muted;
 
@@ -87,7 +99,9 @@ export function SearchScreen() {
     <View style={[styles.root, { paddingTop: insets.top + SPACING.lg }]}>
       <View style={styles.header}>
         <Text style={TEXT_STYLES.heading}>{t('search.title')}</Text>
-        <Text style={styles.sub}>{t('search.results', { n: results.length })}</Text>
+        {hasInput && (
+          <Text style={styles.sub}>{t('search.results', { n: results.length })}</Text>
+        )}
       </View>
 
       <View style={[styles.searchBar, focused && styles.searchBarFocused]}>
@@ -110,15 +124,6 @@ export function SearchScreen() {
         )}
       </View>
 
-      <View style={styles.clearRow} pointerEvents={filterActive ? 'auto' : 'none'}>
-        {filterActive && (
-          <Pressable onPress={clearFilters} hitSlop={8} style={styles.clearBtn}>
-            <CloseIcon width={12} height={12} stroke={WEROL_TOKENS.lime} strokeWidth={2.2} fill="none" />
-            <Text style={styles.clearText}>{t('search.clearFilters')}</Text>
-          </Pressable>
-        )}
-      </View>
-
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -135,24 +140,8 @@ export function SearchScreen() {
             key={c.id}
             label={c.label}
             active={category === c.id}
-            tint={c.tint}
+            tint={WEROL_TOKENS.lime}
             onPress={() => setCategory(category === c.id ? null : c.id)}
-          />
-        ))}
-      </ScrollView>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipsRow}
-      >
-        {SHOP_FILTERS.map((s) => (
-          <Chip
-            key={s}
-            label={s === 'all' ? t('search.allShops') : s}
-            active={shop === s}
-            tint={s === 'all' ? WEROL_TOKENS.muted : SHOP_COLORS[s].bg}
-            onPress={() => setShop(s)}
           />
         ))}
       </ScrollView>
@@ -204,10 +193,10 @@ export function SearchScreen() {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.discover}>
           {recentSearches.length > 0 && (
             <View style={styles.recentBlock}>
-              <View style={styles.recentHeader}>
+              <View style={styles.bucketHead}>
                 <Text style={styles.bucketTitle}>{t('search.recent')}</Text>
                 <Pressable onPress={clearRecentSearches} hitSlop={8}>
-                  <Text style={styles.clearText}>{t('search.recent.clear')}</Text>
+                  <Text style={styles.bucketClear}>{t('search.recent.clear')}</Text>
                 </Pressable>
               </View>
               <View style={styles.recentChips}>
@@ -221,41 +210,23 @@ export function SearchScreen() {
             </View>
           )}
 
-          {recommendations.map((bucket) => (
-            <View key={bucket.key} style={styles.bucket}>
-              <View style={styles.bucketHead}>
-                <View style={styles.bucketHeadText}>
-                  <Text style={styles.bucketTitle}>{bucket.title}</Text>
-                  {bucket.subtitle && (
-                    <Text style={styles.bucketSubtitle}>{bucket.subtitle}</Text>
-                  )}
-                </View>
-                {bucket.tint && <View style={[styles.bucketDot, { backgroundColor: bucket.tint }]} />}
-              </View>
-              <FlatList
-                data={bucket.products}
-                keyExtractor={(p) => `${bucket.key}-${p.id}`}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.bucketList}
-                renderItem={({ item }) => (
-                  <Pressable
-                    style={[styles.miniTile, { width: miniSize }]}
-                    onPress={() => openProduct(item)}
-                  >
-                    <View style={[styles.miniTileFrame, { width: miniSize, height: miniSize }]}>
-                      <Image source={item.image} style={styles.tileImg} resizeMode="contain" />
-                    </View>
-                    <Text style={TEXT_STYLES.productBrand} numberOfLines={1}>{item.brand}</Text>
-                    <Text style={styles.miniName} numberOfLines={2}>{item.name}</Text>
-                    <Text style={TEXT_STYLES.productPrice}>
-                      {item.price.current} {item.price.currency}
-                    </Text>
-                  </Pressable>
-                )}
-              />
-            </View>
-          ))}
+          <Section
+            title="TRENDING NOW"
+            subtitle="Najpopulárnejšie tento týždeň"
+            iconColor={WEROL_TOKENS.lime}
+            data={trendingNow}
+            miniSize={miniSize}
+            onOpen={openProduct}
+          />
+
+          <Section
+            title="FOR YOU"
+            subtitle="Podľa toho čo si lajkol a uložil"
+            iconColor={WEROL_TOKENS.tintMagenta}
+            data={forYou}
+            miniSize={miniSize}
+            onOpen={openProduct}
+          />
 
           <View style={styles.discoverHint}>
             <TrendIcon width={14} height={14} stroke={WEROL_TOKENS.muted2} strokeWidth={1.8} fill="none" />
@@ -263,6 +234,58 @@ export function SearchScreen() {
           </View>
         </ScrollView>
       )}
+    </View>
+  );
+}
+
+function Section({
+  title,
+  subtitle,
+  iconColor,
+  data,
+  miniSize,
+  onOpen,
+}: {
+  title: string;
+  subtitle: string;
+  iconColor: string;
+  data: Product[];
+  miniSize: number;
+  onOpen: (p: Product) => void;
+}) {
+  return (
+    <View style={styles.bucket}>
+      <View style={styles.bucketHead}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={[styles.bucketDot, { backgroundColor: iconColor }]} />
+          <View>
+            <Text style={styles.bucketTitle}>{title}</Text>
+            <Text style={styles.bucketSubtitle}>{subtitle}</Text>
+          </View>
+        </View>
+      </View>
+      <FlatList
+        data={data}
+        keyExtractor={(p) => `${title}-${p.id}`}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.bucketList}
+        renderItem={({ item }) => (
+          <Pressable
+            style={[styles.miniTile, { width: miniSize }]}
+            onPress={() => onOpen(item)}
+          >
+            <View style={[styles.miniTileFrame, { width: miniSize, height: miniSize }]}>
+              <Image source={item.image} style={styles.tileImg} resizeMode="contain" />
+            </View>
+            <Text style={TEXT_STYLES.productBrand} numberOfLines={1}>{item.brand}</Text>
+            <Text style={styles.miniName} numberOfLines={2}>{item.name}</Text>
+            <Text style={TEXT_STYLES.productPrice}>
+              {item.price.current} {item.price.currency}
+            </Text>
+          </Pressable>
+        )}
+      />
     </View>
   );
 }
@@ -339,26 +362,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     padding: 0,
   },
-  clearText: {
-    fontFamily: FONTS.interSemibold,
-    fontSize: 11,
-    color: WEROL_TOKENS.lime,
-  },
-  clearRow: {
-    height: 28,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    marginTop: SPACING.sm,
-    marginBottom: 4,
-  },
-  clearBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-  },
   chipsRow: {
     gap: SPACING.sm,
     paddingBottom: SPACING.lg,
@@ -367,10 +370,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: SPACING.section,
-    paddingVertical: 11,
+    paddingVertical: 10,
     borderRadius: RADII.pill,
     borderWidth: 1.5,
-    minHeight: 38,
+    minHeight: 36,
   },
   chipText: {
     fontFamily: FONTS.archivoBold,
@@ -441,26 +444,20 @@ const styles = StyleSheet.create({
   recentBlock: {
     gap: SPACING.md,
   },
-  recentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
   recentChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: SPACING.sm,
+    gap: 8,
   },
   recentChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: WEROL_TOKENS.concrete,
-    borderRadius: RADII.pill,
-    paddingVertical: 8,
     paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 9999,
     borderWidth: 1,
-    borderColor: WEROL_TOKENS.line,
+    borderColor: WEROL_TOKENS.line2,
   },
   recentChipText: {
     fontFamily: FONTS.inter,
@@ -473,27 +470,29 @@ const styles = StyleSheet.create({
   bucketHead: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.md,
+    justifyContent: 'space-between',
   },
-  bucketHeadText: {
-    flex: 1,
-    gap: 2,
+  bucketDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   bucketTitle: {
-    fontFamily: FONTS.archivoBold,
-    fontSize: 20,
-    letterSpacing: -0.5,
+    fontFamily: FONTS.jetbrainsMonoBold,
+    fontSize: 11,
+    letterSpacing: 2,
     color: WEROL_TOKENS.paper,
   },
   bucketSubtitle: {
     fontFamily: FONTS.inter,
     fontSize: 12,
-    color: WEROL_TOKENS.muted2,
+    color: WEROL_TOKENS.muted,
+    marginTop: 2,
   },
-  bucketDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  bucketClear: {
+    fontFamily: FONTS.interSemibold,
+    fontSize: 11,
+    color: WEROL_TOKENS.lime,
   },
   bucketList: {
     gap: SPACING.lg,
@@ -511,23 +510,20 @@ const styles = StyleSheet.create({
   miniName: {
     fontFamily: FONTS.archivoBold,
     fontSize: 14,
-    lineHeight: 17,
-    letterSpacing: -0.2,
     color: WEROL_TOKENS.paper,
-    minHeight: 34,
+    letterSpacing: -0.2,
   },
   discoverHint: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: SPACING.lg,
-    opacity: 0.7,
+    gap: 8,
+    paddingTop: SPACING.md,
+    paddingHorizontal: 4,
   },
   discoverHintText: {
     fontFamily: FONTS.inter,
-    fontSize: 12,
-    color: WEROL_TOKENS.muted,
-    textAlign: 'center',
+    fontSize: 11,
+    color: WEROL_TOKENS.muted2,
+    lineHeight: 16,
   },
 });

@@ -16,6 +16,7 @@ import { CreatorsCarousel } from '../components/CreatorsCarousel';
 import { LanguageSheet } from '../components/LanguageSheet';
 import { ShopAvatar } from '../components/ShopAvatar';
 import { CREATORS } from '../data/creators';
+import { FRIENDS } from '../data/friends';
 import { ORDERS, type Order, type OrderStatus } from '../data/orders';
 import { PRODUCTS } from '../data/products';
 import { useT } from '../i18n';
@@ -49,6 +50,7 @@ export function ProfileScreen() {
   const userEmail = useUserStore((s) => s.email);
   const userSizes = useUserStore((s) => s.sizes);
   const followedBrands = useUserStore((s) => s.followedBrands);
+  const savedOutfits = useUserStore((s) => s.savedOutfits);
   const logout = useUserStore((s) => s.logout);
   const setSize = useUserStore((s) => s.setSize);
   const toggleBrand = useUserStore((s) => s.toggleBrand);
@@ -160,6 +162,66 @@ export function ProfileScreen() {
           />
         </Section>
       </View>
+
+      <Section
+        title="Moje FIT-y"
+        empty={savedOutfits.length === 0 ? 'Zatiaľ žiadne uložené outfity.' : null}
+      >
+        <FlatList
+          data={savedOutfits}
+          horizontal
+          keyExtractor={(o) => o.id}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.hList}
+          renderItem={({ item }) => {
+            const products = Object.values(item.slots)
+              .map((id) => PRODUCTS.find((p) => p.id === id))
+              .filter((p): p is Product => Boolean(p));
+            const total = products.reduce((sum, p) => sum + p.price.current, 0);
+            return (
+              <Pressable
+                style={styles.outfitMini}
+                onPress={() => navigation.jumpTo('Saved')}
+              >
+                <View style={styles.outfitMiniStack}>
+                  {products.slice(0, 3).map((p, i) => (
+                    <View
+                      key={p.id}
+                      style={[
+                        styles.outfitMiniThumb,
+                        { marginLeft: i === 0 ? 0 : -12, zIndex: 5 - i },
+                      ]}
+                    >
+                      <Image source={p.image} style={styles.outfitMiniImg} resizeMode="cover" />
+                    </View>
+                  ))}
+                </View>
+                <Text style={styles.outfitMiniName} numberOfLines={1}>{item.name}</Text>
+                <Text style={styles.outfitMinaMeta}>
+                  {products.length} ks · {total} €
+                </Text>
+              </Pressable>
+            );
+          }}
+        />
+      </Section>
+
+      <Section title="Priatelia">
+        <FlatList
+          data={FRIENDS}
+          horizontal
+          keyExtractor={(f) => f.id}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.hList}
+          renderItem={({ item }) => (
+            <Pressable style={styles.friendMini}>
+              <Image source={{ uri: item.avatar }} style={styles.friendAvatar} />
+              <Text style={styles.friendName} numberOfLines={1}>{item.name}</Text>
+              <Text style={styles.friendHandle} numberOfLines={1}>{item.handle}</Text>
+            </Pressable>
+          )}
+        />
+      </Section>
 
       <View onLayout={(e) => (positions.current.orders = e.nativeEvent.layout.y)}>
         <Section title={t('profile.section.orders')} empty={ORDERS.length === 0 ? t('profile.orders.empty') : null}>
@@ -709,5 +771,58 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.interSemibold,
     fontSize: 12,
     color: COLORS.cream,
+  },
+  outfitMini: {
+    width: 130,
+    gap: 4,
+  },
+  outfitMiniStack: {
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  outfitMiniThumb: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.ink3,
+    borderWidth: 2,
+    borderColor: COLORS.ink2,
+    overflow: 'hidden',
+  },
+  outfitMiniImg: { width: '100%', height: '100%' },
+  outfitMiniName: {
+    fontFamily: FONTS.archivoBold,
+    fontSize: 13,
+    color: COLORS.cream,
+    letterSpacing: -0.2,
+  },
+  outfitMinaMeta: {
+    fontFamily: FONTS.jetbrainsMono,
+    fontSize: 10,
+    color: COLORS.cream3,
+    letterSpacing: 0.5,
+  },
+  friendMini: {
+    width: 76,
+    alignItems: 'center',
+    gap: 4,
+  },
+  friendAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.ink3,
+  },
+  friendName: {
+    fontFamily: FONTS.interSemibold,
+    fontSize: 11,
+    color: COLORS.cream,
+    textAlign: 'center',
+  },
+  friendHandle: {
+    fontFamily: FONTS.jetbrainsMono,
+    fontSize: 9,
+    color: COLORS.cream3,
+    textAlign: 'center',
   },
 });

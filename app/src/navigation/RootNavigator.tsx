@@ -15,6 +15,7 @@ import { SignInScreen } from '../screens/auth/SignInScreen';
 import { SignUpScreen } from '../screens/auth/SignUpScreen';
 import { WelcomeScreen } from '../screens/auth/WelcomeScreen';
 import { useSettingsStore } from '../store/settingsStore';
+import { useShareStore } from '../store/shareStore';
 import { useUserStore } from '../store/userStore';
 import { useColors } from '../theme/useColors';
 
@@ -23,6 +24,10 @@ const AuthStack = createNativeStackNavigator();
 const HomeStackNav = createNativeStackNavigator();
 
 function AuthFlow() {
+  const showToast = useShareStore((s) => s.showToast);
+  const ssoStub = (provider: string) => () =>
+    showToast(`${provider} login — coming soon. Use email for now.`);
+
   return (
     <AuthStack.Navigator
       screenOptions={{
@@ -36,6 +41,8 @@ function AuthFlow() {
           <WelcomeScreen
             onSignIn={() => navigation.navigate('SignIn')}
             onSignUp={() => navigation.navigate('SignUp')}
+            onAppleSignIn={ssoStub('Apple')}
+            onGoogleSignIn={ssoStub('Google')}
           />
         )}
       </AuthStack.Screen>

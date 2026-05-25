@@ -5,7 +5,6 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PRODUCTS } from '../data/products';
 import { useT } from '../i18n';
-import { useFeedStore } from '../store/feedStore';
 import { useMessagesStore, useUnreadCount } from '../store/messagesStore';
 import { COLORS, SHOP_COLORS } from '../theme/colors';
 import { RADII, SPACING } from '../theme/spacing';
@@ -42,18 +41,22 @@ export function MessagesScreen() {
   const messages = useMessagesStore((s) => s.messages);
   const markAsRead = useMessagesStore((s) => s.markAsRead);
   const markAllRead = useMessagesStore((s) => s.markAllRead);
-  const requestFeedIndex = useFeedStore((s) => s.requestFeedIndex);
   const unread = useUnreadCount();
 
   const openMessage = (m: Message) => {
     markAsRead(m.id);
     if (m.productId) {
-      const idx = PRODUCTS.findIndex((p) => p.id === m.productId);
-      if (idx >= 0) {
-        requestFeedIndex(idx);
-        navigation.jumpTo('Home');
+      const productExists = PRODUCTS.some((p) => p.id === m.productId);
+      if (productExists) {
+        navigation.navigate('Home', {
+          screen: 'ProductDetails',
+          params: { productId: m.productId },
+        });
+        return;
       }
     }
+    // No linked product — fall back to the feed.
+    navigation.jumpTo('Home');
   };
 
   return (

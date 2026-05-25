@@ -19,7 +19,7 @@ import { FONTS, TEXT_STYLES } from '../theme/typography';
 import { useColors } from '../theme/useColors';
 import type { Outfit, Product } from '../types';
 
-type Tab = 'items' | 'outfits';
+type Tab = 'items' | 'brands' | 'outfits';
 
 export function SavedScreen() {
   const insets = useSafeAreaInsets();
@@ -46,6 +46,16 @@ export function SavedScreen() {
     [saved, liked],
   );
 
+  const brands = useMemo(() => {
+    const byBrand = new Map<string, Product[]>();
+    for (const p of items) {
+      const list = byBrand.get(p.brand) ?? [];
+      list.push(p);
+      byBrand.set(p.brand, list);
+    }
+    return Array.from(byBrand.entries()).map(([name, ps]) => ({ name, products: ps }));
+  }, [items]);
+
   const openProduct = (p: Product) => {
     const idx = PRODUCTS.findIndex((x) => x.id === p.id);
     requestFeedIndex(idx);
@@ -68,13 +78,19 @@ export function SavedScreen() {
         />
         <TabButton
           C={C}
+          label={`ZNAČKY · ${brands.length}`}
+          active={tab === 'brands'}
+          onPress={() => setTab('brands')}
+        />
+        <TabButton
+          C={C}
           label={`FITS · ${savedOutfits.length}`}
           active={tab === 'outfits'}
           onPress={() => setTab('outfits')}
         />
       </View>
 
-      {tab === 'items' ? (
+      {tab === 'items' && (
         <FlatList
           data={items}
           keyExtractor={(p) => p.id}
@@ -107,7 +123,51 @@ export function SavedScreen() {
             </Pressable>
           )}
         />
-      ) : (
+      )}
+
+      {tab === 'brands' && (
+        <FlatList
+          data={brands}
+          keyExtractor={(b) => b.name}
+          contentContainerStyle={s.outfitList}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <EmptyState
+              C={C}
+              icon="pricetags-outline"
+              title="Žiadne značky"
+              body="Keď lajkneš pár kúskov, ich značky sa zhromaždia tu."
+            />
+          }
+          renderItem={({ item }) => (
+            <Pressable
+              style={s.brandCard}
+              onPress={() => {
+                const first = item.products[0];
+                if (first) openProduct(first);
+              }}
+            >
+              <View style={s.brandThumbStack}>
+                {item.products.slice(0, 3).map((p, i) => (
+                  <View
+                    key={p.id}
+                    style={[s.brandThumb, { marginLeft: i === 0 ? 0 : -14, zIndex: 5 - i }]}
+                  >
+                    <Image source={p.image} style={s.brandThumbImg} resizeMode="cover" />
+                  </View>
+                ))}
+              </View>
+              <View style={s.brandMeta}>
+                <Text style={s.brandName}>{item.name.toUpperCase()}</Text>
+                <Text style={s.brandCount}>{item.products.length} KÚSKOV</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={C.cream3} />
+            </Pressable>
+          )}
+        />
+      )}
+
+      {tab === 'outfits' && (
         <FlatList
           data={savedOutfits}
           keyExtractor={(o) => o.id}
@@ -118,8 +178,8 @@ export function SavedScreen() {
               C={C}
               icon="shirt-outline"
               title="Žiadne uložené FIT-y"
-              body="Otvor Outfit tab, sklad FIT a tap Save."
-              cta={{ label: 'Otvoriť Outfit Builder', onPress: () => navigation.jumpTo('Outfit') }}
+              body="Otvor FIT tab, sklad outfit a tap Save."
+              cta={{ label: 'Otvoriť FIT Builder', onPress: () => navigation.jumpTo('Fit') }}
             />
           }
           renderItem={({ item }) => (
@@ -301,6 +361,43 @@ function makeStyles(C: ReturnType<typeof useColors>) {
       color: C.cream2,
     },
     outfitList: { gap: SPACING.lg, paddingBottom: 140 },
+    brandCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.lg,
+      backgroundColor: C.ink2,
+      borderRadius: RADII.md,
+      borderWidth: 1,
+      borderColor: C.ink3,
+      padding: SPACING.lg,
+    },
+    brandThumbStack: {
+      flexDirection: 'row',
+      width: 80,
+    },
+    brandThumb: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: C.imagePlaceholder,
+      borderWidth: 2,
+      borderColor: C.ink2,
+      overflow: 'hidden',
+    },
+    brandThumbImg: { width: '100%', height: '100%' },
+    brandMeta: { flex: 1, gap: 3 },
+    brandName: {
+      fontFamily: FONTS.archivoBold,
+      fontSize: 15,
+      letterSpacing: -0.2,
+      color: C.cream,
+    },
+    brandCount: {
+      fontFamily: FONTS.jetbrainsMono,
+      fontSize: 10,
+      letterSpacing: 1.5,
+      color: C.cream3,
+    },
   });
 }
 
