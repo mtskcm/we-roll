@@ -456,14 +456,14 @@ const styles = StyleSheet.create({
     gap: SPACING.lg,
   },
   handle: {
-    fontFamily: FONTS.spaceMonoRegular,
+    fontFamily: FONTS.jetbrainsMono,
     fontSize: 11,
     color: COLORS.teal,
     letterSpacing: 0.5,
     marginTop: 2,
   },
   joined: {
-    fontFamily: FONTS.dmSansRegular,
+    fontFamily: FONTS.inter,
     fontSize: 12,
     color: COLORS.cream3,
     marginTop: 4,
@@ -488,13 +488,13 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.98 }],
   },
   statValue: {
-    fontFamily: FONTS.cormorantRegular,
+    fontFamily: FONTS.archivoBold,
     fontSize: 32,
     color: COLORS.cream,
     letterSpacing: -0.5,
   },
   statLabel: {
-    fontFamily: FONTS.spaceMonoRegular,
+    fontFamily: FONTS.jetbrainsMono,
     fontSize: 9,
     letterSpacing: 1.5,
     color: COLORS.cream3,
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
     gap: SPACING.lg,
   },
   sectionTitle: {
-    fontFamily: FONTS.spaceMonoBold,
+    fontFamily: FONTS.jetbrainsMonoBold,
     fontSize: 11,
     letterSpacing: 2,
     color: COLORS.cream3,
@@ -530,24 +530,24 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   miniBrand: {
-    fontFamily: FONTS.spaceMonoBold,
+    fontFamily: FONTS.jetbrainsMonoBold,
     fontSize: 8,
     letterSpacing: 2,
     color: COLORS.teal,
     textTransform: 'uppercase',
   },
   miniName: {
-    fontFamily: FONTS.cormorantRegular,
+    fontFamily: FONTS.archivoBold,
     fontSize: 16,
     color: COLORS.cream,
   },
   miniPrice: {
-    fontFamily: FONTS.dmSansSemibold,
+    fontFamily: FONTS.interSemibold,
     fontSize: 13,
     color: COLORS.cream2,
   },
   emptyText: {
-    fontFamily: FONTS.dmSansRegular,
+    fontFamily: FONTS.inter,
     fontSize: 14,
     color: COLORS.cream2,
     fontStyle: 'italic',
@@ -562,7 +562,7 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     flex: 1,
-    fontFamily: FONTS.dmSansRegular,
+    fontFamily: FONTS.inter,
     fontSize: 14,
   },
   settingRight: {
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   settingTrailing: {
-    fontFamily: FONTS.dmSansRegular,
+    fontFamily: FONTS.inter,
     fontSize: 12,
     color: COLORS.cream3,
   },
@@ -590,12 +590,12 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
   orderShop: {
-    fontFamily: FONTS.dmSansSemibold,
+    fontFamily: FONTS.interSemibold,
     fontSize: 14,
     color: COLORS.cream,
   },
   orderDate: {
-    fontFamily: FONTS.spaceMonoRegular,
+    fontFamily: FONTS.jetbrainsMono,
     fontSize: 10,
     color: COLORS.cream3,
     marginTop: 2,
@@ -615,7 +615,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   orderStatusText: {
-    fontFamily: FONTS.spaceMonoBold,
+    fontFamily: FONTS.jetbrainsMonoBold,
     fontSize: 9,
     letterSpacing: 1,
     textTransform: 'uppercase',
@@ -636,13 +636,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   orderItemCount: {
-    fontFamily: FONTS.spaceMonoRegular,
+    fontFamily: FONTS.jetbrainsMono,
     fontSize: 10,
     color: COLORS.cream3,
     letterSpacing: 0.5,
   },
   orderTotal: {
-    fontFamily: FONTS.dmSansSemibold,
+    fontFamily: FONTS.interSemibold,
     fontSize: 16,
     color: COLORS.cream,
     marginTop: 2,
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
   sizeLabel: {
-    fontFamily: FONTS.spaceMonoBold,
+    fontFamily: FONTS.jetbrainsMonoBold,
     fontSize: 10,
     letterSpacing: 1.5,
     color: COLORS.cream3,
@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.teal,
   },
   sizeOptionText: {
-    fontFamily: FONTS.dmSansSemibold,
+    fontFamily: FONTS.interSemibold,
     fontSize: 13,
     color: COLORS.cream2,
   },
@@ -706,7 +706,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.ink3,
   },
   brandText: {
-    fontFamily: FONTS.dmSansSemibold,
+    fontFamily: FONTS.interSemibold,
     fontSize: 12,
     color: COLORS.cream,
   },

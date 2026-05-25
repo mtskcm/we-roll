@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import WordmarkOnDark from '../assets/logos/wordmark-on-dark.svg';
 import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -79,9 +80,7 @@ export function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.brand}>
-          <Text style={TEXT_STYLES.wordmark}>WER</Text>
-          <Text style={TEXT_STYLES.wordmarkAccent}>O</Text>
-          <Text style={TEXT_STYLES.wordmark}>L</Text>
+          <WordmarkOnDark width={160} height={32} />
         </View>
 
         <View style={styles.headWrap}>
@@ -221,13 +220,13 @@ const styles = StyleSheet.create({
   },
   headWrap: { gap: SPACING.sm, marginBottom: SPACING.hero },
   heading: {
-    fontFamily: FONTS.cormorantRegular,
+    fontFamily: FONTS.archivoBold,
     fontSize: 32,
     color: COLORS.cream,
     letterSpacing: -0.5,
   },
   subtitle: {
-    fontFamily: FONTS.dmSansRegular,
+    fontFamily: FONTS.inter,
     fontSize: 14,
     color: COLORS.cream3,
     lineHeight: 20,
@@ -247,7 +246,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     color: COLORS.cream,
-    fontFamily: FONTS.dmSansRegular,
+    fontFamily: FONTS.inter,
     fontSize: 14,
     padding: 0,
   },
@@ -264,7 +263,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     flex: 1,
-    fontFamily: FONTS.dmSansSemibold,
+    fontFamily: FONTS.interSemibold,
     fontSize: 12,
     color: COLORS.likeRed,
   },
@@ -277,7 +276,7 @@ const styles = StyleSheet.create({
   },
   ctaDisabled: { opacity: 0.4 },
   ctaText: {
-    fontFamily: FONTS.dmSansSemibold,
+    fontFamily: FONTS.interSemibold,
     fontSize: 15,
     color: COLORS.ink,
     letterSpacing: 0.3,
@@ -290,7 +289,7 @@ const styles = StyleSheet.create({
   },
   divider: { flex: 1, height: 1, backgroundColor: COLORS.ink3 },
   dividerText: {
-    fontFamily: FONTS.spaceMonoRegular,
+    fontFamily: FONTS.jetbrainsMono,
     fontSize: 10,
     color: COLORS.cream3,
     letterSpacing: 1,
@@ -308,7 +307,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   guestText: {
-    fontFamily: FONTS.dmSansSemibold,
+    fontFamily: FONTS.interSemibold,
     fontSize: 14,
     color: COLORS.cream,
   },
@@ -320,18 +319,18 @@ const styles = StyleSheet.create({
     marginTop: SPACING.hero,
   },
   switchText: {
-    fontFamily: FONTS.dmSansRegular,
+    fontFamily: FONTS.inter,
     fontSize: 13,
     color: COLORS.cream3,
   },
   switchLink: {
-    fontFamily: FONTS.dmSansSemibold,
+    fontFamily: FONTS.interSemibold,
     fontSize: 13,
     color: COLORS.teal,
   },
   footer: {
     marginTop: SPACING.lg,
-    fontFamily: FONTS.dmSansRegular,
+    fontFamily: FONTS.inter,
     fontSize: 11,
     color: COLORS.dim,
     textAlign: 'center',

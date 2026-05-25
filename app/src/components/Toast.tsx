@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
-    fontFamily: FONTS.dmSansSemibold,
+    fontFamily: FONTS.interSemibold,
     fontSize: 13,
     color: COLORS.cream,
   },

@@ -168,7 +168,7 @@ function TabButton({
       <Text
         style={[
           styles.tabText,
-          { color: active ? C.cream : C.cream3, fontFamily: FONTS.spaceMonoBold },
+          { color: active ? C.cream : C.cream3, fontFamily: FONTS.jetbrainsMonoBold },
         ]}
       >
         {label}
@@ -257,7 +257,7 @@ function makeStyles(C: ReturnType<typeof useColors>) {
     root: { flex: 1, backgroundColor: C.ink, paddingHorizontal: SPACING.section },
     header: { marginBottom: SPACING.lg },
     eyebrow: {
-      fontFamily: FONTS.spaceMonoBold,
+      fontFamily: FONTS.jetbrainsMonoBold,
       fontSize: 9,
       letterSpacing: 2,
       color: C.teal,
@@ -284,19 +284,19 @@ function makeStyles(C: ReturnType<typeof useColors>) {
     },
     tileImg: { width: '100%', height: '100%' },
     tileBrand: {
-      fontFamily: FONTS.spaceMonoBold,
+      fontFamily: FONTS.jetbrainsMonoBold,
       fontSize: 8,
       letterSpacing: 1.5,
       color: C.teal,
       textTransform: 'uppercase',
     },
     tileName: {
-      fontFamily: FONTS.cormorantRegular,
+      fontFamily: FONTS.archivoBold,
       fontSize: 16,
       color: C.cream,
     },
     tilePrice: {
-      fontFamily: FONTS.dmSansSemibold,
+      fontFamily: FONTS.interSemibold,
       fontSize: 13,
       color: C.cream2,
     },
@@ -321,12 +321,12 @@ const styles = StyleSheet.create({
     gap: SPACING.lg,
   },
   emptyTitle: {
-    fontFamily: FONTS.cormorantRegular,
+    fontFamily: FONTS.archivoBold,
     fontSize: 22,
     letterSpacing: -0.3,
   },
   emptyBody: {
-    fontFamily: FONTS.dmSansRegular,
+    fontFamily: FONTS.inter,
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 18,
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   emptyCtaText: {
-    fontFamily: FONTS.dmSansSemibold,
+    fontFamily: FONTS.interSemibold,
     fontSize: 13,
     letterSpacing: 0.3,
   },
@@ -370,8 +370,8 @@ function makeOutfitCardStyles(C: ReturnType<typeof useColors>) {
     },
     thumbImg: { width: '100%', height: '100%' },
     right: { flex: 1, gap: 4 },
-    name: { fontFamily: FONTS.cormorantRegular, fontSize: 18, color: C.cream },
-    meta: { fontFamily: FONTS.spaceMonoRegular, fontSize: 11, color: C.cream3 },
+    name: { fontFamily: FONTS.archivoBold, fontSize: 18, color: C.cream },
+    meta: { fontFamily: FONTS.jetbrainsMono, fontSize: 11, color: C.cream3 },
     deleteBtn: {
       width: 32,
       height: 32,

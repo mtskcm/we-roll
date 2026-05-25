@@ -282,7 +282,7 @@ function makeStyles(C: ReturnType<typeof useColors>) {
       marginBottom: SPACING.lg,
     },
     eyebrow: {
-      fontFamily: FONTS.spaceMonoBold,
+      fontFamily: FONTS.jetbrainsMonoBold,
       fontSize: 9,
       letterSpacing: 2,
       color: C.teal,
@@ -299,7 +299,7 @@ function makeStyles(C: ReturnType<typeof useColors>) {
       borderColor: C.ink3,
     },
     clearText: {
-      fontFamily: FONTS.dmSansSemibold,
+      fontFamily: FONTS.interSemibold,
       fontSize: 11,
       color: C.cream2,
     },
@@ -321,7 +321,7 @@ function makeStyles(C: ReturnType<typeof useColors>) {
       marginTop: -28,
     },
     slotImage: { width: 50, height: 50 },
-    slotLabel: { fontFamily: FONTS.dmSansSemibold, fontSize: 22 },
+    slotLabel: { fontFamily: FONTS.interSemibold, fontSize: 22 },
     summary: {
       marginTop: 'auto',
       marginBottom: SPACING.section + 78,
@@ -339,13 +339,13 @@ function makeStyles(C: ReturnType<typeof useColors>) {
       gap: SPACING.section,
     },
     summaryLabel: {
-      fontFamily: FONTS.spaceMonoBold,
+      fontFamily: FONTS.jetbrainsMonoBold,
       fontSize: 9,
       letterSpacing: 1.5,
       color: C.cream3,
     },
     summaryValue: {
-      fontFamily: FONTS.cormorantRegular,
+      fontFamily: FONTS.archivoBold,
       fontSize: 26,
       color: C.cream,
       marginTop: 4,
@@ -365,7 +365,7 @@ function makeStyles(C: ReturnType<typeof useColors>) {
       paddingVertical: 16,
     },
     saveBtnText: {
-      fontFamily: FONTS.dmSansSemibold,
+      fontFamily: FONTS.interSemibold,
       fontSize: 15,
       color: C.ink,
       letterSpacing: 0.5,
@@ -415,14 +415,14 @@ function makeSheetStyles(C: ReturnType<typeof useColors>) {
       marginBottom: SPACING.lg,
     },
     eyebrow: {
-      fontFamily: FONTS.spaceMonoBold,
+      fontFamily: FONTS.jetbrainsMonoBold,
       fontSize: 9,
       letterSpacing: 2,
       color: C.teal,
       marginBottom: 4,
     },
     title: {
-      fontFamily: FONTS.cormorantRegular,
+      fontFamily: FONTS.archivoBold,
       fontSize: 26,
       color: C.cream,
     },
@@ -436,7 +436,7 @@ function makeSheetStyles(C: ReturnType<typeof useColors>) {
       borderWidth: 1,
       borderColor: `${COLORS.likeRed}55`,
     },
-    removeText: { fontFamily: FONTS.dmSansSemibold, fontSize: 11 },
+    removeText: { fontFamily: FONTS.interSemibold, fontSize: 11 },
     grid: { gap: SPACING.lg, paddingBottom: SPACING.section },
     gridRow: { gap: SPACING.lg, marginBottom: SPACING.lg },
     tile: {
@@ -458,25 +458,25 @@ function makeSheetStyles(C: ReturnType<typeof useColors>) {
     },
     tileImg: { width: '100%', height: '100%' },
     tileBrand: {
-      fontFamily: FONTS.spaceMonoBold,
+      fontFamily: FONTS.jetbrainsMonoBold,
       fontSize: 8,
       letterSpacing: 1.5,
       color: C.teal,
       textTransform: 'uppercase',
     },
     tileName: {
-      fontFamily: FONTS.cormorantRegular,
+      fontFamily: FONTS.archivoBold,
       fontSize: 14,
       color: C.cream,
     },
     tilePrice: {
-      fontFamily: FONTS.dmSansSemibold,
+      fontFamily: FONTS.interSemibold,
       fontSize: 12,
       color: C.cream2,
     },
     empty: { paddingVertical: SPACING.hero, alignItems: 'center' },
     emptyText: {
-      fontFamily: FONTS.dmSansRegular,
+      fontFamily: FONTS.inter,
       fontSize: 13,
       color: C.cream3,
     },

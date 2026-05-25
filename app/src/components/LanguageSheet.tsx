@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   title: {
-    fontFamily: FONTS.cormorantRegular,
+    fontFamily: FONTS.archivoBold,
     fontSize: 24,
     color: COLORS.cream,
     letterSpacing: -0.3,
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   },
   label: {
     flex: 1,
-    fontFamily: FONTS.dmSansSemibold,
+    fontFamily: FONTS.interSemibold,
     fontSize: 15,
     color: COLORS.cream2,
   },

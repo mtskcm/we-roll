@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React, { useMemo, useState } from 'react';
 import {
@@ -13,27 +12,24 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import CloseIcon from '../assets/icons/close.svg';
+import RotateIcon from '../assets/icons/rotate.svg';
+import SearchIcon from '../assets/icons/search.svg';
+import TrendIcon from '../assets/icons/trend.svg';
 import { CATEGORIES, PRIMARY_CATEGORIES, type CategoryId } from '../data/categories';
 import { PRODUCTS } from '../data/products';
 import { buildRecommendations } from '../data/recommendations';
 import { useT } from '../i18n';
 import { useFeedStore } from '../store/feedStore';
-import { COLORS, SHOP_COLORS, type ShopKey } from '../theme/colors';
+import { COLORS, SHOP_COLORS, WEROL_TOKENS, type ShopKey } from '../theme/colors';
 import { RADII, SPACING } from '../theme/spacing';
 import { FONTS, TEXT_STYLES } from '../theme/typography';
 import type { Product } from '../types';
 
 type ShopFilter = 'all' | ShopKey;
 const SHOP_FILTERS: ShopFilter[] = [
-  'all',
-  'Footshop',
-  'Queens.sk',
-  'Freshment',
-  'Sizeer',
-  'Zalando',
-  'About You',
-  'Hervis',
-  'StockX',
+  'all', 'Footshop', 'Queens.sk', 'Freshment', 'Sizeer',
+  'Zalando', 'About You', 'Hervis', 'StockX',
 ];
 
 export function SearchScreen() {
@@ -70,10 +66,7 @@ export function SearchScreen() {
     });
   }, [query, shop, category]);
 
-  const recommendations = useMemo(
-    () => buildRecommendations(liked, saved),
-    [liked, saved],
-  );
+  const recommendations = useMemo(() => buildRecommendations(liked, saved), [liked, saved]);
 
   const openProduct = (p: Product) => {
     const idx = PRODUCTS.findIndex((x) => x.id === p.id);
@@ -88,6 +81,7 @@ export function SearchScreen() {
   };
 
   const hasInput = query.trim().length > 0 || filterActive;
+  const iconColor = focused ? WEROL_TOKENS.lime : WEROL_TOKENS.muted;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + SPACING.lg }]}>
@@ -97,7 +91,7 @@ export function SearchScreen() {
       </View>
 
       <View style={[styles.searchBar, focused && styles.searchBarFocused]}>
-        <Ionicons name="search" size={18} color={focused ? COLORS.teal : COLORS.cream3} />
+        <SearchIcon width={18} height={18} stroke={iconColor} strokeWidth={1.8} fill="none" />
         <TextInput
           value={query}
           onChangeText={setQuery}
@@ -111,7 +105,7 @@ export function SearchScreen() {
         />
         {!!query && (
           <Pressable onPress={() => setQuery('')} hitSlop={8}>
-            <Ionicons name="close-circle" size={18} color={COLORS.cream3} />
+            <CloseIcon width={18} height={18} stroke={WEROL_TOKENS.muted} strokeWidth={1.8} fill="none" />
           </Pressable>
         )}
       </View>
@@ -119,7 +113,7 @@ export function SearchScreen() {
       <View style={styles.clearRow} pointerEvents={filterActive ? 'auto' : 'none'}>
         {filterActive && (
           <Pressable onPress={clearFilters} hitSlop={8} style={styles.clearBtn}>
-            <Ionicons name="close" size={12} color={COLORS.teal} />
+            <CloseIcon width={12} height={12} stroke={WEROL_TOKENS.lime} strokeWidth={2.2} fill="none" />
             <Text style={styles.clearText}>{t('search.clearFilters')}</Text>
           </Pressable>
         )}
@@ -133,14 +127,13 @@ export function SearchScreen() {
         <Chip
           label={t('search.allCategories')}
           active={category === null}
-          tint={COLORS.teal}
+          tint={WEROL_TOKENS.lime}
           onPress={() => setCategory(null)}
         />
         {CATEGORIES.filter((c) => PRIMARY_CATEGORIES.includes(c.id)).map((c) => (
           <Chip
             key={c.id}
             label={c.label}
-            icon={c.icon}
             active={category === c.id}
             tint={c.tint}
             onPress={() => setCategory(category === c.id ? null : c.id)}
@@ -158,7 +151,7 @@ export function SearchScreen() {
             key={s}
             label={s === 'all' ? t('search.allShops') : s}
             active={shop === s}
-            tint={s === 'all' ? COLORS.cream2 : SHOP_COLORS[s].bg}
+            tint={s === 'all' ? WEROL_TOKENS.muted : SHOP_COLORS[s].bg}
             onPress={() => setShop(s)}
           />
         ))}
@@ -174,7 +167,7 @@ export function SearchScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Ionicons name="search-outline" size={36} color={COLORS.dim} />
+              <SearchIcon width={36} height={36} stroke={WEROL_TOKENS.muted2} strokeWidth={1.5} fill="none" />
               <Text style={styles.emptyTitle}>{t('search.empty.title')}</Text>
               <Text style={styles.emptyText}>{t('search.empty.body')}</Text>
             </View>
@@ -188,19 +181,11 @@ export function SearchScreen() {
               }}
             >
               <View style={[styles.tileImageFrame, { width: tileSize, height: tileSize }]}>
-                <Image
-                  source={item.image}
-                  style={styles.tileImg}
-                  resizeMode="contain"
-                />
+                <Image source={item.image} style={styles.tileImg} resizeMode="contain" />
               </View>
               <View style={styles.tileInfo}>
-                <Text style={TEXT_STYLES.productBrand} numberOfLines={1}>
-                  {item.brand}
-                </Text>
-                <Text style={styles.tileName} numberOfLines={2}>
-                  {item.name}
-                </Text>
+                <Text style={TEXT_STYLES.productBrand} numberOfLines={1}>{item.brand}</Text>
+                <Text style={styles.tileName} numberOfLines={2}>{item.name}</Text>
                 <View style={styles.tilePriceRow}>
                   <Text style={TEXT_STYLES.productPrice}>
                     {item.price.current} {item.price.currency}
@@ -216,10 +201,7 @@ export function SearchScreen() {
           )}
         />
       ) : (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.discover}
-        >
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.discover}>
           {recentSearches.length > 0 && (
             <View style={styles.recentBlock}>
               <View style={styles.recentHeader}>
@@ -230,12 +212,8 @@ export function SearchScreen() {
               </View>
               <View style={styles.recentChips}>
                 {recentSearches.map((q) => (
-                  <Pressable
-                    key={q}
-                    style={styles.recentChip}
-                    onPress={() => setQuery(q)}
-                  >
-                    <Ionicons name="time-outline" size={12} color={COLORS.cream3} />
+                  <Pressable key={q} style={styles.recentChip} onPress={() => setQuery(q)}>
+                    <RotateIcon width={12} height={12} stroke={WEROL_TOKENS.muted} strokeWidth={1.8} fill="none" />
                     <Text style={styles.recentChipText}>{q}</Text>
                   </Pressable>
                 ))}
@@ -265,20 +243,11 @@ export function SearchScreen() {
                     style={[styles.miniTile, { width: miniSize }]}
                     onPress={() => openProduct(item)}
                   >
-                    <View
-                      style={[
-                        styles.miniTileFrame,
-                        { width: miniSize, height: miniSize },
-                      ]}
-                    >
+                    <View style={[styles.miniTileFrame, { width: miniSize, height: miniSize }]}>
                       <Image source={item.image} style={styles.tileImg} resizeMode="contain" />
                     </View>
-                    <Text style={TEXT_STYLES.productBrand} numberOfLines={1}>
-                      {item.brand}
-                    </Text>
-                    <Text style={styles.miniName} numberOfLines={2}>
-                      {item.name}
-                    </Text>
+                    <Text style={TEXT_STYLES.productBrand} numberOfLines={1}>{item.brand}</Text>
+                    <Text style={styles.miniName} numberOfLines={2}>{item.name}</Text>
                     <Text style={TEXT_STYLES.productPrice}>
                       {item.price.current} {item.price.currency}
                     </Text>
@@ -289,7 +258,7 @@ export function SearchScreen() {
           ))}
 
           <View style={styles.discoverHint}>
-            <Ionicons name="sparkles-outline" size={14} color={COLORS.cream3} />
+            <TrendIcon width={14} height={14} stroke={WEROL_TOKENS.muted2} strokeWidth={1.8} fill="none" />
             <Text style={styles.discoverHintText}>{t('search.discoverHint')}</Text>
           </View>
         </ScrollView>
@@ -300,13 +269,11 @@ export function SearchScreen() {
 
 function Chip({
   label,
-  icon,
   active,
   tint,
   onPress,
 }: {
   label: string;
-  icon?: keyof typeof Ionicons.glyphMap;
   active: boolean;
   tint: string;
   onPress: () => void;
@@ -317,20 +284,12 @@ function Chip({
       style={[
         styles.chip,
         {
-          borderColor: active ? tint : COLORS.ink4,
+          borderColor: active ? tint : WEROL_TOKENS.line,
           backgroundColor: active ? tint : 'transparent',
         },
       ]}
     >
-      {icon && (
-        <Ionicons
-          name={icon}
-          size={15}
-          color={active ? COLORS.ink : COLORS.cream2}
-          style={styles.chipIcon}
-        />
-      )}
-      <Text style={[styles.chipText, { color: active ? COLORS.ink : COLORS.cream2 }]}>
+      <Text style={[styles.chipText, { color: active ? WEROL_TOKENS.pitch : WEROL_TOKENS.muted }]}>
         {label}
       </Text>
     </Pressable>
@@ -340,7 +299,7 @@ function Chip({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: COLORS.ink,
+    backgroundColor: WEROL_TOKENS.pitch,
     paddingHorizontal: SPACING.section,
   },
   header: {
@@ -350,10 +309,10 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   sub: {
-    fontFamily: FONTS.spaceMonoRegular,
+    fontFamily: FONTS.jetbrainsMono,
     fontSize: 10,
-    letterSpacing: 1,
-    color: COLORS.cream3,
+    letterSpacing: 1.5,
+    color: WEROL_TOKENS.muted2,
     textTransform: 'uppercase',
     paddingBottom: 6,
   },
@@ -361,41 +320,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
-    backgroundColor: COLORS.ink2,
+    backgroundColor: WEROL_TOKENS.concrete,
     borderRadius: RADII.md,
     paddingHorizontal: SPACING.lg,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: COLORS.ink3,
+    borderColor: WEROL_TOKENS.line,
     marginBottom: SPACING.lg,
   },
   searchBarFocused: {
-    borderColor: COLORS.teal,
-    backgroundColor: COLORS.ink3,
+    borderColor: WEROL_TOKENS.lime,
+    backgroundColor: WEROL_TOKENS.pitch,
   },
   input: {
     flex: 1,
-    color: COLORS.cream,
-    fontFamily: FONTS.dmSansRegular,
-    fontSize: 14,
+    color: WEROL_TOKENS.paper,
+    fontFamily: FONTS.inter,
+    fontSize: 15,
     padding: 0,
   },
-  sectionLabel: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  sectionLabelText: {
-    fontFamily: FONTS.spaceMonoBold,
-    fontSize: 9,
-    letterSpacing: 2,
-    color: COLORS.cream3,
-  },
   clearText: {
-    fontFamily: FONTS.dmSansSemibold,
+    fontFamily: FONTS.interSemibold,
     fontSize: 11,
-    color: COLORS.teal,
+    color: WEROL_TOKENS.lime,
   },
   clearRow: {
     height: 28,
@@ -425,12 +372,9 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     minHeight: 38,
   },
-  chipIcon: {
-    marginRight: 6,
-  },
   chipText: {
-    fontFamily: FONTS.dmSansSemibold,
-    fontSize: 13,
+    fontFamily: FONTS.archivoBold,
+    fontSize: 12,
     letterSpacing: 0.3,
   },
   grid: {
@@ -441,14 +385,14 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   tile: {
-    backgroundColor: COLORS.ink2,
+    backgroundColor: WEROL_TOKENS.concrete,
     borderRadius: RADII.md,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: COLORS.ink3,
+    borderColor: WEROL_TOKENS.line,
   },
   tileImageFrame: {
-    backgroundColor: COLORS.imagePlaceholder,
+    backgroundColor: WEROL_TOKENS.concrete,
   },
   tileImg: {
     width: '100%',
@@ -459,15 +403,17 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   tileName: {
-    ...TEXT_STYLES.productName,
-    fontSize: 16,
-    lineHeight: 20,
+    fontFamily: FONTS.archivoBold,
+    fontSize: 15,
+    lineHeight: 18,
+    letterSpacing: -0.3,
+    color: WEROL_TOKENS.paper,
   },
   tilePriceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 8,
-    marginTop: 2,
+    marginTop: 4,
   },
   empty: {
     paddingTop: 60,
@@ -475,14 +421,16 @@ const styles = StyleSheet.create({
     gap: SPACING.lg,
   },
   emptyTitle: {
-    fontFamily: FONTS.cormorantRegular,
+    fontFamily: FONTS.archivoBold,
     fontSize: 22,
-    color: COLORS.cream,
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
+    color: WEROL_TOKENS.paper,
   },
   emptyText: {
-    ...TEXT_STYLES.body,
-    color: COLORS.cream2,
+    fontFamily: FONTS.inter,
+    fontSize: 14,
+    lineHeight: 20,
+    color: WEROL_TOKENS.muted,
     textAlign: 'center',
   },
   discover: {
@@ -507,17 +455,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: COLORS.ink2,
+    backgroundColor: WEROL_TOKENS.concrete,
     borderRadius: RADII.pill,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: COLORS.ink3,
+    borderColor: WEROL_TOKENS.line,
   },
   recentChipText: {
-    fontFamily: FONTS.dmSansRegular,
+    fontFamily: FONTS.inter,
     fontSize: 12,
-    color: COLORS.cream2,
+    color: WEROL_TOKENS.muted,
   },
   bucket: {
     gap: SPACING.md,
@@ -532,15 +480,15 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   bucketTitle: {
-    fontFamily: FONTS.cormorantRegular,
+    fontFamily: FONTS.archivoBold,
     fontSize: 20,
-    color: COLORS.cream,
-    letterSpacing: -0.3,
+    letterSpacing: -0.5,
+    color: WEROL_TOKENS.paper,
   },
   bucketSubtitle: {
-    fontFamily: FONTS.dmSansRegular,
-    fontSize: 11,
-    color: COLORS.cream3,
+    fontFamily: FONTS.inter,
+    fontSize: 12,
+    color: WEROL_TOKENS.muted2,
   },
   bucketDot: {
     width: 10,
@@ -555,18 +503,18 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   miniTileFrame: {
-    backgroundColor: COLORS.imagePlaceholder,
+    backgroundColor: WEROL_TOKENS.concrete,
     borderRadius: RADII.md,
     overflow: 'hidden',
     marginBottom: 6,
   },
   miniName: {
-    fontFamily: FONTS.cormorantRegular,
-    fontSize: 15,
-    lineHeight: 18,
-    color: COLORS.cream,
+    fontFamily: FONTS.archivoBold,
+    fontSize: 14,
+    lineHeight: 17,
     letterSpacing: -0.2,
-    minHeight: 36,
+    color: WEROL_TOKENS.paper,
+    minHeight: 34,
   },
   discoverHint: {
     flexDirection: 'row',
@@ -577,9 +525,9 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   discoverHintText: {
-    fontFamily: FONTS.dmSansRegular,
-    fontSize: 11,
-    color: COLORS.cream3,
+    fontFamily: FONTS.inter,
+    fontSize: 12,
+    color: WEROL_TOKENS.muted,
     textAlign: 'center',
   },
 });

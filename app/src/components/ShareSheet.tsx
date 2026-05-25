@@ -159,13 +159,13 @@ const styles = StyleSheet.create({
     gap: SPACING.lg,
   },
   title: {
-    fontFamily: FONTS.cormorantRegular,
+    fontFamily: FONTS.archivoBold,
     fontSize: 24,
     color: COLORS.cream,
     letterSpacing: -0.3,
   },
   subtitle: {
-    fontFamily: FONTS.dmSansRegular,
+    fontFamily: FONTS.inter,
     fontSize: 12,
     color: COLORS.cream3,
     marginTop: 2,
@@ -207,13 +207,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.ink3,
   },
   friendName: {
-    fontFamily: FONTS.dmSansSemibold,
+    fontFamily: FONTS.interSemibold,
     fontSize: 12,
     color: COLORS.cream,
     textAlign: 'center',
   },
   friendHandle: {
-    fontFamily: FONTS.spaceMonoRegular,
+    fontFamily: FONTS.jetbrainsMono,
     fontSize: 9,
     color: COLORS.cream3,
     textAlign: 'center',
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   },
   nativeBtnText: {
     flex: 1,
-    fontFamily: FONTS.dmSansSemibold,
+    fontFamily: FONTS.interSemibold,
     fontSize: 14,
     color: COLORS.cream,
   },

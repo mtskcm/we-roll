@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   txt: {
-    fontFamily: FONTS.spaceMonoBold,
+    fontFamily: FONTS.jetbrainsMonoBold,
     letterSpacing: 0.5,
   },
 });

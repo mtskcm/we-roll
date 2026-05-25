@@ -73,19 +73,19 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.ink3,
   },
   name: {
-    fontFamily: FONTS.dmSansSemibold,
+    fontFamily: FONTS.interSemibold,
     fontSize: 12,
     color: COLORS.cream,
     textAlign: 'center',
   },
   handle: {
-    fontFamily: FONTS.spaceMonoRegular,
+    fontFamily: FONTS.jetbrainsMono,
     fontSize: 9,
     color: COLORS.cream3,
     textAlign: 'center',
   },
   meta: {
-    fontFamily: FONTS.spaceMonoBold,
+    fontFamily: FONTS.jetbrainsMonoBold,
     fontSize: 8,
     letterSpacing: 1,
     textTransform: 'uppercase',
