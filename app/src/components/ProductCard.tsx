@@ -115,16 +115,9 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDeta
         />
         <View style={styles.backdropDim} pointerEvents="none" />
         <BlurView intensity={40} tint="dark" style={styles.backdropBlur} pointerEvents="none" />
-        {/* Foreground — full image, never cropped */}
+        {/* Foreground — full image, never cropped, hugging the top under the logo */}
         <Image source={product.image} style={styles.image} resizeMode="contain" />
 
-        {/* Top gradient — fades the image into the TopNav overlay area */}
-        <LinearGradient
-          colors={['rgba(10,10,12,0.65)', 'rgba(10,10,12,0)']}
-          locations={[0, 1]}
-          style={styles.topGradient}
-          pointerEvents="none"
-        />
         {/* Bottom gradient for overlay info legibility */}
         <LinearGradient
           colors={['rgba(10,10,12,0)', 'rgba(10,10,12,0.55)', 'rgba(10,10,12,0.95)']}
@@ -268,8 +261,11 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   image: {
-    width: '100%',
-    height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    aspectRatio: 1,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -280,13 +276,6 @@ const styles = StyleSheet.create({
   backdropDim: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(10,10,12,0.35)',
-  },
-  topGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    height: 140,
   },
   bottomGradient: {
     position: 'absolute',
