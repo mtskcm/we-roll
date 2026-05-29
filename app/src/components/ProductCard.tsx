@@ -14,7 +14,6 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import ArrowRightIcon from '../assets/icons/arrow_right.svg';
 import BookmarkIcon from '../assets/icons/bookmark.svg';
 import CartIcon from '../assets/icons/cart.svg';
 import HangerIcon from '../assets/icons/hanger.svg';
@@ -214,13 +213,6 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDeta
                 <CartIcon width={12} height={12} stroke={shop.text} strokeWidth={2} fill="none" />
               </View>
               <Text style={styles.buyText}>BUY ON {product.shop.name.toUpperCase()}</Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.detailsBtn, pressed && { opacity: 0.6 }]}
-              onPress={onDetails}
-            >
-              <Text style={styles.detailsText}>DETAILS</Text>
-              <ArrowRightIcon width={12} height={12} stroke={WEROL_TOKENS.paper} strokeWidth={2} fill="none" />
             </Pressable>
           </View>
         </View>
@@ -461,23 +453,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 0.4,
     color: WEROL_TOKENS.pitch,
-  },
-  detailsBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    borderRadius: RADII.pill,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-    backgroundColor: 'rgba(10,10,12,0.4)',
-  },
-  detailsText: {
-    fontFamily: FONTS.archivoBold,
-    fontSize: 12,
-    letterSpacing: 0.4,
-    color: WEROL_TOKENS.paper,
   },
 });
