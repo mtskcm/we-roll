@@ -51,6 +51,9 @@ function findSlotForProduct(category: Product['category']): OutfitSlotId | null 
 
 export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDetails }: Props) {
   const infoBottomOffset = BOTTOM_NAV_HEIGHT + bottomSafeArea + 8;
+  // Photo occupies everything from under the logo down to just above the
+  // product info block (≈170px of brand chip / name / price / BUY).
+  const imageZoneHeight = Math.max(0, height - infoBottomOffset - 170);
   const shop = SHOP_COLORS[product.shop.name];
   const PartnerMark = getPartnerMark(product.shop.name);
   const liked = useIsLiked(product.id);
@@ -115,8 +118,13 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDeta
         />
         <View style={styles.backdropDim} pointerEvents="none" />
         <BlurView intensity={40} tint="dark" style={styles.backdropBlur} pointerEvents="none" />
-        {/* Foreground — full image, never cropped, hugging the top under the logo */}
-        <Image source={product.image} style={styles.image} resizeMode="contain" />
+        {/* Foreground — full image, never cropped, top-anchored under the logo,
+            stretched down to meet the product info block */}
+        <Image
+          source={product.image}
+          style={[styles.image, { height: imageZoneHeight }]}
+          resizeMode="contain"
+        />
 
         {/* Bottom gradient for overlay info legibility */}
         <LinearGradient
@@ -265,7 +273,6 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    aspectRatio: 1,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
