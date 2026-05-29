@@ -115,8 +115,8 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDeta
         />
         <View style={styles.backdropDim} pointerEvents="none" />
         <BlurView intensity={40} tint="dark" style={styles.backdropBlur} pointerEvents="none" />
-        {/* Foreground — full image, never cropped, hugging the top under the logo */}
-        <Image source={product.image} style={styles.image} resizeMode="contain" />
+        {/* Foreground — edge-to-edge, hugging the top under the logo */}
+        <Image source={product.image} style={styles.image} resizeMode="cover" />
 
         {/* Bottom gradient for overlay info legibility */}
         <LinearGradient
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    aspectRatio: 1,
+    aspectRatio: 4 / 5,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
