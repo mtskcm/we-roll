@@ -4,8 +4,9 @@
 
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -49,11 +50,47 @@ function findSlotForProduct(category: Product['category']): OutfitSlotId | null 
   return slot?.id ?? null;
 }
 
+// Resolve an image's intrinsic aspect ratio (width / height). Local assets
+// resolve synchronously; remote URLs fall back to 0.8 (our portrait default)
+// until Image.getSize returns.
+function useImageAspectRatio(source: ImageSourcePropType): number {
+  const initial = () => {
+    const r = Image.resolveAssetSource(source);
+    if (r && r.width && r.height) return r.width / r.height;
+    return 0.8;
+  };
+  const [ar, setAr] = useState<number>(initial);
+
+  useEffect(() => {
+    const r = Image.resolveAssetSource(source);
+    if (r && r.width && r.height) {
+      setAr(r.width / r.height);
+      return;
+    }
+    if (r && r.uri) {
+      let active = true;
+      Image.getSize(
+        r.uri,
+        (w, h) => {
+          if (active && w && h) setAr(w / h);
+        },
+        () => {},
+      );
+      return () => {
+        active = false;
+      };
+    }
+  }, [source]);
+
+  return ar;
+}
+
 export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDetails }: Props) {
   const infoBottomOffset = BOTTOM_NAV_HEIGHT + bottomSafeArea + 8;
   // Photo occupies everything from under the logo down to just above the
   // product info block (brand chip / name / color / price+BUY row ≈ 150px).
   const imageZoneHeight = Math.max(0, height - infoBottomOffset - 150);
+  const imageAspect = useImageAspectRatio(product.image);
   const shop = SHOP_COLORS[product.shop.name];
   const PartnerMark = getPartnerMark(product.shop.name);
   const liked = useIsLiked(product.id);
@@ -118,11 +155,11 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDeta
         />
         <View style={styles.backdropDim} pointerEvents="none" />
         <BlurView intensity={40} tint="dark" style={styles.backdropBlur} pointerEvents="none" />
-        {/* Foreground — edge-to-edge, top-anchored under the logo, filling
-            down to just above the product info block */}
+        {/* Foreground — full width at the image's natural height (edge-to-edge,
+            no over-zoom), top-anchored under the logo, capped above the info. */}
         <Image
           source={product.image}
-          style={[styles.image, { height: imageZoneHeight }]}
+          style={[styles.image, { aspectRatio: imageAspect, maxHeight: imageZoneHeight }]}
           resizeMode="cover"
         />
 
