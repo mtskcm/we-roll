@@ -52,8 +52,8 @@ function findSlotForProduct(category: Product['category']): OutfitSlotId | null 
 export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDetails }: Props) {
   const infoBottomOffset = BOTTOM_NAV_HEIGHT + bottomSafeArea + 8;
   // Photo occupies everything from under the logo down to just above the
-  // product info block (≈170px of brand chip / name / price / BUY).
-  const imageZoneHeight = Math.max(0, height - infoBottomOffset - 170);
+  // product info block (brand chip / name / color / price+BUY row ≈ 150px).
+  const imageZoneHeight = Math.max(0, height - infoBottomOffset - 150);
   const shop = SHOP_COLORS[product.shop.name];
   const PartnerMark = getPartnerMark(product.shop.name);
   const liked = useIsLiked(product.id);
@@ -118,12 +118,12 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDeta
         />
         <View style={styles.backdropDim} pointerEvents="none" />
         <BlurView intensity={40} tint="dark" style={styles.backdropBlur} pointerEvents="none" />
-        {/* Foreground — full image, never cropped, top-anchored under the logo,
-            stretched down to meet the product info block */}
+        {/* Foreground — edge-to-edge, top-anchored under the logo, filling
+            down to just above the product info block */}
         <Image
           source={product.image}
           style={[styles.image, { height: imageZoneHeight }]}
-          resizeMode="contain"
+          resizeMode="cover"
         />
 
         {/* Bottom gradient for overlay info legibility */}
@@ -194,18 +194,17 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDeta
 
           <Text style={styles.colorText}>{product.shop.name.toUpperCase()}</Text>
 
-          <View style={styles.priceRow}>
-            <Text style={styles.price}>
-              {product.price.current} {product.price.currency}
-            </Text>
-            {product.price.original !== undefined && (
-              <Text style={styles.priceOld}>
-                {product.price.original} {product.price.currency}
-              </Text>
-            )}
-          </View>
-
           <View style={styles.ctaRow}>
+            <View style={styles.priceBlock}>
+              <Text style={styles.price}>
+                {product.price.current} {product.price.currency}
+              </Text>
+              {product.price.original !== undefined && (
+                <Text style={styles.priceOld}>
+                  {product.price.original} {product.price.currency}
+                </Text>
+              )}
+            </View>
             <Pressable
               onPress={onBuy}
               style={({ pressed }) => [styles.buyBtn, pressed && { opacity: 0.85 }]}
@@ -402,11 +401,9 @@ const styles = StyleSheet.create({
     color: WEROL_TOKENS.muted,
     textTransform: 'uppercase',
   },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 8,
-    marginTop: 2,
+  priceBlock: {
+    justifyContent: 'center',
+    minWidth: 64,
   },
   price: {
     fontFamily: FONTS.archivo,
@@ -416,14 +413,16 @@ const styles = StyleSheet.create({
   },
   priceOld: {
     fontFamily: FONTS.inter,
-    fontSize: 13,
+    fontSize: 12,
     color: WEROL_TOKENS.muted2,
     textDecorationLine: 'line-through',
+    marginTop: 1,
   },
   ctaRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginTop: 10,
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 12,
   },
   buyBtn: {
     flex: 1,
