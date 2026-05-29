@@ -19,8 +19,12 @@ export function FeedScreen() {
   const navigation = useNavigation<any>();
   const listRef = useRef<FlatList<Product>>(null);
 
-  // Image is full-bleed; TopNav floats on top as an overlay.
-  const itemHeight = winHeight;
+  // The feed area is whatever's left after the TopNav. Measure on layout;
+  // pre-seed with an estimate so the FlatList mounts at the right size.
+  const ESTIMATED_TOPNAV = 36;
+  const [feedHeight, setFeedHeight] = useState(
+    Math.max(0, winHeight - insets.top - ESTIMATED_TOPNAV),
+  );
 
   const currentIndex = useFeedStore((s) => s.currentIndex);
   const setCurrentIndex = useFeedStore((s) => s.setCurrentIndex);
@@ -65,58 +69,68 @@ export function FeedScreen() {
 
   const getItemLayout = useCallback(
     (_: ArrayLike<Product> | null | undefined, index: number) => ({
-      length: itemHeight,
-      offset: itemHeight * index,
+      length: feedHeight,
+      offset: feedHeight * index,
       index,
     }),
-    [itemHeight],
+    [feedHeight],
   );
 
   return (
     <View style={styles.root}>
-      <FlatList
-        ref={listRef}
-        data={PRODUCTS}
-        keyExtractor={(p) => p.id}
-        renderItem={({ item }) => (
-          <ProductCard
-            product={item}
-            height={itemHeight}
-            bottomSafeArea={insets.bottom}
-            onBuy={() => setBuyTarget(item)}
-            onDetails={() => navigation.navigate('ProductDetails', { productId: item.id })}
-          />
-        )}
-        pagingEnabled
-        snapToInterval={itemHeight}
-        snapToAlignment="start"
-        decelerationRate="fast"
-        showsVerticalScrollIndicator={false}
-        getItemLayout={getItemLayout}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        onScrollBeginDrag={() => {
-          dismissSwipeHint();
-          setChromeHidden(true);
-        }}
-        onScrollEndDrag={() => setChromeHidden(false)}
-        onMomentumScrollEnd={() => setChromeHidden(false)}
-        initialScrollIndex={currentIndex}
-        initialNumToRender={2}
-        windowSize={3}
-        maxToRenderPerBatch={2}
-      />
-      <View style={[styles.topOverlay, { paddingTop: insets.top }]} pointerEvents="box-none">
+      <View style={{ paddingTop: insets.top }}>
         <TopNav
           onSearch={() => navigation.navigate('Search')}
           onNotifications={() => navigation.navigate('Messages')}
         />
       </View>
-      {!swipeHintDismissed && (
-        <View pointerEvents="none" style={styles.hintHolder}>
-          <SwipeHint />
-        </View>
-      )}
+
+      <View
+        style={styles.feedArea}
+        onLayout={(e) => {
+          const h = e.nativeEvent.layout.height;
+          if (h > 0 && Math.abs(h - feedHeight) > 1) setFeedHeight(h);
+        }}
+      >
+        <FlatList
+          ref={listRef}
+          data={PRODUCTS}
+          keyExtractor={(p) => p.id}
+          renderItem={({ item }) => (
+            <ProductCard
+              product={item}
+              height={feedHeight}
+              bottomSafeArea={insets.bottom}
+              onBuy={() => setBuyTarget(item)}
+              onDetails={() => navigation.navigate('ProductDetails', { productId: item.id })}
+            />
+          )}
+          pagingEnabled
+          snapToInterval={feedHeight}
+          snapToAlignment="start"
+          decelerationRate="fast"
+          showsVerticalScrollIndicator={false}
+          getItemLayout={getItemLayout}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          onScrollBeginDrag={() => {
+            dismissSwipeHint();
+            setChromeHidden(true);
+          }}
+          onScrollEndDrag={() => setChromeHidden(false)}
+          onMomentumScrollEnd={() => setChromeHidden(false)}
+          initialScrollIndex={currentIndex}
+          initialNumToRender={2}
+          windowSize={3}
+          maxToRenderPerBatch={2}
+        />
+        {!swipeHintDismissed && (
+          <View pointerEvents="none" style={styles.hintHolder}>
+            <SwipeHint />
+          </View>
+        )}
+      </View>
+
       <BuyRedirectSheet product={buyTarget} onClose={() => setBuyTarget(null)} />
     </View>
   );
@@ -127,11 +141,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: WEROL_TOKENS.pitch,
   },
-  topOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+  feedArea: {
+    flex: 1,
+    overflow: 'hidden',
   },
   hintHolder: {
     position: 'absolute',
