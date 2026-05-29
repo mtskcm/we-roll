@@ -1,7 +1,7 @@
 import type { Product } from '../types';
 
 const UNSPLASH = (id: string) =>
-  `https://images.unsplash.com/${id}?w=800&h=1200&fit=crop&q=80&auto=format`;
+  `https://images.unsplash.com/${id}?w=1600&h=2000&fit=crop&q=82&auto=format`;
 
 export const PRODUCTS: Product[] = [
   {

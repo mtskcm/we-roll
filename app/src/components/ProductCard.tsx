@@ -2,6 +2,7 @@
 // Full-bleed product image; right-edge action bar; bottom overlay
 // (gradient backdrop) with brand chip, live badge, name, price, BUY + DETAILS.
 
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useMemo } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -106,7 +107,17 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDeta
   return (
     <View style={[styles.card, { height }]}>
       <View style={styles.imageWrap}>
-        <Image source={product.image} style={styles.image} resizeMode="cover" />
+        {/* Blurred backdrop — same image stretched to cover, blurred, dimmed */}
+        <Image
+          source={product.image}
+          style={styles.backdrop}
+          resizeMode="cover"
+          blurRadius={28}
+        />
+        <View style={styles.backdropDim} pointerEvents="none" />
+        <BlurView intensity={40} tint="dark" style={styles.backdropBlur} pointerEvents="none" />
+        {/* Foreground — full image, never cropped */}
+        <Image source={product.image} style={styles.image} resizeMode="contain" />
 
         {/* Top gradient — fades the image into the TopNav overlay area */}
         <LinearGradient
@@ -267,6 +278,16 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  backdropBlur: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  backdropDim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10,10,12,0.35)',
   },
   topGradient: {
     position: 'absolute',

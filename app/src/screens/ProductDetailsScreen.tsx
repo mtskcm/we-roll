@@ -1,6 +1,7 @@
 // ProductDetailsScreen — v1 stub: header + hero + brand chip + live badge + name/price
 // + bottom action bar (heart/bookmark + BUY pill). Tag chips + SIMILAR PIECES are out of scope.
 
+import { BlurView } from 'expo-blur';
 import React, { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
@@ -79,7 +80,15 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.heroWrap}>
-          <Image source={product.image} style={styles.hero} resizeMode="cover" />
+          <Image
+            source={product.image}
+            style={styles.heroBackdrop}
+            resizeMode="cover"
+            blurRadius={28}
+          />
+          <View style={styles.heroDim} pointerEvents="none" />
+          <BlurView intensity={40} tint="dark" style={styles.heroBlur} pointerEvents="none" />
+          <Image source={product.image} style={styles.hero} resizeMode="contain" />
         </View>
 
         <View style={styles.body}>
@@ -216,10 +225,21 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     overflow: 'hidden',
     backgroundColor: WEROL_TOKENS.concrete,
+    position: 'relative',
   },
   hero: {
     width: '100%',
     height: '100%',
+  },
+  heroBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  heroBlur: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  heroDim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10,10,12,0.35)',
   },
   body: {
     paddingHorizontal: SPACING.section,

@@ -108,8 +108,6 @@ export function FeedScreen() {
       />
       <View style={[styles.topOverlay, { paddingTop: insets.top }]} pointerEvents="box-none">
         <TopNav
-          currentIndex={currentIndex}
-          total={PRODUCTS.length}
           onSearch={() => navigation.navigate('Search')}
           onNotifications={() => navigation.navigate('Messages')}
         />
