@@ -26,19 +26,29 @@ const DRY = ARGS.has('--dry') || SELFTEST;
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://hcrccagnnjeslnpmfdky.supabase.co';
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
 const FEED_URL = process.env.FEED_URL || '';
+const FEED_FILE = process.env.FEED_FILE || flagValue('--file');
 const SHOP_ENV = process.env.SHOP || '';
+const CURRENCY_ENV = process.env.CURRENCY || '';
+const BUY_FALLBACK = process.env.BUY_FALLBACK || ''; // e.g. "https://shop.sk/search?q={q}"
 const LIMIT = process.env.LIMIT ? parseInt(process.env.LIMIT, 10) : Infinity;
 
-// ── Category mapping: CATEGORYTEXT + name keywords → our CategoryId ──────────
+function flagValue(flag) {
+  const i = process.argv.indexOf(flag);
+  return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : '';
+}
+
+// ── Category mapping: category text + name/type keywords → our CategoryId ─────
+// Covers SK + CZ + EN terms.
 const CATEGORY_RULES = [
-  ['sneakers', /(obuv|tenisk|topánk|topank|sneaker|botas|boty|obuv|teniska)/i],
-  ['hoodies', /(mikin|hoodie|crewneck|sveter|pulóver|pulover)/i],
-  ['tshirts', /(tričk|tricko|tielk|t-shirt|\btee\b|\btshirt\b|polo)/i],
-  ['jackets', /(bund|kabát|kabat|jacket|parka|vest|coat|softshell)/i],
+  // underwear / swimwear / lingerie first → accessories (else "plavk" hits shorts)
+  ['accessories', /(prádl|pradl|spodní prádlo|spodn|slip|boxerk|podprsenk|tang|plavk|ponožk|ponozk|pun[čc]och|opasok|pásek|pasek|tašk|kabelk|ruksak|batoh|šál|\bsál\b|rukavic|čelenk|celenk|šperk|sperk|doplnk|accessor)/i],
+  ['sneakers', /(obuv|tenisk|topánk|topank|sneaker|botas|\bboty\b|teniska|kotn|sandál|sandal|šlapk|slapk)/i],
+  ['hoodies', /(mikin|hoodie|crewneck|sveter|svetr|pulóver|pulover|rolák|rolak)/i],
+  ['tshirts', /(tričk|tricko|tielk|tílk|tilk|t-shirt|\btee\b|\btshirt\b|polo|košeľ|košil|kosil|halenk|blúz|bluz)/i],
+  ['jackets', /(bund|kabát|kabat|jacket|parka|\bvest|coat|softshell|sako|kardig)/i],
   ['shorts', /(šortk|sortk|kraťas|kratas|\bshorts?\b)/i],
-  ['pants', /(nohavic|jeans|rifle|teplák|teplak|jogger|chino|pants|legín|legin)/i],
-  ['caps', /(šiltovk|siltovk|čiapk|ciapk|\bcap\b|beanie|klobúk|klobuk|headwear)/i],
-  ['accessories', /(doplnk|ponožk|ponozk|opasok|tašk|t_ask|ruksak|batoh|šál|sal|rukavic|accessor)/i],
+  ['pants', /(nohavic|kalhot|jeans|rifle|teplák|teplak|jogger|chino|pants|legín|legin|sukn|šaty|saty)/i],
+  ['caps', /(šiltovk|siltovk|čiapk|ciapk|čepic|cepic|\bcap\b|beanie|klobúk|klobuk|headwear|šatk|satk)/i],
 ];
 function mapCategory(categoryText, name) {
   const hay = `${categoryText || ''} ${name || ''}`;
@@ -49,7 +59,8 @@ function mapCategory(categoryText, name) {
 // ── helpers ─────────────────────────────────────────────────────────────────
 const first = (v) => (Array.isArray(v) ? v[0] : v);
 const str = (v) => {
-  const x = first(v);
+  let x = first(v);
+  if (x && typeof x === 'object' && '#text' in x) x = x['#text']; // element had attributes
   return x === undefined || x === null ? null : String(x).trim();
 };
 const num = (v) => {
@@ -94,6 +105,55 @@ function mapItem(item, shopName) {
   };
 }
 
+// ── buy_url when the feed has none (dropship supplier feeds) ─────────────────
+function fallbackBuyUrl(brand, name) {
+  const q = encodeURIComponent([brand, name].filter(Boolean).join(' '));
+  if (BUY_FALLBACK) return BUY_FALLBACK.replace('{q}', q);
+  return `https://www.google.com/search?tbm=shop&q=${q}`;
+}
+
+// ── map one custom <product> (e.g. matterhorn-moda.cz dropship feed) → row ──
+function mapCustomProduct(p, shopName, idAttr) {
+  const extId = idAttr || str(p.id) || str(p.name);
+  const name = str(p.name);
+  if (!extId || !name) return null;
+
+  // images: <images><image_url>..</image_url>..</images>
+  let imgs = p.images?.image_url ?? [];
+  if (!Array.isArray(imgs)) imgs = imgs ? [imgs] : [];
+  imgs = imgs.map((x) => str(x)).filter(Boolean);
+
+  const categoryRaw = str(p.category_path) || str(p.category);
+  const type = str(p.type);
+
+  // options → stock + first ean
+  let opts = p.options?.option ?? [];
+  if (!Array.isArray(opts)) opts = opts ? [opts] : [];
+  const inStock = opts.length === 0 ? true : opts.some((o) => (num(o.STOCK) ?? 0) > 0);
+  const ean = opts.length ? str(opts[0].ean) : null;
+
+  const brand = str(p.brand);
+
+  return {
+    id: `${slug(shopName)}:${extId}`,
+    ext_id: extId,
+    shop: shopName,
+    brand,
+    name,
+    description: null, // feed descriptions are HTML size-tables; skip for now
+    price_current: num(p.price),
+    price_original: null,
+    currency: CURRENCY_ENV || 'CZK', // matterhorn-moda.cz feed is CZK
+    image_url: imgs[0] ?? null,
+    image_alt_url: imgs[1] ?? null,
+    buy_url: fallbackBuyUrl(brand, name), // feed has no product URL → placeholder
+    category: mapCategory(`${categoryRaw} ${type}`, name),
+    category_raw: categoryRaw,
+    ean,
+    in_stock: inStock,
+  };
+}
+
 // ── collapse variants (same ITEMGROUP_ID) to one product ────────────────────
 function dedupeVariants(items) {
   const seen = new Set();
@@ -110,19 +170,43 @@ function dedupeVariants(items) {
 }
 
 function parseFeed(xml, shopName) {
-  const parser = new XMLParser({ ignoreAttributes: true, trimValues: true });
+  const parser = new XMLParser({
+    ignoreAttributes: false,
+    attributeNamePrefix: '@_',
+    trimValues: true,
+  });
   const doc = parser.parse(xml);
-  const root = doc.SHOP || doc.shop || doc;
-  let items = root.SHOPITEM || root.shopitem || [];
-  if (!Array.isArray(items)) items = [items];
-  const deduped = dedupeVariants(items);
+
+  // Format detection: Heureka (SHOP/SHOPITEM) vs custom (products/product).
+  const heurekaRoot = doc.SHOP || doc.shop;
+  const customRoot = doc.products || doc.PRODUCTS;
+
   const rows = [];
-  for (const it of deduped) {
-    const row = mapItem(it, shopName);
-    if (row) rows.push(row);
-    if (rows.length >= LIMIT) break;
+  let total = 0;
+
+  if (heurekaRoot || doc.SHOPITEM) {
+    let items = (heurekaRoot && (heurekaRoot.SHOPITEM || heurekaRoot.shopitem)) || doc.SHOPITEM || [];
+    if (!Array.isArray(items)) items = [items];
+    total = items.length;
+    for (const it of dedupeVariants(items)) {
+      const row = mapItem(it, shopName);
+      if (row) rows.push(row);
+      if (rows.length >= LIMIT) break;
+    }
+  } else if (customRoot) {
+    let items = customRoot.product || customRoot.PRODUCT || [];
+    if (!Array.isArray(items)) items = [items];
+    total = items.length;
+    for (const p of items) {
+      const row = mapCustomProduct(p, shopName, str(p['@_id']));
+      if (row) rows.push(row);
+      if (rows.length >= LIMIT) break;
+    }
+  } else {
+    throw new Error('Unrecognized feed format (expected SHOP/SHOPITEM or products/product).');
   }
-  return { total: items.length, mapped: rows };
+
+  return { total, mapped: rows };
 }
 
 // ── Supabase upsert via PostgREST ───────────────────────────────────────────
@@ -193,15 +277,22 @@ const FIXTURE = `<?xml version="1.0" encoding="utf-8"?>
 
 // ── main ────────────────────────────────────────────────────────────────────
 async function main() {
-  const shopName = SHOP_ENV || (FEED_URL ? new URL(FEED_URL).hostname.replace(/^www\./, '') : 'Demo Shop');
+  const shopName =
+    SHOP_ENV ||
+    (FEED_URL ? new URL(FEED_URL).hostname.replace(/^www\./, '') : '') ||
+    (FEED_FILE ? 'Local Feed' : 'Demo Shop');
 
   let xml;
   if (SELFTEST) {
     console.log('▶ selftest: parsing bundled fixture');
     xml = FIXTURE;
+  } else if (FEED_FILE) {
+    console.log(`▶ reading local file: ${FEED_FILE}`);
+    const { readFile } = await import('node:fs/promises');
+    xml = await readFile(FEED_FILE, 'utf8');
   } else {
     if (!FEED_URL) {
-      console.error('✗ FEED_URL not set. Use --selftest, or set FEED_URL=...');
+      console.error('✗ No source. Use --selftest, FEED_URL=…, or --file <path> / FEED_FILE=…');
       process.exit(1);
     }
     console.log(`▶ fetching feed: ${FEED_URL}`);
@@ -214,7 +305,7 @@ async function main() {
   }
 
   const { total, mapped } = parseFeed(xml, shopName);
-  console.log(`✓ parsed ${total} SHOPITEMs → ${mapped.length} products (shop: "${shopName}", variants collapsed)`);
+  console.log(`✓ parsed ${total} items → ${mapped.length} products (shop: "${shopName}", variants collapsed)`);
 
   // category histogram
   const hist = {};
