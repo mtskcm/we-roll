@@ -25,12 +25,19 @@ import { ShareSheet } from './src/components/ShareSheet';
 import { Toast } from './src/components/Toast';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { SplashScreen } from './src/screens/SplashScreen';
+import { useProductsStore } from './src/store/productsStore';
 import { useShareStore } from './src/store/shareStore';
 import { useLiveMessages } from './src/store/useLiveMessages';
 
 function AppShell() {
   useLiveMessages();
   const [splashDone, setSplashDone] = React.useState(false);
+
+  // Pull real products from Supabase on launch (falls back to mock if empty/offline).
+  React.useEffect(() => {
+    useProductsStore.getState().hydrate();
+  }, []);
+
   const product = useShareStore((s) => s.product);
   const closeShare = useShareStore((s) => s.closeShare);
   const showToast = useShareStore((s) => s.showToast);

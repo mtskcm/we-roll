@@ -24,7 +24,7 @@ import { OUTFIT_SLOTS } from '../data/outfitSlots';
 import { useFeedStore, useIsLiked, useIsSaved } from '../store/feedStore';
 import { useShareStore } from '../store/shareStore';
 import { useUserStore } from '../store/userStore';
-import { DARK_COLORS, SHOP_COLORS, WEROL_TOKENS } from '../theme/colors';
+import { DARK_COLORS, getShopColor, WEROL_TOKENS } from '../theme/colors';
 import { RADII, SPACING } from '../theme/spacing';
 import { FONTS } from '../theme/typography';
 import type { OutfitSlotId, Product } from '../types';
@@ -91,7 +91,7 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDeta
   // product info block (brand chip / name / color / price+BUY row ≈ 150px).
   const imageZoneHeight = Math.max(0, height - infoBottomOffset - 150);
   const imageAspect = useImageAspectRatio(product.image);
-  const shop = SHOP_COLORS[product.shop.name];
+  const shop = getShopColor(product.shop.name);
   const PartnerMark = getPartnerMark(product.shop.name);
   const liked = useIsLiked(product.id);
   const saved = useIsSaved(product.id);

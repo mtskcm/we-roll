@@ -21,10 +21,10 @@ import HeartIcon from '../assets/icons/heart.svg';
 import ShareIcon from '../assets/icons/share.svg';
 import { BuyRedirectSheet } from '../components/BuyRedirectSheet';
 import { getPartnerMark } from '../components/partnerMarks';
-import { PRODUCTS } from '../data/products';
+import { useProducts } from '../store/productsStore';
 import { useFeedStore, useIsLiked, useIsSaved } from '../store/feedStore';
 import { useShareStore } from '../store/shareStore';
-import { DARK_COLORS, SHOP_COLORS, WEROL_TOKENS } from '../theme/colors';
+import { DARK_COLORS, getShopColor, WEROL_TOKENS } from '../theme/colors';
 import { SPACING } from '../theme/spacing';
 import { FONTS } from '../theme/typography';
 import type { Product } from '../types';
@@ -40,6 +40,7 @@ function watchingFor(product: Product): number {
 
 export function ProductDetailsScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const PRODUCTS = useProducts();
   const productId = route?.params?.productId;
   const product = PRODUCTS.find((p) => p.id === productId) ?? PRODUCTS[0];
   const liked = useIsLiked(product.id);
@@ -51,7 +52,7 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
 
   const productIdx = PRODUCTS.findIndex((p) => p.id === product.id);
   const watching = watchingFor(product);
-  const shop = SHOP_COLORS[product.shop.name];
+  const shop = getShopColor(product.shop.name);
   const Mark = getPartnerMark(product.shop.name);
 
   const pulse = useSharedValue(0);

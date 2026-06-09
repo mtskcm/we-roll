@@ -18,7 +18,8 @@ import { ShopAvatar } from '../components/ShopAvatar';
 import { CREATORS } from '../data/creators';
 import { FRIENDS } from '../data/friends';
 import { ORDERS, type Order, type OrderStatus } from '../data/orders';
-import { PRODUCTS } from '../data/products';
+import { PRODUCTS as MOCK_PRODUCTS } from '../data/products';
+import { useProducts } from '../store/productsStore';
 import { useT } from '../i18n';
 import { useFeedStore } from '../store/feedStore';
 import { useSettingsStore } from '../store/settingsStore';
@@ -37,6 +38,7 @@ export function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const t = useT();
+  const PRODUCTS = useProducts();
   const liked = useFeedStore((s) => s.liked);
   const saved = useFeedStore((s) => s.saved);
   const requestFeedIndex = useFeedStore((s) => s.requestFeedIndex);
@@ -331,7 +333,7 @@ const ORDER_STATUS_COLOR: Record<OrderStatus, string> = {
 function OrderRow({ order, t }: { order: Order; t: ReturnType<typeof useT> }) {
   const statusLabel = t(`profile.order.${order.status}` as 'profile.order.delivered');
   const items = order.productIds
-    .map((id) => PRODUCTS.find((p) => p.id === id))
+    .map((id) => MOCK_PRODUCTS.find((p) => p.id === id))
     .filter((p): p is Product => Boolean(p));
   return (
     <View style={styles.orderRow}>

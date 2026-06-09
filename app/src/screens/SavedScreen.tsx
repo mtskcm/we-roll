@@ -11,7 +11,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { PRODUCTS } from '../data/products';
+import { getAllProducts, useProducts } from '../store/productsStore';
 import { useFeedStore } from '../store/feedStore';
 import { useUserStore } from '../store/userStore';
 import { RADII, SPACING } from '../theme/spacing';
@@ -28,6 +28,7 @@ export function SavedScreen() {
   const C = useColors();
   const s = useMemo(() => makeStyles(C), [C]);
 
+  const PRODUCTS = useProducts();
   const saved = useFeedStore((u) => u.saved);
   const liked = useFeedStore((u) => u.liked);
   const requestFeedIndex = useFeedStore((u) => u.requestFeedIndex);
@@ -249,7 +250,7 @@ function OutfitCard({
   onDelete: () => void;
 }) {
   const products = Object.values(outfit.slots)
-    .map((id) => PRODUCTS.find((p) => p.id === id))
+    .map((id) => getAllProducts().find((p) => p.id === id))
     .filter((p): p is Product => Boolean(p));
 
   const total = products.reduce((sum, p) => sum + p.price.current, 0);

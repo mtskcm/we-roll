@@ -90,3 +90,9 @@ export const SHOP_COLORS: Record<ShopKey, { bg: string; text: string }> = {
   Hervis: { bg: '#22D3EE', text: '#0A0A0C' },      // T-07 cyan
   StockX: { bg: '#FFFFFF', text: '#0A0A0C' },      // paper
 };
+
+// Safe accessor — real feed shops aren't in the fixed map above; fall back to
+// a neutral chip so SHOP_COLORS[name] never returns undefined.
+export function getShopColor(name: string): { bg: string; text: string } {
+  return SHOP_COLORS[name as ShopKey] ?? { bg: '#2A2A2E', text: '#FFFFFF' };
+}

@@ -3,10 +3,10 @@ import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { PRODUCTS } from '../data/products';
+import { getAllProducts } from '../store/productsStore';
 import { useT } from '../i18n';
 import { useMessagesStore, useUnreadCount } from '../store/messagesStore';
-import { COLORS, SHOP_COLORS } from '../theme/colors';
+import { COLORS, getShopColor } from '../theme/colors';
 import { RADII, SPACING } from '../theme/spacing';
 import { FONTS, TEXT_STYLES } from '../theme/typography';
 import type { Message, MessageType } from '../types';
@@ -46,7 +46,7 @@ export function MessagesScreen() {
   const openMessage = (m: Message) => {
     markAsRead(m.id);
     if (m.productId) {
-      const productExists = PRODUCTS.some((p) => p.id === m.productId);
+      const productExists = getAllProducts().some((p) => p.id === m.productId);
       if (productExists) {
         navigation.navigate('Home', {
           screen: 'ProductDetails',
@@ -103,7 +103,7 @@ function MessageRow({
   typeLabel: string;
   onPress: () => void;
 }) {
-  const tint = SHOP_COLORS[message.shopName].bg;
+  const tint = getShopColor(message.shopName).bg;
   return (
     <Pressable
       onPress={onPress}

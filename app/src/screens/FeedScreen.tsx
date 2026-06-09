@@ -7,7 +7,7 @@ import { BuyRedirectSheet } from '../components/BuyRedirectSheet';
 import { ProductCard } from '../components/ProductCard';
 import { SwipeHint } from '../components/SwipeHint';
 import { TopNav } from '../components/TopNav';
-import { PRODUCTS } from '../data/products';
+import { useProducts } from '../store/productsStore';
 import { useFeedStore } from '../store/feedStore';
 import { useUiStore } from '../store/uiStore';
 import { WEROL_TOKENS } from '../theme/colors';
@@ -18,6 +18,7 @@ export function FeedScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const listRef = useRef<FlatList<Product>>(null);
+  const PRODUCTS = useProducts();
 
   // The feed area is whatever's left after the TopNav. Measure on layout;
   // pre-seed with an estimate so the FlatList mounts at the right size.

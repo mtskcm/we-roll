@@ -12,7 +12,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CartIcon from '../assets/icons/cart.svg';
 import CloseIcon from '../assets/icons/close.svg';
-import { SHOP_COLORS, WEROL_TOKENS } from '../theme/colors';
+import { getShopColor, WEROL_TOKENS } from '../theme/colors';
 import { RADII, SPACING } from '../theme/spacing';
 import { FONTS } from '../theme/typography';
 import type { Product } from '../types';
@@ -58,7 +58,7 @@ export function BuyRedirectSheet({ product, onClose }: Props) {
     );
   }
 
-  const shop = SHOP_COLORS[product.shop.name];
+  const shop = getShopColor(product.shop.name);
   const domain = shopDomain(product.shop.name);
 
   const handleContinue = () => {

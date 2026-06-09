@@ -21,7 +21,7 @@ import { StoryShareSheet } from '../components/StoryShareSheet';
 import { useShareStore } from '../store/shareStore';
 import { useUserStore } from '../store/userStore';
 import { OUTFIT_SLOTS, SLOT_BY_ID } from '../data/outfitSlots';
-import { PRODUCTS } from '../data/products';
+import { useProducts } from '../store/productsStore';
 import { COLORS } from '../theme/colors';
 import { RADII, SPACING } from '../theme/spacing';
 import { FONTS, TEXT_STYLES } from '../theme/typography';
@@ -33,6 +33,7 @@ export function OutfitBuilderScreen() {
   const { width: winWidth } = useWindowDimensions();
   const C = useColors();
   const s = useMemo(() => makeStyles(C), [C]);
+  const PRODUCTS = useProducts();
 
   const draftOutfit = useUserStore((u) => u.draftOutfit);
   const setSlot = useUserStore((u) => u.setSlot);
@@ -233,11 +234,12 @@ function SlotPickerSheet({
 
   const draftOutfit = useUserStore((u) => u.draftOutfit);
   const currentProductId = slotId ? draftOutfit[slotId] : undefined;
+  const PRODUCTS = useProducts();
 
   const matching = useMemo(() => {
     if (!slotDef) return [] as Product[];
     return PRODUCTS.filter((p) => slotDef.categories.includes(p.category));
-  }, [slotDef]);
+  }, [slotDef, PRODUCTS]);
 
   const s = makeSheetStyles(C);
 

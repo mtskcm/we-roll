@@ -32,10 +32,11 @@ export type RecBucket = {
 export function buildRecommendations(
   liked: string[],
   saved: string[],
+  catalog: Product[] = PRODUCTS,
 ): RecBucket[] {
   const interactions = [...liked, ...saved];
   const interactedProducts = interactions
-    .map((id) => PRODUCTS.find((p) => p.id === id))
+    .map((id) => catalog.find((p) => p.id === id))
     .filter((p): p is Product => Boolean(p));
 
   const buckets: RecBucket[] = [];
@@ -45,7 +46,7 @@ export function buildRecommendations(
   const topCategory = topKey(categoryCounts);
   if (topCategory) {
     const meta = CATEGORIES.find((c) => c.id === topCategory)!;
-    const items = PRODUCTS.filter(
+    const items = catalog.filter(
       (p) => p.category === topCategory && !interactions.includes(p.id),
     ).slice(0, 8);
     if (items.length > 0) {
@@ -59,7 +60,7 @@ export function buildRecommendations(
     }
   } else {
     // Fallback: trending (top-liked products overall)
-    const trending = [...PRODUCTS].sort((a, b) => b.likes - a.likes).slice(0, 8);
+    const trending = [...catalog].sort((a, b) => b.likes - a.likes).slice(0, 8);
     buckets.push({
       key: 'trending',
       title: 'Trendy',
@@ -72,7 +73,7 @@ export function buildRecommendations(
   const shopCounts = countBy<ShopKey>(interactedProducts.map((p) => p.shop.name));
   const topShop = topKey(shopCounts);
   if (topShop) {
-    const items = PRODUCTS.filter((p) => p.shop.name === topShop && !interactions.includes(p.id))
+    const items = catalog.filter((p) => p.shop.name === topShop && !interactions.includes(p.id))
       .sort((a, b) => b.likes - a.likes)
       .slice(0, 8);
     if (items.length > 0) {
@@ -90,7 +91,7 @@ export function buildRecommendations(
   const topCreatorId = topKey(creatorCounts);
   if (topCreatorId) {
     const creator: Creator | undefined = CREATORS.find((c) => c.id === topCreatorId);
-    const items = PRODUCTS.filter(
+    const items = catalog.filter(
       (p) => p.creatorId === topCreatorId && !interactions.includes(p.id),
     ).slice(0, 8);
     if (creator && items.length > 0) {
@@ -108,7 +109,7 @@ export function buildRecommendations(
   const otherCategories = CATEGORIES.filter((c) => c.id !== topCategory);
   if (otherCategories.length > 0) {
     const pick = otherCategories[0];
-    const items = PRODUCTS.filter((p) => p.category === pick.id).slice(0, 6);
+    const items = catalog.filter((p) => p.category === pick.id).slice(0, 6);
     if (items.length > 0) {
       buckets.push({
         key: `cat-${pick.id}`,

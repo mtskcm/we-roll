@@ -20,7 +20,7 @@ import RotateIcon from '../assets/icons/rotate.svg';
 import SearchIcon from '../assets/icons/search.svg';
 import TrendIcon from '../assets/icons/trend.svg';
 import { CATEGORIES, PRIMARY_CATEGORIES, type CategoryId } from '../data/categories';
-import { PRODUCTS } from '../data/products';
+import { useProducts } from '../store/productsStore';
 import { buildRecommendations } from '../data/recommendations';
 import { useT } from '../i18n';
 import { useFeedStore } from '../store/feedStore';
@@ -34,6 +34,7 @@ export function SearchScreen() {
   const { width: winWidth } = useWindowDimensions();
   const navigation = useNavigation<any>();
   const t = useT();
+  const PRODUCTS = useProducts();
   const liked = useFeedStore((s) => s.liked);
   const saved = useFeedStore((s) => s.saved);
   const recentSearches = useFeedStore((s) => s.recentSearches);
@@ -58,15 +59,15 @@ export function SearchScreen() {
         p.shop.name.toLowerCase().includes(q)
       );
     });
-  }, [query, category]);
+  }, [query, category, PRODUCTS]);
 
   const trendingNow = useMemo(
     () => [...PRODUCTS].sort((a, b) => b.likes - a.likes).slice(0, 8),
-    [],
+    [PRODUCTS],
   );
 
   const forYou = useMemo(() => {
-    const buckets = buildRecommendations(liked, saved);
+    const buckets = buildRecommendations(liked, saved, PRODUCTS);
     const flat: Product[] = [];
     const seen = new Set<string>();
     for (const b of buckets) {
@@ -82,7 +83,7 @@ export function SearchScreen() {
       return [...PRODUCTS].sort((a, b) => a.likes - b.likes).slice(0, 8);
     }
     return flat.slice(0, 8);
-  }, [liked, saved]);
+  }, [liked, saved, PRODUCTS]);
 
   const openProduct = (p: Product) => {
     navigation.navigate('Home', {
