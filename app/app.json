@@ -27,6 +27,12 @@
     "plugins": [
       "expo-asset",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d487033e-74be-4208-8fa1-46241f7f29ed"
+      }
+    },
+    "owner": "mkacmar"
   }
 }
