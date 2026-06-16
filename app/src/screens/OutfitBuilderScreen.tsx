@@ -18,6 +18,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StoryShareSheet } from '../components/StoryShareSheet';
+import { OutfitBuilderPrototype } from './OutfitBuilderPrototype';
 import { useShareStore } from '../store/shareStore';
 import { useUserStore } from '../store/userStore';
 import { OUTFIT_SLOTS, SLOT_BY_ID } from '../data/outfitSlots';
@@ -28,7 +29,13 @@ import { FONTS, TEXT_STYLES } from '../theme/typography';
 import { useColors } from '../theme/useColors';
 import type { OutfitSlotId, Product } from '../types';
 
+// PROTOTYPE GATE — dev builds cycle outfit-builder variants via the floating
+// bar; production renders the original screen. See OutfitBuilderPrototype.tsx.
 export function OutfitBuilderScreen() {
+  return <OutfitBuilderPrototype Original={OutfitBuilderOriginal} />;
+}
+
+export function OutfitBuilderOriginal() {
   const insets = useSafeAreaInsets();
   const { width: winWidth } = useWindowDimensions();
   const C = useColors();
@@ -194,7 +201,7 @@ function Mannequin({ size, C }: { size: number; C: ReturnType<typeof useColors> 
   );
 }
 
-function SlotPickerSheet({
+export function SlotPickerSheet({
   slotId,
   onClose,
   onPick,
