@@ -22,6 +22,8 @@ import { XMLParser } from 'fast-xml-parser';
 const ARGS = new Set(process.argv.slice(2));
 const SELFTEST = ARGS.has('--selftest');
 const DRY = ARGS.has('--dry') || SELFTEST;
+const REPLACE = ARGS.has('--replace'); // delete all existing products before insert
+const MAX_PRODUCTS = process.env.MAX_PRODUCTS ? parseInt(process.env.MAX_PRODUCTS, 10) : 3000;
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://hcrccagnnjeslnpmfdky.supabase.co';
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
@@ -154,6 +156,91 @@ function mapCustomProduct(p, shopName, idAttr) {
   };
 }
 
+// ── map one TradeDoubler JSON product → row ─────────────────────────────────
+// TradeDoubler /products.json: { productHeader, products:[{ name, brand,
+// description, fields:[{name,value}], offers:[{ productUrl(=affiliate deeplink),
+// priceHistory:[{price:{value,currency}}], availability, programName,
+// sourceProductId }], categories:[{name}], productImage:{url} }] }
+function mapTradedoubler(p, shopName) {
+  const offer = (p.offers && p.offers[0]) || {};
+  const fields = Object.fromEntries((p.fields || []).map((f) => [f.name, f.value]));
+  const ext = str(offer.sourceProductId) || str(fields.mpn) || str(p.name);
+  const name = str(p.name);
+  const buyUrl = str(offer.productUrl) || str(offer.legacyProductUrl); // affiliate deeplink
+  if (!ext || !name || !buyUrl) return null;
+
+  const ph = offer.priceHistory || [];
+  const lastPrice = ph.length ? ph[ph.length - 1].price : null;
+  const priceCurrent = lastPrice ? num(lastPrice.value) : null;
+  const currency = (lastPrice && str(lastPrice.currency)) || CURRENCY_ENV || 'EUR';
+
+  // "Prevoius_price" (sic) / BestPrice hold the pre-sale price like "34.95EUR"
+  let priceOriginal = num(fields.Prevoius_price) ?? num(fields.BestPrice);
+  if (priceOriginal && priceCurrent && priceOriginal <= priceCurrent) priceOriginal = null;
+
+  const categoryRaw = str((p.categories && p.categories[0] && p.categories[0].name)) || '';
+  const img = str(p.productImage && p.productImage.url);
+  const avail = (str(offer.availability) || '').toLowerCase();
+
+  return {
+    id: `${slug(shopName)}:${ext}`,
+    ext_id: ext,
+    shop: shopName,
+    brand: str(p.brand),
+    name,
+    description: null, // long HTML; skip for now
+    price_current: priceCurrent,
+    price_original: priceOriginal,
+    currency,
+    image_url: img,
+    image_alt_url: str(fields.additional_image_link),
+    buy_url: buyUrl,
+    category: mapCategory(categoryRaw, name),
+    category_raw: categoryRaw,
+    ean: str(fields.gtin) || str(fields.ean),
+    in_stock: avail ? avail.includes('in stock') || avail.includes('skladom') : true,
+  };
+}
+
+// ── fetch all TradeDoubler pages (matrix param ;page=N) up to MAX_PRODUCTS ───
+async function fetchTradedoublerAll(baseUrl, shopName) {
+  const rows = [];
+  let page = 1;
+  let totalHits = Infinity;
+  while (rows.length < Math.min(totalHits, MAX_PRODUCTS)) {
+    const url = baseUrl.replace(/;page=\d+/i, `;page=${page}`);
+    const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'WEROL-ingest/1.0' } });
+    if (!res.ok) throw new Error(`feed page ${page} failed: HTTP ${res.status}`);
+    const j = await res.json();
+    if (j.productHeader && typeof j.productHeader.totalHits === 'number') totalHits = j.productHeader.totalHits;
+    const items = j.products || [];
+    if (!items.length) break;
+    for (const p of items) {
+      const row = mapTradedoubler(p, shopName);
+      if (row) rows.push(row);
+      if (rows.length >= MAX_PRODUCTS) break;
+    }
+    process.stdout.write(`  fetched page ${page} (${rows.length}/${Math.min(totalHits, MAX_PRODUCTS)})\r`);
+    if (items.length < 100) break; // last page
+    page += 1;
+  }
+  process.stdout.write('\n');
+  return { total: totalHits === Infinity ? rows.length : totalHits, mapped: rows };
+}
+
+// ── delete every product (used by --replace before a fresh import) ───────────
+async function deleteAllProducts() {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/products?id=not.is.null`, {
+    method: 'DELETE',
+    headers: {
+      apikey: SERVICE_KEY,
+      Authorization: `Bearer ${SERVICE_KEY}`,
+      Prefer: 'return=minimal',
+    },
+  });
+  if (!res.ok) throw new Error(`delete-all failed (${res.status}): ${(await res.text()).slice(0, 300)}`);
+}
+
 // ── collapse variants (same ITEMGROUP_ID) to one product ────────────────────
 function dedupeVariants(items) {
   const seen = new Set();
@@ -282,30 +369,41 @@ async function main() {
     (FEED_URL ? new URL(FEED_URL).hostname.replace(/^www\./, '') : '') ||
     (FEED_FILE ? 'Local Feed' : 'Demo Shop');
 
-  let xml;
-  if (SELFTEST) {
-    console.log('▶ selftest: parsing bundled fixture');
-    xml = FIXTURE;
-  } else if (FEED_FILE) {
-    console.log(`▶ reading local file: ${FEED_FILE}`);
-    const { readFile } = await import('node:fs/promises');
-    xml = await readFile(FEED_FILE, 'utf8');
-  } else {
-    if (!FEED_URL) {
-      console.error('✗ No source. Use --selftest, FEED_URL=…, or --file <path> / FEED_FILE=…');
-      process.exit(1);
-    }
-    console.log(`▶ fetching feed: ${FEED_URL}`);
-    const res = await fetch(FEED_URL, { headers: { 'User-Agent': 'WEROL-ingest/1.0' } });
-    if (!res.ok) {
-      console.error(`✗ feed fetch failed: HTTP ${res.status}`);
-      process.exit(1);
-    }
-    xml = await res.text();
-  }
+  // TradeDoubler (JSON, paginated) is detected by URL.
+  const isTradedoubler =
+    !SELFTEST && !FEED_FILE && /tradedoubler\.com|products\.json/i.test(FEED_URL);
 
-  const { total, mapped } = parseFeed(xml, shopName);
-  console.log(`✓ parsed ${total} items → ${mapped.length} products (shop: "${shopName}", variants collapsed)`);
+  let total, mapped;
+
+  if (isTradedoubler) {
+    console.log(`▶ fetching TradeDoubler feed (JSON, up to ${MAX_PRODUCTS}): ${FEED_URL.replace(/token=[^&;]+/i, 'token=***')}`);
+    ({ total, mapped } = await fetchTradedoublerAll(FEED_URL, shopName));
+    console.log(`✓ ${total} available → imported ${mapped.length} products (shop: "${shopName}")`);
+  } else {
+    let xml;
+    if (SELFTEST) {
+      console.log('▶ selftest: parsing bundled fixture');
+      xml = FIXTURE;
+    } else if (FEED_FILE) {
+      console.log(`▶ reading local file: ${FEED_FILE}`);
+      const { readFile } = await import('node:fs/promises');
+      xml = await readFile(FEED_FILE, 'utf8');
+    } else {
+      if (!FEED_URL) {
+        console.error('✗ No source. Use --selftest, FEED_URL=…, or --file <path> / FEED_FILE=…');
+        process.exit(1);
+      }
+      console.log(`▶ fetching feed: ${FEED_URL}`);
+      const res = await fetch(FEED_URL, { headers: { 'User-Agent': 'WEROL-ingest/1.0' } });
+      if (!res.ok) {
+        console.error(`✗ feed fetch failed: HTTP ${res.status}`);
+        process.exit(1);
+      }
+      xml = await res.text();
+    }
+    ({ total, mapped } = parseFeed(xml, shopName));
+    console.log(`✓ parsed ${total} items → ${mapped.length} products (shop: "${shopName}", variants collapsed)`);
+  }
 
   // category histogram
   const hist = {};
@@ -320,6 +418,10 @@ async function main() {
   if (!SERVICE_KEY) {
     console.error('✗ SUPABASE_SERVICE_KEY not set — cannot write. (Use --dry to preview.)');
     process.exit(1);
+  }
+  if (REPLACE) {
+    console.log('▶ --replace: deleting ALL existing products…');
+    await deleteAllProducts();
   }
   console.log(`▶ upserting ${mapped.length} products into ${SUPABASE_URL}…`);
   await upsert(mapped);
