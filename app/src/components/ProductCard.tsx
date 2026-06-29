@@ -17,9 +17,10 @@ import BookmarkIcon from '../assets/icons/bookmark.svg';
 import CartIcon from '../assets/icons/cart.svg';
 import HeartIcon from '../assets/icons/heart.svg';
 import ShareIcon from '../assets/icons/share.svg';
-import { getBrandLogo } from './brandLogos';
+import { BrandBadge } from './BrandBadge';
 import { useFeedStore, useIsLiked, useIsSaved } from '../store/feedStore';
 import { useShareStore } from '../store/shareStore';
+import { formatPrice } from '../lib/format';
 import { WEROL_TOKENS } from '../theme/colors';
 import { RADII, SPACING } from '../theme/spacing';
 import { FONTS } from '../theme/typography';
@@ -43,7 +44,6 @@ function formatCount(n: number): string {
 
 export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDetails }: Props) {
   const infoBottomOffset = BOTTOM_NAV_HEIGHT + bottomSafeArea + 8;
-  const brandLogo = getBrandLogo(product.brand);
   const liked = useIsLiked(product.id);
   const saved = useIsSaved(product.id);
   const toggleLike = useFeedStore((s) => s.toggleLike);
@@ -89,21 +89,15 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDeta
         {/* Bottom-left info — brand · name · price + BUY */}
         <View style={[styles.info, { bottom: infoBottomOffset }]} pointerEvents="box-none">
           <View style={styles.textBlock}>
-            {brandLogo ? (
-              <View style={styles.brandBadge}>
-                <Image source={brandLogo} style={styles.brandLogo} resizeMode="cover" />
-              </View>
-            ) : (
-              <Text style={styles.brand} numberOfLines={1}>{product.brand}</Text>
-            )}
+            <BrandBadge brand={product.brand} height={22} />
             <Text style={styles.name} numberOfLines={1}>{product.name}</Text>
             <View style={styles.priceRow}>
               <Text style={styles.price}>
-                {product.price.current} {product.price.currency}
+                {formatPrice(product.price.current, product.price.currency)}
               </Text>
               {product.price.original !== undefined && (
                 <Text style={styles.priceOld}>
-                  {product.price.original} {product.price.currency}
+                  {formatPrice(product.price.original, product.price.currency)}
                 </Text>
               )}
             </View>
@@ -114,7 +108,8 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDeta
             style={({ pressed }) => [styles.buyBtn, pressed && { opacity: 0.88 }]}
           >
             <CartIcon width={15} height={15} stroke={WEROL_TOKENS.pitch} strokeWidth={2} fill="none" />
-            <Text style={styles.buyText}>BUY ON {product.shop.name.toUpperCase()}</Text>
+            <Text style={styles.buyText}>BUY ON</Text>
+            <BrandBadge brand={product.brand} height={17} />
           </Pressable>
         </View>
       </View>
@@ -213,27 +208,6 @@ const styles = StyleSheet.create({
   textBlock: {
     paddingRight: 56, // keep long names clear of the rail
     gap: 4,
-  },
-  brand: {
-    fontFamily: FONTS.jetbrainsMonoBold,
-    fontSize: 12,
-    letterSpacing: 1.5,
-    color: WEROL_TOKENS.paper,
-    textTransform: 'uppercase',
-  },
-  brandBadge: {
-    alignSelf: 'flex-start',
-    width: 50,
-    height: 24,
-    borderRadius: 6,
-    backgroundColor: WEROL_TOKENS.paper,
-    overflow: 'hidden',
-    padding: 3,
-    marginBottom: 2,
-  },
-  brandLogo: {
-    width: '100%',
-    height: '100%',
   },
   name: {
     fontFamily: FONTS.spaceGrotesk,

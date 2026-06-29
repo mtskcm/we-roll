@@ -12,6 +12,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CartIcon from '../assets/icons/cart.svg';
 import CloseIcon from '../assets/icons/close.svg';
+import { formatPrice } from '../lib/format';
 import { getShopColor, WEROL_TOKENS } from '../theme/colors';
 import { RADII, SPACING } from '../theme/spacing';
 import { FONTS } from '../theme/typography';
@@ -109,7 +110,7 @@ export function BuyRedirectSheet({ product, onClose }: Props) {
               <Text style={styles.productBrand}>{product.brand.toUpperCase()}</Text>
             </View>
             <Text style={styles.productPrice}>
-              {product.price.current} {product.price.currency}
+              {formatPrice(product.price.current, product.price.currency)}
             </Text>
           </View>
 

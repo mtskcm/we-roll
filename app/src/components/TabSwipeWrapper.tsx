@@ -10,7 +10,9 @@ import { StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 
-const TAB_ORDER = ['Home', 'Outfit', 'Fit', 'Saved', 'Messages', 'Profile'];
+// Must match the visible bottom-bar tabs (BottomNav). Saved + Messages were
+// removed from the bar, so they're not swipeable between either.
+const TAB_ORDER = ['Home', 'Outfit', 'Fit', 'Profile'];
 const VELOCITY_THRESHOLD = 400;
 const TRANSLATION_THRESHOLD = 60;
 

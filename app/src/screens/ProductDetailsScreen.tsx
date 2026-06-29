@@ -9,10 +9,12 @@ import BookmarkIcon from '../assets/icons/bookmark.svg';
 import CartIcon from '../assets/icons/cart.svg';
 import HeartIcon from '../assets/icons/heart.svg';
 import ShareIcon from '../assets/icons/share.svg';
+import { BrandBadge } from '../components/BrandBadge';
 import { BuyRedirectSheet } from '../components/BuyRedirectSheet';
 import { useProducts } from '../store/productsStore';
 import { useFeedStore, useIsLiked, useIsSaved } from '../store/feedStore';
 import { useShareStore } from '../store/shareStore';
+import { formatPrice } from '../lib/format';
 import { WEROL_TOKENS } from '../theme/colors';
 import { SPACING } from '../theme/spacing';
 import { FONTS } from '../theme/typography';
@@ -42,8 +44,8 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
     [
       'Price',
       product.price.original !== undefined
-        ? `${product.price.current} ${product.price.currency}  (was ${product.price.original})`
-        : `${product.price.current} ${product.price.currency}`,
+        ? `${formatPrice(product.price.current, product.price.currency)}  (was ${formatPrice(product.price.original, product.price.currency)})`
+        : formatPrice(product.price.current, product.price.currency),
     ],
   ];
 
@@ -59,7 +61,9 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
         >
           <BackIcon width={22} height={22} stroke={WEROL_TOKENS.paper} strokeWidth={1.9} fill="none" />
         </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>{product.brand}</Text>
+        <View style={styles.headerCenter}>
+          <BrandBadge brand={product.brand} height={24} />
+        </View>
         <Pressable
           accessibilityLabel="Share"
           onPress={() => openShare(product)}
@@ -125,7 +129,7 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
         >
           <CartIcon width={15} height={15} stroke={WEROL_TOKENS.pitch} strokeWidth={2} fill="none" />
           <Text style={styles.buyText}>
-            BUY · {product.price.current} {product.price.currency}
+            BUY · {formatPrice(product.price.current, product.price.currency)}
           </Text>
         </Pressable>
       </View>
@@ -153,13 +157,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: {
+  headerCenter: {
     flex: 1,
-    textAlign: 'center',
-    fontFamily: FONTS.spaceGroteskBold,
-    fontSize: 16,
-    color: WEROL_TOKENS.paper,
-    letterSpacing: 0.2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontFamily: FONTS.spaceGroteskBold,
