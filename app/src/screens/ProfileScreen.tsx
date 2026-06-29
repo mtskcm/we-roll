@@ -1,8 +1,11 @@
+// ProfileScreen (ME) — IG/TikTok-style: header (avatar · name · stats · edit),
+// segment control (My FITS · Saved · Liked) → grid, settings behind the gear.
+// Also the entry points for Inbox (bell) and Saved that left the bottom bar.
+
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
-  FlatList,
   Image,
   Pressable,
   ScrollView,
@@ -10,821 +13,449 @@ import {
   Switch,
   Text,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CreatorsCarousel } from '../components/CreatorsCarousel';
 import { LanguageSheet } from '../components/LanguageSheet';
-import { ShopAvatar } from '../components/ShopAvatar';
-import { CREATORS } from '../data/creators';
-import { FRIENDS } from '../data/friends';
-import { ORDERS, type Order, type OrderStatus } from '../data/orders';
-import { PRODUCTS as MOCK_PRODUCTS } from '../data/products';
-import { useProducts } from '../store/productsStore';
 import { useT } from '../i18n';
+import { useProducts } from '../store/productsStore';
 import { useFeedStore } from '../store/feedStore';
 import { useSettingsStore } from '../store/settingsStore';
-import { useUserStore, type Sizes } from '../store/userStore';
-import { COLORS, WEROL_TOKENS } from '../theme/colors';
-import { RADII, SPACING } from '../theme/spacing';
-import { FONTS, TEXT_STYLES } from '../theme/typography';
+import { useUserStore } from '../store/userStore';
+import { useUnreadCount } from '../store/messagesStore';
+import { WEROL_TOKENS } from '../theme/colors';
+import { SPACING } from '../theme/spacing';
+import { FONTS } from '../theme/typography';
 import type { Product } from '../types';
 
-function formatJoined(iso: string, locale: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
-}
+type Segment = 'fits' | 'saved' | 'liked';
 
 export function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const { width: winWidth } = useWindowDimensions();
   const navigation = useNavigation<any>();
   const t = useT();
   const PRODUCTS = useProducts();
+
   const liked = useFeedStore((s) => s.liked);
   const saved = useFeedStore((s) => s.saved);
-  const requestFeedIndex = useFeedStore((s) => s.requestFeedIndex);
+  const profile = useUserStore((s) => s.profile);
+  const savedOutfits = useUserStore((s) => s.savedOutfits);
+  const logout = useUserStore((s) => s.logout);
+  const unread = useUnreadCount();
+
   const language = useSettingsStore((s) => s.language);
   const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
   const toggleNotifications = useSettingsStore((s) => s.toggleNotifications);
   const themeMode = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
 
-  const profile = useUserStore((s) => s.profile);
-  const userEmail = useUserStore((s) => s.email);
-  const userSizes = useUserStore((s) => s.sizes);
-  const followedBrands = useUserStore((s) => s.followedBrands);
-  const savedOutfits = useUserStore((s) => s.savedOutfits);
-  const logout = useUserStore((s) => s.logout);
-  const setSize = useUserStore((s) => s.setSize);
-  const toggleBrand = useUserStore((s) => s.toggleBrand);
-
-  const [langSheetOpen, setLangSheetOpen] = useState(false);
-
-  const likedProducts = PRODUCTS.filter((p) => liked.includes(p.id));
-  const savedProducts = PRODUCTS.filter((p) => saved.includes(p.id));
-
+  const [segment, setSegment] = useState<Segment>('fits');
+  const [langOpen, setLangOpen] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
-  const positions = useRef<Record<string, number>>({});
+  const settingsY = useRef(0);
 
-  const open = (p: Product) => {
-    const idx = PRODUCTS.findIndex((x) => x.id === p.id);
-    requestFeedIndex(idx);
-    navigation.jumpTo('Home');
-  };
+  const likedProducts = useMemo(
+    () => PRODUCTS.filter((p) => liked.includes(p.id)),
+    [PRODUCTS, liked],
+  );
+  const savedProducts = useMemo(
+    () => PRODUCTS.filter((p) => saved.includes(p.id)),
+    [PRODUCTS, saved],
+  );
 
-  const scrollToSection = (key: string) => {
-    const y = positions.current[key];
-    if (y !== undefined) {
-      scrollRef.current?.scrollTo({ y: Math.max(y - 16, 0), animated: true });
-    }
-  };
+  const tile = (winWidth - SPACING.section * 2 - 4) / 3;
+
+  const openProduct = (p: Product) =>
+    navigation.navigate('Home', { screen: 'ProductDetails', params: { productId: p.id } });
+
+  const gridProducts = segment === 'liked' ? likedProducts : segment === 'saved' ? savedProducts : [];
 
   return (
-    <ScrollView
-      ref={scrollRef}
-      style={styles.root}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.lg }]}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.head}>
-        <ShopAvatar
-          initials={profile.initials}
-          size={64}
-          bg={COLORS.ink2}
-          textColor={COLORS.teal}
-          borderColor={COLORS.ink3}
-        />
-        <View>
-          <Text style={TEXT_STYLES.heading}>{profile.name}</Text>
-          <Text style={styles.handle}>{userEmail ?? profile.handle}</Text>
-          <Text style={styles.joined}>
-            {t('profile.joined', {
-              date: formatJoined(profile.joinedAt, language === 'sk' ? 'sk-SK' : 'en-GB'),
-            })}
-          </Text>
+    <View style={styles.root}>
+      {/* Top bar */}
+      <View style={[styles.topBar, { paddingTop: insets.top + 4 }]}>
+        <Text style={styles.topHandle} numberOfLines={1}>@{profile.handle.replace(/^@/, '')}</Text>
+        <View style={styles.topActions}>
+          <Pressable onPress={() => navigation.navigate('Messages')} hitSlop={8} style={styles.topBtn}>
+            <Ionicons name="notifications-outline" size={24} color={WEROL_TOKENS.paper} />
+            {unread > 0 && <View style={styles.dot} />}
+          </Pressable>
+          <Pressable
+            onPress={() => scrollRef.current?.scrollTo({ y: settingsY.current - 12, animated: true })}
+            hitSlop={8}
+            style={styles.topBtn}
+          >
+            <Ionicons name="settings-outline" size={23} color={WEROL_TOKENS.paper} />
+          </Pressable>
         </View>
       </View>
 
-      <View style={styles.statsGrid}>
-        <Stat
-          label={t('profile.stat.liked')}
-          value={liked.length}
-          onPress={() => scrollToSection('liked')}
-        />
-        <Stat
-          label={t('profile.stat.saved')}
-          value={saved.length}
-          onPress={() => scrollToSection('saved')}
-        />
-        <Stat
-          label={t('profile.stat.orders')}
-          value={ORDERS.length}
-          onPress={() => scrollToSection('orders')}
-        />
-        <Stat
-          label={t('profile.stat.brands')}
-          value={followedBrands.length}
-          onPress={() => scrollToSection('brands')}
-        />
-      </View>
-
-      <View onLayout={(e) => (positions.current.creators = e.nativeEvent.layout.y)}>
-        <Section title={t('profile.section.creators')}>
-          <CreatorsCarousel creators={CREATORS} />
-        </Section>
-      </View>
-
-      <View onLayout={(e) => (positions.current.liked = e.nativeEvent.layout.y)}>
-        <Section
-          title={t('profile.section.liked')}
-          empty={likedProducts.length === 0 ? t('profile.empty.liked') : null}
-        >
-          <FlatList
-            data={likedProducts}
-            horizontal
-            keyExtractor={(p) => p.id}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.hList}
-            renderItem={({ item }) => <ProductMini product={item} onPress={() => open(item)} />}
-          />
-        </Section>
-      </View>
-
-      <View onLayout={(e) => (positions.current.saved = e.nativeEvent.layout.y)}>
-        <Section
-          title={t('profile.section.saved')}
-          empty={savedProducts.length === 0 ? t('profile.empty.saved') : null}
-        >
-          <FlatList
-            data={savedProducts}
-            horizontal
-            keyExtractor={(p) => p.id}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.hList}
-            renderItem={({ item }) => <ProductMini product={item} onPress={() => open(item)} />}
-          />
-        </Section>
-      </View>
-
-      <Section
-        title="Moje FIT-y"
-        empty={savedOutfits.length === 0 ? 'Zatiaľ žiadne uložené outfity.' : null}
+      <ScrollView
+        ref={scrollRef}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingTop: insets.top + 52, paddingBottom: insets.bottom + 110 }}
       >
-        <FlatList
-          data={savedOutfits}
-          horizontal
-          keyExtractor={(o) => o.id}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.hList}
-          renderItem={({ item }) => {
-            const products = Object.values(item.slots)
-              .map((id) => PRODUCTS.find((p) => p.id === id))
-              .filter((p): p is Product => Boolean(p));
-            const total = products.reduce((sum, p) => sum + p.price.current, 0);
-            return (
-              <Pressable
-                style={styles.outfitMini}
-                onPress={() => navigation.jumpTo('Saved')}
-              >
-                <View style={styles.outfitMiniStack}>
-                  {products.slice(0, 3).map((p, i) => (
-                    <View
-                      key={p.id}
-                      style={[
-                        styles.outfitMiniThumb,
-                        { marginLeft: i === 0 ? 0 : -12, zIndex: 5 - i },
-                      ]}
-                    >
-                      <Image source={p.image} style={styles.outfitMiniImg} resizeMode="cover" />
-                    </View>
-                  ))}
-                </View>
-                <Text style={styles.outfitMiniName} numberOfLines={1}>{item.name}</Text>
-                <Text style={styles.outfitMinaMeta}>
-                  {products.length} ks · {total} €
-                </Text>
-              </Pressable>
-            );
-          }}
-        />
-      </Section>
-
-      <Section title="Priatelia">
-        <FlatList
-          data={FRIENDS}
-          horizontal
-          keyExtractor={(f) => f.id}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.hList}
-          renderItem={({ item }) => (
-            <Pressable style={styles.friendMini}>
-              <Image source={{ uri: item.avatar }} style={styles.friendAvatar} />
-              <Text style={styles.friendName} numberOfLines={1}>{item.name}</Text>
-              <Text style={styles.friendHandle} numberOfLines={1}>{item.handle}</Text>
-            </Pressable>
-          )}
-        />
-      </Section>
-
-      <View onLayout={(e) => (positions.current.orders = e.nativeEvent.layout.y)}>
-        <Section title={t('profile.section.orders')} empty={ORDERS.length === 0 ? t('profile.orders.empty') : null}>
-          {ORDERS.map((order) => (
-            <OrderRow key={order.id} order={order} t={t} />
-          ))}
-        </Section>
-      </View>
-
-      <View onLayout={(e) => (positions.current.sizes = e.nativeEvent.layout.y)}>
-        <Section title={t('profile.section.sizes')}>
-          <View style={styles.sizesGrid}>
-            <SizeCell
-              label={t('profile.size.top')}
-              value={userSizes.top}
-              options={['XS', 'S', 'M', 'L', 'XL', 'XXL']}
-              onPick={(v) => setSize('top', v)}
-            />
-            <SizeCell
-              label={t('profile.size.bottom')}
-              value={userSizes.bottom}
-              options={['28', '30', '32', '34', '36']}
-              onPick={(v) => setSize('bottom', v)}
-            />
-            <SizeCell
-              label={t('profile.size.shoes')}
-              value={userSizes.shoes}
-              options={['40', '41', '42', '43', '44', '45']}
-              onPick={(v) => setSize('shoes', v)}
-            />
+        {/* Identity */}
+        <View style={styles.identity}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{profile.initials}</Text>
           </View>
-        </Section>
-      </View>
+          <Text style={styles.name}>{profile.name}</Text>
+          <Text style={styles.handle}>@{profile.handle.replace(/^@/, '')}</Text>
 
-      <View onLayout={(e) => (positions.current.brands = e.nativeEvent.layout.y)}>
-        <Section
-          title={t('profile.section.brands')}
-          empty={followedBrands.length === 0 ? t('profile.brands.empty') : null}
-        >
-          <View style={styles.brandsWrap}>
-            {followedBrands.map((b) => (
+          <View style={styles.stats}>
+            <Stat value={savedOutfits.length} label="OUTFITY" onPress={() => setSegment('fits')} />
+            <View style={styles.statDivider} />
+            <Stat value={liked.length} label="LAJKY" onPress={() => setSegment('liked')} />
+            <View style={styles.statDivider} />
+            <Stat value={saved.length} label="ULOŽENÉ" onPress={() => setSegment('saved')} />
+          </View>
+
+          <Pressable
+            onPress={() => {}}
+            style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.7 }]}
+          >
+            <Text style={styles.editText}>Upraviť profil</Text>
+          </Pressable>
+        </View>
+
+        {/* Segments */}
+        <View style={styles.segments}>
+          <Seg label="My FITS" active={segment === 'fits'} onPress={() => setSegment('fits')} />
+          <Seg label="Saved" active={segment === 'saved'} onPress={() => setSegment('saved')} />
+          <Seg label="Liked" active={segment === 'liked'} onPress={() => setSegment('liked')} />
+        </View>
+
+        {/* Grid */}
+        {segment === 'fits' ? (
+          savedOutfits.length === 0 ? (
+            <Empty text="Zatiaľ žiadne outfity. Zostav si fit v CREATE." />
+          ) : (
+            <View style={styles.grid}>
+              {savedOutfits.map((o) => {
+                const first = Object.values(o.slots)
+                  .map((id) => PRODUCTS.find((p) => p.id === id))
+                  .find(Boolean);
+                return (
+                  <Pressable
+                    key={o.id}
+                    onPress={() => navigation.navigate('Saved')}
+                    style={[styles.tile, { width: tile, height: tile }]}
+                  >
+                    {first ? (
+                      <Image source={first.image} style={styles.tileImg} resizeMode="cover" />
+                    ) : (
+                      <View style={styles.tileImg} />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+          )
+        ) : gridProducts.length === 0 ? (
+          <Empty text={segment === 'liked' ? 'Zatiaľ nič nelajknuté.' : 'Žiadne uložené kúsky.'} />
+        ) : (
+          <View style={styles.grid}>
+            {gridProducts.map((p) => (
               <Pressable
-                key={b}
-                onPress={() => toggleBrand(b)}
-                style={({ pressed }) => [styles.brandChip, pressed && { opacity: 0.7 }]}
+                key={p.id}
+                onPress={() => openProduct(p)}
+                style={[styles.tile, { width: tile, height: tile }]}
               >
-                <Text style={styles.brandText}>{b}</Text>
-                <Ionicons name="close" size={12} color={COLORS.cream3} />
+                <Image source={p.image} style={styles.tileImg} resizeMode="cover" />
               </Pressable>
             ))}
           </View>
-        </Section>
-      </View>
+        )}
 
-      <Section title={t('profile.section.settings')}>
-        <SettingsRow
-          icon="notifications-outline"
-          label={t('profile.settings.notifications')}
-          right={
+        {/* Settings */}
+        <View onLayout={(e) => (settingsY.current = e.nativeEvent.layout.y)} style={styles.settings}>
+          <Text style={styles.settingsTitle}>Nastavenia</Text>
+          <SettingRow icon="notifications-outline" label="Notifikácie">
             <Switch
               value={notificationsEnabled}
               onValueChange={toggleNotifications}
-              trackColor={{ false: COLORS.ink3, true: COLORS.teal }}
-              thumbColor={COLORS.cream}
-              ios_backgroundColor={COLORS.ink3}
+              trackColor={{ false: WEROL_TOKENS.line2, true: WEROL_TOKENS.lime }}
+              thumbColor={WEROL_TOKENS.paper}
+              ios_backgroundColor={WEROL_TOKENS.line2}
             />
-          }
-        />
-        <SettingsRow
-          icon={themeMode === 'dark' ? 'moon-outline' : 'sunny-outline'}
-          label={t('profile.settings.theme')}
-          right={
+          </SettingRow>
+          <SettingRow icon={themeMode === 'dark' ? 'moon-outline' : 'sunny-outline'} label="Tmavá téma">
             <Switch
               value={themeMode === 'dark'}
               onValueChange={(v) => setTheme(v ? 'dark' : 'light')}
-              trackColor={{ false: COLORS.ink3, true: COLORS.teal }}
-              thumbColor={COLORS.cream}
-              ios_backgroundColor={COLORS.ink3}
+              trackColor={{ false: WEROL_TOKENS.line2, true: WEROL_TOKENS.lime }}
+              thumbColor={WEROL_TOKENS.paper}
+              ios_backgroundColor={WEROL_TOKENS.line2}
             />
-          }
-        />
-        <SettingsRow
-          icon="globe-outline"
-          label={t('profile.settings.language')}
-          trailing={language === 'sk' ? t('lang.sk') : t('lang.en')}
-          onPress={() => setLangSheetOpen(true)}
-        />
-        <SettingsRow
-          icon="log-out-outline"
-          label={t('profile.settings.logout')}
-          tint={COLORS.likeRed}
-          onPress={logout}
-        />
-      </Section>
-
-      <LanguageSheet visible={langSheetOpen} onClose={() => setLangSheetOpen(false)} />
-    </ScrollView>
-  );
-}
-
-const ORDER_STATUS_COLOR: Record<OrderStatus, string> = {
-  delivered: COLORS.teal,
-  shipped: WEROL_TOKENS.tintCyan,
-  processing: WEROL_TOKENS.tintYellow,
-};
-
-function OrderRow({ order, t }: { order: Order; t: ReturnType<typeof useT> }) {
-  const statusLabel = t(`profile.order.${order.status}` as 'profile.order.delivered');
-  const items = order.productIds
-    .map((id) => MOCK_PRODUCTS.find((p) => p.id === id))
-    .filter((p): p is Product => Boolean(p));
-  return (
-    <View style={styles.orderRow}>
-      <View style={styles.orderHead}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.orderShop}>{order.shopName}</Text>
-          <Text style={styles.orderDate}>{order.date}</Text>
-        </View>
-        <View style={[styles.orderStatus, { borderColor: ORDER_STATUS_COLOR[order.status] }]}>
-          <View
-            style={[styles.orderStatusDot, { backgroundColor: ORDER_STATUS_COLOR[order.status] }]}
+          </SettingRow>
+          <SettingRow
+            icon="globe-outline"
+            label="Jazyk"
+            trailing={language === 'sk' ? 'Slovenčina' : 'English'}
+            onPress={() => setLangOpen(true)}
           />
-          <Text style={[styles.orderStatusText, { color: ORDER_STATUS_COLOR[order.status] }]}>
-            {statusLabel}
-          </Text>
+          <Pressable
+            onPress={logout}
+            style={({ pressed }) => [styles.logoutBtn, pressed && { opacity: 0.7 }]}
+          >
+            <Ionicons name="log-out-outline" size={18} color="#E63946" />
+            <Text style={styles.logoutText}>Odhlásiť sa</Text>
+          </Pressable>
         </View>
-      </View>
-      <View style={styles.orderItems}>
-        {items.map((p) => (
-          <Image key={p.id} source={p.image} style={styles.orderItemImg} resizeMode="contain" />
-        ))}
-        <View style={styles.orderTotalBox}>
-          <Text style={styles.orderItemCount}>
-            {t('profile.order.itemCount', { n: order.itemCount })}
-          </Text>
-          <Text style={styles.orderTotal}>
-            {order.total} {order.currency}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function SizeCell({
-  label,
-  value,
-  options,
-  onPick,
-}: {
-  label: string;
-  value: string | null;
-  options: string[];
-  onPick: (v: string) => void;
-}) {
-  return (
-    <View style={styles.sizeCell}>
-      <Text style={styles.sizeLabel}>{label}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sizeOptions}>
-        {options.map((opt) => {
-          const active = value === opt;
-          return (
-            <Pressable
-              key={opt}
-              onPress={() => onPick(opt)}
-              style={[styles.sizeOption, active && styles.sizeOptionActive]}
-            >
-              <Text style={[styles.sizeOptionText, active && styles.sizeOptionTextActive]}>
-                {opt}
-              </Text>
-            </Pressable>
-          );
-        })}
       </ScrollView>
+
+      <LanguageSheet visible={langOpen} onClose={() => setLangOpen(false)} />
     </View>
   );
 }
 
-function Stat({
-  label,
-  value,
-  onPress,
-}: {
-  label: string;
-  value: number;
-  onPress?: () => void;
-}) {
+function Stat({ value, label, onPress }: { value: number; label: string; onPress: () => void }) {
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={!onPress}
-      style={({ pressed }) => [styles.stat, pressed && onPress && styles.statPressed]}
-    >
+    <Pressable onPress={onPress} style={styles.stat}>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </Pressable>
   );
 }
 
-function Section({
-  title,
-  children,
-  empty,
-}: {
-  title: string;
-  children: React.ReactNode;
-  empty?: string | null;
-}) {
+function Seg({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {empty ? <Text style={styles.emptyText}>{empty}</Text> : children}
-    </View>
-  );
-}
-
-function ProductMini({ product, onPress }: { product: Product; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.mini, pressed && styles.miniPressed]}
-    >
-      <Image source={product.image} style={styles.miniImg} resizeMode="contain" />
-      <Text style={styles.miniBrand} numberOfLines={1}>
-        {product.brand}
-      </Text>
-      <Text style={styles.miniName} numberOfLines={1}>
-        {product.name}
-      </Text>
-      <Text style={styles.miniPrice}>
-        {product.price.current} {product.price.currency}
-      </Text>
+    <Pressable onPress={onPress} style={[styles.seg, active && styles.segActive]}>
+      <Text style={[styles.segText, active && styles.segTextActive]}>{label}</Text>
     </Pressable>
   );
 }
 
-function SettingsRow({
+function Empty({ text }: { text: string }) {
+  return (
+    <View style={styles.empty}>
+      <Text style={styles.emptyText}>{text}</Text>
+    </View>
+  );
+}
+
+function SettingRow({
   icon,
   label,
   trailing,
-  right,
   onPress,
-  disabled,
-  tint = COLORS.cream,
+  children,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   trailing?: string;
-  right?: React.ReactNode;
   onPress?: () => void;
-  disabled?: boolean;
-  tint?: string;
+  children?: React.ReactNode;
 }) {
   return (
     <Pressable
       onPress={onPress}
-      disabled={disabled || (!onPress && !right)}
-      style={({ pressed }) => [
-        styles.settingRow,
-        pressed && onPress && { opacity: 0.7 },
-        disabled && { opacity: 0.5 },
-      ]}
+      disabled={!onPress}
+      style={({ pressed }) => [styles.settingRow, pressed && onPress && { opacity: 0.7 }]}
     >
-      <Ionicons name={icon} size={20} color={tint} />
-      <Text style={[styles.settingLabel, { color: tint }]}>{label}</Text>
-      <View style={styles.settingRight}>
-        {right ?? (
-          <>
-            {trailing && <Text style={styles.settingTrailing}>{trailing}</Text>}
-            {!disabled && onPress && (
-              <Ionicons name="chevron-forward" size={16} color={COLORS.dim} />
-            )}
-            {disabled && <Ionicons name="lock-closed" size={14} color={COLORS.dim} />}
-          </>
-        )}
-      </View>
+      <Ionicons name={icon} size={20} color={WEROL_TOKENS.muted} />
+      <Text style={styles.settingLabel}>{label}</Text>
+      {trailing ? <Text style={styles.settingTrailing}>{trailing}</Text> : null}
+      {children}
+      {onPress && !children ? (
+        <Ionicons name="chevron-forward" size={18} color={WEROL_TOKENS.muted2} />
+      ) : null}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: COLORS.ink,
-  },
-  content: {
-    paddingHorizontal: SPACING.section,
-    paddingBottom: 140,
-    gap: SPACING.hero,
-  },
-  head: {
+  root: { flex: 1, backgroundColor: WEROL_TOKENS.pitch },
+  topBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.lg,
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.section,
+    paddingBottom: 10,
+    backgroundColor: 'rgba(10,10,12,0.92)',
+  },
+  topHandle: {
+    flex: 1,
+    fontFamily: FONTS.spaceGroteskBold,
+    fontSize: 18,
+    color: WEROL_TOKENS.paper,
+  },
+  topActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  topBtn: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
+  dot: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: '#E63946',
+    borderWidth: 1.5,
+    borderColor: WEROL_TOKENS.pitch,
+  },
+  identity: {
+    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 18,
+    paddingHorizontal: SPACING.section,
+  },
+  avatar: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: WEROL_TOKENS.concrete,
+    borderWidth: 2,
+    borderColor: WEROL_TOKENS.lime,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontFamily: FONTS.archivo,
+    fontSize: 30,
+    letterSpacing: -1,
+    color: WEROL_TOKENS.paper,
+  },
+  name: {
+    fontFamily: FONTS.spaceGroteskBold,
+    fontSize: 21,
+    color: WEROL_TOKENS.paper,
+    marginTop: 12,
   },
   handle: {
-    fontFamily: FONTS.jetbrainsMono,
-    fontSize: 11,
-    color: COLORS.teal,
-    letterSpacing: 0.5,
+    fontFamily: FONTS.inter,
+    fontSize: 14,
+    color: WEROL_TOKENS.muted,
     marginTop: 2,
   },
-  joined: {
-    fontFamily: FONTS.inter,
-    fontSize: 12,
-    color: COLORS.cream3,
-    marginTop: 4,
-  },
-  statsGrid: {
+  stats: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.lg,
+    alignItems: 'center',
+    marginTop: 18,
   },
-  stat: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: COLORS.ink2,
-    borderRadius: RADII.md,
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.lg,
-    borderWidth: 1,
-    borderColor: COLORS.ink3,
-  },
-  statPressed: {
-    backgroundColor: COLORS.ink3,
-    transform: [{ scale: 0.98 }],
-  },
+  stat: { alignItems: 'center', paddingHorizontal: 22 },
   statValue: {
-    fontFamily: FONTS.archivoBold,
-    fontSize: 32,
-    color: COLORS.cream,
-    letterSpacing: -0.5,
+    fontFamily: FONTS.archivo,
+    fontSize: 22,
+    letterSpacing: -0.6,
+    color: WEROL_TOKENS.paper,
   },
   statLabel: {
     fontFamily: FONTS.jetbrainsMono,
     fontSize: 9,
-    letterSpacing: 1.5,
-    color: COLORS.cream3,
-    marginTop: 4,
+    letterSpacing: 1.4,
+    color: WEROL_TOKENS.muted2,
+    marginTop: 3,
   },
-  section: {
-    gap: SPACING.lg,
+  statDivider: { width: 1, height: 28, backgroundColor: WEROL_TOKENS.line },
+  editBtn: {
+    marginTop: 18,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    paddingVertical: 11,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: WEROL_TOKENS.line2,
   },
-  sectionTitle: {
-    fontFamily: FONTS.jetbrainsMonoBold,
-    fontSize: 11,
-    letterSpacing: 2,
-    color: COLORS.cream3,
-    textTransform: 'uppercase',
-  },
-  hList: {
-    gap: SPACING.lg,
-    paddingRight: SPACING.section,
-  },
-  mini: {
-    width: 140,
-    gap: 4,
-  },
-  miniPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.97 }],
-  },
-  miniImg: {
-    width: 140,
-    height: 140,
-    borderRadius: RADII.md,
-    backgroundColor: COLORS.imagePlaceholder,
-    marginBottom: 6,
-  },
-  miniBrand: {
-    fontFamily: FONTS.jetbrainsMonoBold,
-    fontSize: 8,
-    letterSpacing: 2,
-    color: COLORS.teal,
-    textTransform: 'uppercase',
-  },
-  miniName: {
-    fontFamily: FONTS.archivoBold,
-    fontSize: 16,
-    color: COLORS.cream,
-  },
-  miniPrice: {
-    fontFamily: FONTS.interSemibold,
+  editText: {
+    fontFamily: FONTS.spaceGroteskBold,
     fontSize: 13,
-    color: COLORS.cream2,
+    color: WEROL_TOKENS.paper,
+    letterSpacing: 0.2,
+  },
+  segments: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: SPACING.section,
+    marginBottom: 10,
+  },
+  seg: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 9,
+    borderRadius: 9999,
+    backgroundColor: WEROL_TOKENS.concrete,
+  },
+  segActive: { backgroundColor: WEROL_TOKENS.lime },
+  segText: {
+    fontFamily: FONTS.spaceGroteskBold,
+    fontSize: 12,
+    letterSpacing: 0.3,
+    color: WEROL_TOKENS.muted,
+  },
+  segTextActive: { color: WEROL_TOKENS.pitch },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 2,
+    paddingHorizontal: SPACING.section,
+  },
+  tile: {
+    borderRadius: 4,
+    overflow: 'hidden',
+    backgroundColor: WEROL_TOKENS.concrete,
+  },
+  tileImg: { width: '100%', height: '100%', backgroundColor: WEROL_TOKENS.concrete },
+  empty: {
+    paddingVertical: 48,
+    alignItems: 'center',
+    paddingHorizontal: SPACING.section,
   },
   emptyText: {
     fontFamily: FONTS.inter,
     fontSize: 14,
-    color: COLORS.cream2,
-    fontStyle: 'italic',
+    color: WEROL_TOKENS.muted,
+    textAlign: 'center',
+  },
+  settings: {
+    marginTop: 28,
+    paddingHorizontal: SPACING.section,
+  },
+  settingsTitle: {
+    fontFamily: FONTS.spaceGroteskBold,
+    fontSize: 16,
+    color: WEROL_TOKENS.paper,
+    marginBottom: 6,
   },
   settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.lg,
-    paddingVertical: 16,
+    gap: 14,
+    paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.ink3,
+    borderBottomColor: WEROL_TOKENS.line,
   },
   settingLabel: {
     flex: 1,
     fontFamily: FONTS.inter,
-    fontSize: 14,
-  },
-  settingRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
+    fontSize: 15,
+    color: WEROL_TOKENS.paper,
   },
   settingTrailing: {
     fontFamily: FONTS.inter,
-    fontSize: 12,
-    color: COLORS.cream3,
-  },
-  orderRow: {
-    backgroundColor: COLORS.ink2,
-    borderRadius: RADII.md,
-    borderWidth: 1,
-    borderColor: COLORS.ink3,
-    padding: SPACING.lg,
-    gap: SPACING.lg,
-    marginBottom: SPACING.lg,
-  },
-  orderHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-  },
-  orderShop: {
-    fontFamily: FONTS.interSemibold,
     fontSize: 14,
-    color: COLORS.cream,
+    color: WEROL_TOKENS.muted,
   },
-  orderDate: {
-    fontFamily: FONTS.jetbrainsMono,
-    fontSize: 10,
-    color: COLORS.cream3,
-    marginTop: 2,
-  },
-  orderStatus: {
+  logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: RADII.pill,
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 20,
+    paddingVertical: 13,
+    borderRadius: 10,
     borderWidth: 1,
+    borderColor: 'rgba(230,57,70,0.4)',
   },
-  orderStatusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  orderStatusText: {
-    fontFamily: FONTS.jetbrainsMonoBold,
-    fontSize: 9,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  orderItems: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-  },
-  orderItemImg: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    backgroundColor: COLORS.imagePlaceholder,
-  },
-  orderTotalBox: {
-    flex: 1,
-    alignItems: 'flex-end',
-  },
-  orderItemCount: {
-    fontFamily: FONTS.jetbrainsMono,
-    fontSize: 10,
-    color: COLORS.cream3,
-    letterSpacing: 0.5,
-  },
-  orderTotal: {
-    fontFamily: FONTS.interSemibold,
-    fontSize: 16,
-    color: COLORS.cream,
-    marginTop: 2,
-  },
-  sizesGrid: {
-    gap: SPACING.lg,
-  },
-  sizeCell: {
-    backgroundColor: COLORS.ink2,
-    borderRadius: RADII.md,
-    borderWidth: 1,
-    borderColor: COLORS.ink3,
-    padding: SPACING.lg,
-    gap: SPACING.md,
-  },
-  sizeLabel: {
-    fontFamily: FONTS.jetbrainsMonoBold,
-    fontSize: 10,
-    letterSpacing: 1.5,
-    color: COLORS.cream3,
-    textTransform: 'uppercase',
-  },
-  sizeOptions: {
-    gap: SPACING.sm,
-  },
-  sizeOption: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: 8,
-    borderRadius: RADII.pill,
-    borderWidth: 1,
-    borderColor: COLORS.ink3,
-    minWidth: 50,
-    alignItems: 'center',
-  },
-  sizeOptionActive: {
-    borderColor: COLORS.teal,
-    backgroundColor: COLORS.teal,
-  },
-  sizeOptionText: {
-    fontFamily: FONTS.interSemibold,
-    fontSize: 13,
-    color: COLORS.cream2,
-  },
-  sizeOptionTextActive: {
-    color: COLORS.ink,
-  },
-  brandsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
-  },
-  brandChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: COLORS.ink2,
-    borderRadius: RADII.pill,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: COLORS.ink3,
-  },
-  brandText: {
-    fontFamily: FONTS.interSemibold,
-    fontSize: 12,
-    color: COLORS.cream,
-  },
-  outfitMini: {
-    width: 130,
-    gap: 4,
-  },
-  outfitMiniStack: {
-    flexDirection: 'row',
-    marginBottom: 6,
-  },
-  outfitMiniThumb: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.ink3,
-    borderWidth: 2,
-    borderColor: COLORS.ink2,
-    overflow: 'hidden',
-  },
-  outfitMiniImg: { width: '100%', height: '100%' },
-  outfitMiniName: {
-    fontFamily: FONTS.archivoBold,
-    fontSize: 13,
-    color: COLORS.cream,
-    letterSpacing: -0.2,
-  },
-  outfitMinaMeta: {
-    fontFamily: FONTS.jetbrainsMono,
-    fontSize: 10,
-    color: COLORS.cream3,
-    letterSpacing: 0.5,
-  },
-  friendMini: {
-    width: 76,
-    alignItems: 'center',
-    gap: 4,
-  },
-  friendAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.ink3,
-  },
-  friendName: {
-    fontFamily: FONTS.interSemibold,
-    fontSize: 11,
-    color: COLORS.cream,
-    textAlign: 'center',
-  },
-  friendHandle: {
-    fontFamily: FONTS.jetbrainsMono,
-    fontSize: 9,
-    color: COLORS.cream3,
-    textAlign: 'center',
+  logoutText: {
+    fontFamily: FONTS.spaceGroteskBold,
+    fontSize: 14,
+    color: '#E63946',
   },
 });
