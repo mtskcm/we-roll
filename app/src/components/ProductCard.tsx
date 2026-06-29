@@ -74,8 +74,8 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDeta
           pointerEvents="none"
         />
 
-        {/* Right rail — like / save / share */}
-        <View style={[styles.rail, { bottom: infoBottomOffset + 188 }]}>
+        {/* Right rail — like / save / share (vertically centred, upper-middle) */}
+        <View style={[styles.rail, { bottom: Math.round(height * 0.46) }]}>
           <RailAction
             Icon={HeartIcon}
             active={liked}

@@ -57,6 +57,13 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
     opacity: 1 - Math.min(1, translateY.value / 120) * 0.85,
   }));
 
+  // Hide the bar on detail screens nested inside a tab (e.g. ProductDetails)
+  // so they can use their own sticky bottom bar.
+  const activeTab = state.routes[state.index] as { state?: { index?: number; routes?: { name: string }[] } };
+  const nested = activeTab.state;
+  const nestedRoute = nested?.routes?.[nested.index ?? 0]?.name;
+  if (nestedRoute === 'ProductDetails') return null;
+
   return (
     <View
       pointerEvents="box-none"
