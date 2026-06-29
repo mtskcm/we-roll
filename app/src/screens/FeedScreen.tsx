@@ -1,9 +1,8 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { FlatList, Linking, StyleSheet, View, useWindowDimensions } from 'react-native';
 import type { ViewToken } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BuyRedirectSheet } from '../components/BuyRedirectSheet';
 import { ProductCard } from '../components/ProductCard';
 import { SwipeHint } from '../components/SwipeHint';
 import { TopNav } from '../components/TopNav';
@@ -34,7 +33,6 @@ export function FeedScreen() {
   const [, setActiveProduct] = useState<Product>(
     PRODUCTS[currentIndex] ?? PRODUCTS[0],
   );
-  const [buyTarget, setBuyTarget] = useState<Product | null>(null);
 
   useEffect(() => {
     const unsubFocus = navigation.addListener('focus', () => {
@@ -85,7 +83,7 @@ export function FeedScreen() {
             product={item}
             height={itemHeight}
             bottomSafeArea={insets.bottom}
-            onBuy={() => setBuyTarget(item)}
+            onBuy={() => Linking.openURL(item.takeItUrl).catch(() => {})}
             onDetails={() => navigation.navigate('ProductDetails', { productId: item.id })}
           />
         )}
@@ -119,8 +117,6 @@ export function FeedScreen() {
           <SwipeHint />
         </View>
       )}
-
-      <BuyRedirectSheet product={buyTarget} onClose={() => setBuyTarget(null)} />
     </View>
   );
 }

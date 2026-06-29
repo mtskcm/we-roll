@@ -1,8 +1,8 @@
 // ProductDetailsScreen — clean (HYPE-style). Header (back · brand · share),
 // big title, product image on a light card, a details list, sticky BUY bar.
 
-import React, { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BackIcon from '../assets/icons/back.svg';
 import BookmarkIcon from '../assets/icons/bookmark.svg';
@@ -10,7 +10,6 @@ import CartIcon from '../assets/icons/cart.svg';
 import HeartIcon from '../assets/icons/heart.svg';
 import ShareIcon from '../assets/icons/share.svg';
 import { BrandBadge } from '../components/BrandBadge';
-import { BuyRedirectSheet } from '../components/BuyRedirectSheet';
 import { useProducts } from '../store/productsStore';
 import { useFeedStore, useIsLiked, useIsSaved } from '../store/feedStore';
 import { useShareStore } from '../store/shareStore';
@@ -34,7 +33,6 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
   const toggleLike = useFeedStore((s) => s.toggleLike);
   const toggleSaved = useFeedStore((s) => s.toggleSaved);
   const openShare = useShareStore((s) => s.openShare);
-  const [buyOpen, setBuyOpen] = useState(false);
 
   const sku = product.id.includes(':') ? product.id.split(':')[1] : product.id;
   const rows: Array<[string, string]> = [
@@ -124,7 +122,7 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
           />
         </Pressable>
         <Pressable
-          onPress={() => setBuyOpen(true)}
+          onPress={() => Linking.openURL(product.takeItUrl).catch(() => {})}
           style={({ pressed }) => [styles.buyBtn, pressed && { opacity: 0.88 }]}
         >
           <CartIcon width={15} height={15} stroke={WEROL_TOKENS.pitch} strokeWidth={2} fill="none" />
@@ -133,8 +131,6 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
           </Text>
         </Pressable>
       </View>
-
-      <BuyRedirectSheet product={buyOpen ? product : null} onClose={() => setBuyOpen(false)} />
     </View>
   );
 }
