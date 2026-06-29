@@ -1,13 +1,11 @@
 // ProductCard — TikTok-clean (redesign v3).
-// Full-bleed image (blurred backdrop for non-full-bleed shots); minimal
-// right rail (like / save / share); bottom-left brand · name · price; a single
-// lime BUY pill. Full product info lives on the detail screen (tap the image).
+// Full-bleed sharp image (cover, fills the whole card); minimal right rail
+// (like / save / share); bottom-left brand · name · price; lime BUY pill.
+// Full product info lives on the detail screen (tap the image).
 
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import type { ImageSourcePropType } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -42,33 +40,8 @@ function formatCount(n: number): string {
   return String(n);
 }
 
-// Resolve an image's intrinsic aspect ratio (width / height).
-function useImageAspectRatio(source: ImageSourcePropType): number {
-  const initial = () => {
-    const r = Image.resolveAssetSource(source);
-    if (r && r.width && r.height) return r.width / r.height;
-    return 0.8;
-  };
-  const [ar, setAr] = useState<number>(initial);
-  useEffect(() => {
-    const r = Image.resolveAssetSource(source);
-    if (r && r.width && r.height) {
-      setAr(r.width / r.height);
-      return;
-    }
-    if (r && r.uri) {
-      let active = true;
-      Image.getSize(r.uri, (w, h) => { if (active && w && h) setAr(w / h); }, () => {});
-      return () => { active = false; };
-    }
-  }, [source]);
-  return ar;
-}
-
 export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDetails }: Props) {
   const infoBottomOffset = BOTTOM_NAV_HEIGHT + bottomSafeArea + 8;
-  const imageZoneHeight = Math.max(0, height - infoBottomOffset - 150);
-  const imageAspect = useImageAspectRatio(product.image);
   const liked = useIsLiked(product.id);
   const saved = useIsSaved(product.id);
   const toggleLike = useFeedStore((s) => s.toggleLike);
@@ -78,21 +51,20 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDeta
   return (
     <View style={[styles.card, { height }]}>
       <View style={styles.imageWrap}>
-        {/* Blurred backdrop for shots that don't fill the frame */}
-        <Image source={product.image} style={styles.backdrop} resizeMode="cover" blurRadius={28} />
-        <View style={styles.backdropDim} pointerEvents="none" />
-        <BlurView intensity={40} tint="dark" style={styles.backdropBlur} pointerEvents="none" />
-        {/* Foreground product image */}
-        <Image
-          source={product.image}
-          style={[styles.image, { aspectRatio: imageAspect, maxHeight: imageZoneHeight }]}
-          resizeMode="cover"
-        />
+        {/* Full-bleed product image */}
+        <Image source={product.image} style={StyleSheet.absoluteFill} resizeMode="cover" />
 
         {/* Tap anywhere on the media → product detail (under the rail/info) */}
         <Pressable style={StyleSheet.absoluteFill} onPress={onDetails} />
 
-        {/* Bottom gradient for overlay legibility */}
+        {/* Top gradient — keeps the WEROL logo + top icons legible on light shots */}
+        <LinearGradient
+          colors={['rgba(10,10,12,0.55)', 'rgba(10,10,12,0)']}
+          locations={[0, 1]}
+          style={styles.topGradient}
+          pointerEvents="none"
+        />
+        {/* Bottom gradient — info/BUY legibility */}
         <LinearGradient
           colors={['rgba(10,10,12,0)', 'rgba(10,10,12,0.5)', 'rgba(10,10,12,0.92)']}
           locations={[0, 0.5, 1]}
@@ -108,11 +80,7 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDeta
             label={formatCount(product.likes + (liked ? 1 : 0))}
             onPress={() => toggleLike(product.id)}
           />
-          <RailAction
-            Icon={BookmarkIcon}
-            active={saved}
-            onPress={() => toggleSaved(product.id)}
-          />
+          <RailAction Icon={BookmarkIcon} active={saved} onPress={() => toggleSaved(product.id)} />
           <RailAction Icon={ShareIcon} onPress={() => openShare(product)} />
         </View>
 
@@ -195,17 +163,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
   },
-  image: {
+  topGradient: {
     position: 'absolute',
-    top: 0,
     left: 0,
     right: 0,
-  },
-  backdrop: { ...StyleSheet.absoluteFillObject },
-  backdropBlur: { ...StyleSheet.absoluteFillObject },
-  backdropDim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,10,12,0.35)',
+    top: 0,
+    height: 130,
   },
   bottomGradient: {
     position: 'absolute',
@@ -251,10 +214,10 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   name: {
-    fontFamily: FONTS.inter,
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.85)',
-    letterSpacing: -0.1,
+    fontFamily: FONTS.spaceGrotesk,
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.92)',
+    letterSpacing: 0,
   },
   priceRow: {
     flexDirection: 'row',
