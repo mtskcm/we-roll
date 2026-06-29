@@ -136,8 +136,8 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   label: {
-    fontFamily: FONTS.jetbrainsMonoBold,
-    fontSize: 9,
-    letterSpacing: 1.2,
+    fontFamily: FONTS.spaceGroteskBold,
+    fontSize: 11,
+    letterSpacing: 0.5,
   },
 });

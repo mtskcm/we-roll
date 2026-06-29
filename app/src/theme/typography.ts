@@ -22,6 +22,10 @@ export const FONTS = {
   jetbrainsMonoRegular: 'JetBrainsMono_400Regular',
   jetbrainsMonoBold: 'JetBrainsMono_700Bold',
 
+  // Nav / accent — Space Grotesk (tab labels, modern micro-type)
+  spaceGrotesk: 'SpaceGrotesk_500Medium',
+  spaceGroteskBold: 'SpaceGrotesk_600SemiBold',
+
   // Backward-compat aliases (old code calls these — point to new families)
   cormorantLight: 'Archivo_900Black',
   cormorantRegular: 'Archivo_800ExtraBold',
