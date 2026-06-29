@@ -6,7 +6,7 @@ const SK: Dict = {
   // Tabs
   'tab.feed': 'HOME',
   'tab.outfit': 'FITS',
-  'tab.fit': 'FIT',
+  'tab.fit': 'CREATE',
   'tab.saved': 'SAVED',
   'tab.search': 'HĽADAJ',
   'tab.notifications': 'INBOX',
@@ -121,7 +121,7 @@ const EN: Dict = {
   // Tabs
   'tab.feed': 'HOME',
   'tab.outfit': 'FITS',
-  'tab.fit': 'FIT',
+  'tab.fit': 'CREATE',
   'tab.saved': 'SAVED',
   'tab.search': 'SEARCH',
   'tab.notifications': 'INBOX',

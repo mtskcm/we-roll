@@ -9,13 +9,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddIcon from '../assets/icons/add.svg';
-import BellIcon from '../assets/icons/bell.svg';
-import BookmarkIcon from '../assets/icons/bookmark.svg';
 import HangerIcon from '../assets/icons/hanger.svg';
 import HomeIcon from '../assets/icons/home.svg';
 import UserIcon from '../assets/icons/user.svg';
 import { useT, type TKey } from '../i18n';
-import { useUnreadCount } from '../store/messagesStore';
 import { useUiStore } from '../store/uiStore';
 import { WEROL_TOKENS } from '../theme/colors';
 import { FONTS } from '../theme/typography';
@@ -29,22 +26,19 @@ type IconComponent = React.FC<{
 }>;
 
 const ICONS: Record<string, { Icon: IconComponent; labelKey: TKey }> = {
-  Home: { Icon: HomeIcon, labelKey: 'tab.feed' },
-  Outfit: { Icon: HangerIcon, labelKey: 'tab.outfit' },     // FITS — other people's outfits
-  Fit: { Icon: AddIcon, labelKey: 'tab.fit' },              // FIT — outfit builder
-  Saved: { Icon: BookmarkIcon, labelKey: 'tab.saved' },
-  Messages: { Icon: BellIcon, labelKey: 'tab.notifications' },
-  Profile: { Icon: UserIcon, labelKey: 'tab.profile' },
+  Home: { Icon: HomeIcon, labelKey: 'tab.feed' },        // HOME — main feed
+  Outfit: { Icon: HangerIcon, labelKey: 'tab.outfit' },  // FITS — community outfits
+  Fit: { Icon: AddIcon, labelKey: 'tab.fit' },           // FIT — outfit builder
+  Profile: { Icon: UserIcon, labelKey: 'tab.profile' },  // ME — profile
 };
 
-const TAB_ORDER = ['Home', 'Outfit', 'Fit', 'Saved', 'Messages', 'Profile'];
+// Saved + Inbox were removed from the bar (reached elsewhere).
+const TAB_ORDER = ['Home', 'Outfit', 'Fit', 'Profile'];
 
 export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const unread = useUnreadCount();
   const chromeHidden = useUiStore((s) => s.chromeHidden);
-  // useT kept for future label re-introduction; currently icon-only.
-  useT();
+  const t = useT();
 
   const orderedRoutes = TAB_ORDER
     .map((name) => state.routes.find((r) => r.name === name))
@@ -52,7 +46,7 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
 
   const translateY = useSharedValue(0);
   useEffect(() => {
-    translateY.value = withTiming(chromeHidden ? 110 : 0, {
+    translateY.value = withTiming(chromeHidden ? 120 : 0, {
       duration: chromeHidden ? 280 : 360,
       easing: chromeHidden ? Easing.in(Easing.cubic) : Easing.out(Easing.cubic),
     });
@@ -60,7 +54,7 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
-    opacity: 1 - Math.min(1, translateY.value / 110) * 0.85,
+    opacity: 1 - Math.min(1, translateY.value / 120) * 0.85,
   }));
 
   return (
@@ -68,13 +62,14 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
       pointerEvents="box-none"
       style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 12) }]}
     >
-      <Animated.View style={[styles.pill, animatedStyle]}>
+      <Animated.View style={[styles.bar, animatedStyle]}>
         {orderedRoutes.map((route) => {
           const index = state.routes.findIndex((r) => r.key === route.key);
           const isFocused = state.index === index;
           const meta = ICONS[route.name] ?? ICONS.Home;
-          const iconColor = isFocused ? WEROL_TOKENS.pitch : WEROL_TOKENS.muted;
+          const color = isFocused ? WEROL_TOKENS.lime : WEROL_TOKENS.muted;
           const { options } = descriptors[route.key];
+          const { Icon } = meta;
 
           const onPress = () => {
             const event = navigation.emit({
@@ -87,8 +82,6 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
             }
           };
 
-          const { Icon } = meta;
-
           return (
             <Pressable
               key={route.key}
@@ -98,29 +91,10 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
               onPress={onPress}
               style={styles.tab}
             >
-              <View
-                style={[
-                  styles.tabInner,
-                  isFocused && styles.tabInnerActive,
-                ]}
-              >
-                <View style={styles.iconWrap}>
-                  <Icon
-                    width={20}
-                    height={20}
-                    stroke={iconColor}
-                    strokeWidth={1.8}
-                    fill="none"
-                  />
-                  {route.name === 'Messages' && unread > 0 && (
-                    <View style={styles.badge}>
-                      <Text style={styles.badgeText}>
-                        {unread > 9 ? '9+' : unread}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </View>
+              <Icon width={23} height={23} stroke={color} strokeWidth={1.8} fill="none" />
+              <Text style={[styles.label, { color }]} numberOfLines={1}>
+                {t(meta.labelKey)}
+              </Text>
             </Pressable>
           );
         })}
@@ -135,20 +109,19 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     alignItems: 'center',
   },
-  pill: {
+  bar: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'stretch',
     backgroundColor: 'rgba(16,16,20,0.94)',
-    borderRadius: 9999,
+    borderRadius: 28,
     borderWidth: 1,
     borderColor: WEROL_TOKENS.line2,
-    paddingHorizontal: 6,
-    paddingVertical: 6,
-    gap: 2,
-    // soft shadow
+    paddingVertical: 10,
+    paddingHorizontal: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.45,
@@ -159,42 +132,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 2,
   },
-  tabInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 9999,
-    minWidth: 44,
-    justifyContent: 'center',
-  },
-  tabInnerActive: {
-    backgroundColor: WEROL_TOKENS.lime,
-    paddingHorizontal: 14,
-  },
-  iconWrap: {
-    position: 'relative',
-  },
-  badge: {
-    position: 'absolute',
-    top: -5,
-    right: -8,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#E63946',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-    borderWidth: 2,
-    borderColor: 'rgba(16,16,20,1)',
-  },
-  badgeText: {
+  label: {
     fontFamily: FONTS.jetbrainsMonoBold,
     fontSize: 9,
-    color: WEROL_TOKENS.paper,
-    lineHeight: 11,
+    letterSpacing: 1.2,
   },
 });
