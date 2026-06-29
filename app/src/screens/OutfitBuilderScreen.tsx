@@ -5,6 +5,7 @@ import {
   Image,
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -18,22 +19,244 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StoryShareSheet } from '../components/StoryShareSheet';
-import { OutfitBuilderPrototype } from './OutfitBuilderPrototype';
 import { useShareStore } from '../store/shareStore';
 import { useUserStore } from '../store/userStore';
 import { OUTFIT_SLOTS, SLOT_BY_ID } from '../data/outfitSlots';
 import { useProducts } from '../store/productsStore';
-import { COLORS } from '../theme/colors';
+import { formatPrice } from '../lib/format';
+import { COLORS, WEROL_TOKENS } from '../theme/colors';
 import { RADII, SPACING } from '../theme/spacing';
 import { FONTS, TEXT_STYLES } from '../theme/typography';
 import { useColors } from '../theme/useColors';
 import type { OutfitSlotId, Product } from '../types';
 
-// PROTOTYPE GATE — dev builds cycle outfit-builder variants via the floating
-// bar; production renders the original screen. See OutfitBuilderPrototype.tsx.
+// CREATE — flat-lay collage builder (path C). Pick a piece per slot; they
+// land as cards in an editorial collage. Save the fit or share it as a story.
 export function OutfitBuilderScreen() {
-  return <OutfitBuilderPrototype Original={OutfitBuilderOriginal} />;
+  return <CollageBuilder />;
 }
+
+function CollageBuilder() {
+  const insets = useSafeAreaInsets();
+  const C = useColors();
+  const PRODUCTS = useProducts();
+  const draftOutfit = useUserStore((u) => u.draftOutfit);
+  const setSlot = useUserStore((u) => u.setSlot);
+  const clearDraft = useUserStore((u) => u.clearDraftOutfit);
+  const saveOutfit = useUserStore((u) => u.saveOutfit);
+  const showToast = useShareStore((sh) => sh.showToast);
+  const [pickerSlot, setPickerSlot] = useState<OutfitSlotId | null>(null);
+  const [storyOpen, setStoryOpen] = useState(false);
+
+  const productFor = (slotId: OutfitSlotId): Product | undefined => {
+    const pid = draftOutfit[slotId];
+    return pid ? PRODUCTS.find((p) => p.id === pid) : undefined;
+  };
+  const filled = Object.values(draftOutfit).filter(Boolean) as string[];
+  const pieceCount = filled.length;
+  const totalPrice = filled.reduce((s, pid) => s + (PRODUCTS.find((x) => x.id === pid)?.price.current ?? 0), 0);
+  const currency = PRODUCTS.find((x) => x.id === filled[0])?.price.currency ?? 'EUR';
+  const heroImage = filled.length ? PRODUCTS.find((p) => p.id === filled[0])?.image : undefined;
+
+  const handleSave = () => {
+    if (!pieceCount) return;
+    saveOutfit();
+    showToast(`FIT uložený · ${pieceCount} kúskov`);
+  };
+
+  const Tile = ({ slotId, style }: { slotId: OutfitSlotId; style?: object }) => {
+    const p = productFor(slotId);
+    return (
+      <Pressable
+        onPress={() => setPickerSlot(slotId)}
+        style={[col.tile, p ? col.tileFilled : col.tileEmpty, style]}
+      >
+        {p ? (
+          <>
+            <Image source={p.image} style={col.tileImg} resizeMode="contain" />
+            <View style={col.priceTag}>
+              <Text style={col.priceTagText}>{formatPrice(p.price.current, p.price.currency)}</Text>
+            </View>
+            <Pressable onPress={() => setSlot(slotId, undefined)} hitSlop={6} style={col.tileClear}>
+              <Ionicons name="close" size={12} color={WEROL_TOKENS.paper} />
+            </Pressable>
+          </>
+        ) : (
+          <>
+            <Text style={col.tilePlus}>+</Text>
+            <Text style={col.tileLabel}>{SLOT_BY_ID[slotId].label}</Text>
+          </>
+        )}
+      </Pressable>
+    );
+  };
+
+  return (
+    <View style={[col.root, { paddingTop: insets.top + 14 }]}>
+      <View style={col.header}>
+        <View>
+          <Text style={col.eyebrow}>CREATE</Text>
+          <Text style={col.title}>Poskladaj svoj fit</Text>
+        </View>
+        {pieceCount > 0 && (
+          <Pressable onPress={clearDraft} hitSlop={8} style={col.clearBtn}>
+            <Ionicons name="refresh" size={14} color={WEROL_TOKENS.muted} />
+            <Text style={col.clearText}>Vyčistiť</Text>
+          </Pressable>
+        )}
+      </View>
+
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+        <View style={col.row}>
+          <Tile slotId="top" style={{ flex: 1.5, aspectRatio: 0.92 }} />
+          <View style={{ flex: 1, gap: 10 }}>
+            <Tile slotId="head" style={{ flex: 1 }} />
+            <Tile slotId="mid" style={{ flex: 1 }} />
+          </View>
+        </View>
+        <View style={[col.row, { marginTop: 10 }]}>
+          <Tile slotId="bottom" style={{ flex: 1, aspectRatio: 0.8 }} />
+          <Tile slotId="feet" style={{ flex: 1.1, aspectRatio: 0.9 }} />
+        </View>
+      </ScrollView>
+
+      <View style={[col.bottom, { paddingBottom: Math.max(insets.bottom, 12) + 78 }]}>
+        <View style={col.summary}>
+          <Text style={col.summaryLabel}>{pieceCount}/5 KÚSKOV</Text>
+          <Text style={col.summaryTotal}>{formatPrice(totalPrice, currency)}</Text>
+        </View>
+        <View style={col.actions}>
+          <Pressable
+            onPress={handleSave}
+            disabled={!pieceCount}
+            style={({ pressed }) => [col.saveBtn, !pieceCount && { opacity: 0.4 }, pressed && pieceCount > 0 && { opacity: 0.85 }]}
+          >
+            <Text style={col.saveText}>SAVE FIT</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => pieceCount && setStoryOpen(true)}
+            disabled={!pieceCount}
+            style={({ pressed }) => [col.shareBtn, !pieceCount && { opacity: 0.4 }, pressed && pieceCount > 0 && { opacity: 0.7 }]}
+          >
+            <Text style={col.shareText}>SHARE</Text>
+          </Pressable>
+        </View>
+      </View>
+
+      <SlotPickerSheet
+        slotId={pickerSlot}
+        onClose={() => setPickerSlot(null)}
+        onPick={(pid) => { if (pickerSlot) setSlot(pickerSlot, pid); setPickerSlot(null); }}
+        onClear={() => { if (pickerSlot) setSlot(pickerSlot, undefined); setPickerSlot(null); }}
+        C={C}
+      />
+      <StoryShareSheet
+        visible={storyOpen}
+        outfit={{ pieceCount, totalPrice, currency: '€', heroImage }}
+        onClose={() => setStoryOpen(false)}
+        onCopied={() => showToast('Link copied')}
+      />
+    </View>
+  );
+}
+
+const col = StyleSheet.create({
+  root: { flex: 1, backgroundColor: WEROL_TOKENS.pitch, paddingHorizontal: 20 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  eyebrow: {
+    fontFamily: FONTS.jetbrainsMonoBold,
+    fontSize: 10,
+    letterSpacing: 2,
+    color: WEROL_TOKENS.lime,
+    marginBottom: 4,
+  },
+  title: { fontFamily: FONTS.spaceGroteskBold, fontSize: 24, letterSpacing: -0.4, color: WEROL_TOKENS.paper },
+  clearBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 99,
+    borderWidth: 1,
+    borderColor: WEROL_TOKENS.line2,
+  },
+  clearText: { fontFamily: FONTS.interSemibold, fontSize: 11, color: WEROL_TOKENS.muted },
+  row: { flexDirection: 'row', gap: 10 },
+  tile: {
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    minHeight: 96,
+  },
+  tileFilled: { backgroundColor: '#F3F3F5' },
+  tileEmpty: {
+    backgroundColor: WEROL_TOKENS.concrete,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: WEROL_TOKENS.line2,
+  },
+  tileImg: { width: '86%', height: '86%' },
+  priceTag: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: WEROL_TOKENS.lime,
+    transform: [{ rotate: '-5deg' }],
+  },
+  priceTagText: { fontFamily: FONTS.archivoBold, fontSize: 11, color: WEROL_TOKENS.pitch },
+  tileClear: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(10,10,12,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tilePlus: { fontFamily: FONTS.archivo, fontSize: 24, color: WEROL_TOKENS.muted2 },
+  tileLabel: { fontFamily: FONTS.jetbrainsMonoBold, fontSize: 8, letterSpacing: 1.5, color: WEROL_TOKENS.muted2, marginTop: 2 },
+  bottom: { paddingTop: 14 },
+  summary: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  summaryLabel: { fontFamily: FONTS.jetbrainsMonoBold, fontSize: 10, letterSpacing: 1.5, color: WEROL_TOKENS.muted },
+  summaryTotal: { fontFamily: FONTS.archivo, fontSize: 28, letterSpacing: -1, color: WEROL_TOKENS.paper },
+  actions: { flexDirection: 'row', gap: 8 },
+  saveBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: WEROL_TOKENS.lime,
+    borderRadius: 12,
+    paddingVertical: 15,
+  },
+  saveText: { fontFamily: FONTS.archivoBold, fontSize: 13, letterSpacing: 0.5, color: WEROL_TOKENS.pitch },
+  shareBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    paddingVertical: 15,
+    borderWidth: 1,
+    borderColor: WEROL_TOKENS.line2,
+  },
+  shareText: { fontFamily: FONTS.archivoBold, fontSize: 13, letterSpacing: 0.5, color: WEROL_TOKENS.paper },
+});
 
 export function OutfitBuilderOriginal() {
   const insets = useSafeAreaInsets();
