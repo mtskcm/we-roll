@@ -19,6 +19,9 @@
       "package": "com.werol.app",
       "adaptiveIcon": {
         "backgroundColor": "#0c0c0a"
+      },
+      "runtimeVersion": {
+        "policy": "appVersion"
       }
     },
     "web": {
@@ -33,6 +36,9 @@
         "projectId": "d487033e-74be-4208-8fa1-46241f7f29ed"
       }
     },
-    "owner": "mkacmar"
+    "owner": "mkacmar",
+    "updates": {
+      "url": "https://u.expo.dev/d487033e-74be-4208-8fa1-46241f7f29ed"
+    }
   }
 }
