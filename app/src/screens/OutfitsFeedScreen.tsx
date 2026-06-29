@@ -1,94 +1,156 @@
-// OutfitsFeedScreen — FITS tab: 2-col discover grid of user-uploaded outfits.
+// OutfitsFeedScreen — FITS tab: IG-style vertical feed of community outfits.
 
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import BellIcon from '../assets/icons/bell.svg';
+import AddIcon from '../assets/icons/add.svg';
+import BookmarkIcon from '../assets/icons/bookmark.svg';
 import HeartIcon from '../assets/icons/heart.svg';
-import SearchIcon from '../assets/icons/search.svg';
-import WordmarkOnDark from '../assets/logos/wordmark-on-dark.svg';
+import SendIcon from '../assets/icons/send.svg';
 import { OUTFITS, type UserOutfit } from '../data/outfits';
+import {
+  useIsFollowed,
+  useIsOutfitBookmarked,
+  useIsOutfitLiked,
+  useOutfitFeedStore,
+} from '../store/outfitFeedStore';
+import { useShareStore } from '../store/shareStore';
 import { WEROL_TOKENS } from '../theme/colors';
 import { SPACING } from '../theme/spacing';
 import { FONTS } from '../theme/typography';
 
 const BOTTOM_NAV_HEIGHT = 78;
 
+function formatCount(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K`;
+  return String(n);
+}
+function relTime(ts: number): string {
+  const m = Math.floor((Date.now() - ts) / 60000);
+  if (m < 60) return `${Math.max(1, m)}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
+}
+
 export function OutfitsFeedScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const showToast = useShareStore((s) => s.showToast);
 
   return (
     <View style={styles.root}>
       <FlatList
         data={OUTFITS}
         keyExtractor={(o) => o.id}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
         contentContainerStyle={{
-          paddingTop: insets.top + 80,
-          paddingBottom: BOTTOM_NAV_HEIGHT + insets.bottom + 16,
-          paddingHorizontal: 12,
-          gap: 12,
+          paddingTop: insets.top + 52,
+          paddingBottom: BOTTOM_NAV_HEIGHT + insets.bottom + 24,
         }}
-        renderItem={({ item }) => <OutfitCard outfit={item} onPress={() => {}} />}
-        ListHeaderComponent={
-          <View style={styles.listHeader}>
-            <Text style={styles.eyebrow}>— FITS</Text>
-            <Text style={styles.title}>
-              Outfity od{'\n'}<Text style={styles.titleAccent}>komunity.</Text>
-            </Text>
-          </View>
-        }
         showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <OutfitPost
+            outfit={item}
+            onOpen={() => navigation.navigate('OutfitDetail', { outfitId: item.id })}
+          />
+        )}
+        ItemSeparatorComponent={() => <View style={{ height: 24 }} />}
       />
 
-      <View style={[styles.topOverlay, { paddingTop: insets.top + 6 }]} pointerEvents="box-none">
-        <View style={styles.topRow}>
-          <WordmarkOnDark width={108} height={20} />
-          <View style={styles.topRight}>
-            <Pressable
-              onPress={() => navigation.navigate('Search')}
-              style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.6 }]}
-            >
-              <SearchIcon width={20} height={20} stroke={WEROL_TOKENS.paper} strokeWidth={1.8} fill="none" />
-            </Pressable>
-            <Pressable
-              onPress={() => navigation.navigate('Messages')}
-              style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.6 }]}
-            >
-              <BellIcon width={20} height={20} stroke={WEROL_TOKENS.paper} strokeWidth={1.8} fill="none" />
-            </Pressable>
-          </View>
-        </View>
+      {/* Top bar */}
+      <View style={[styles.topBar, { paddingTop: insets.top + 4 }]}>
+        <Text style={styles.topTitle}>FITS</Text>
+        <Pressable
+          onPress={() => showToast('Pridať vlastný fit — už čoskoro')}
+          hitSlop={10}
+          style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.6 }]}
+        >
+          <AddIcon width={24} height={24} stroke={WEROL_TOKENS.paper} strokeWidth={1.9} fill="none" />
+        </Pressable>
       </View>
     </View>
   );
 }
 
-function OutfitCard({ outfit, onPress }: { outfit: UserOutfit; onPress: () => void }) {
+function OutfitPost({ outfit, onOpen }: { outfit: UserOutfit; onOpen: () => void }) {
+  const liked = useIsOutfitLiked(outfit.id);
+  const bookmarked = useIsOutfitBookmarked(outfit.id);
+  const followed = useIsFollowed(outfit.ownerHandle);
+  const toggleLike = useOutfitFeedStore((s) => s.toggleLike);
+  const toggleBookmark = useOutfitFeedStore((s) => s.toggleBookmark);
+  const toggleFollow = useOutfitFeedStore((s) => s.toggleFollow);
+
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
-    >
-      <Image source={outfit.image} style={styles.cardImage} resizeMode="cover" />
-
-      <View style={styles.cardOverlay}>
-        <View style={styles.ownerRow}>
-          <View style={[styles.ownerAvatar, { backgroundColor: outfit.ownerTint }]}>
-            <Text style={styles.ownerInitials}>{outfit.ownerInitials}</Text>
-          </View>
-          <Text style={styles.ownerHandle} numberOfLines={1}>{outfit.ownerHandle}</Text>
+    <View style={styles.post}>
+      {/* Header */}
+      <View style={styles.postHead}>
+        <View style={[styles.avatar, { backgroundColor: outfit.ownerTint }]}>
+          <Text style={styles.avatarInitials}>{outfit.ownerInitials}</Text>
         </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.handle}>@{outfit.ownerHandle}</Text>
+          <Text style={styles.time}>{relTime(outfit.createdAt)} · {outfit.taggedProductIds.length} kúskov</Text>
+        </View>
+        <Pressable
+          onPress={() => toggleFollow(outfit.ownerHandle)}
+          style={({ pressed }) => [
+            followed ? styles.followingBtn : styles.followBtn,
+            pressed && { opacity: 0.7 },
+          ]}
+        >
+          <Text style={followed ? styles.followingText : styles.followText}>
+            {followed ? 'FOLLOWING' : 'FOLLOW'}
+          </Text>
+        </Pressable>
       </View>
 
-      <View style={styles.likeBadge}>
-        <HeartIcon width={11} height={11} stroke={WEROL_TOKENS.pitch} fill={WEROL_TOKENS.pitch} strokeWidth={1.8} />
-        <Text style={styles.likeText}>{outfit.likes}</Text>
+      {/* Image */}
+      <Pressable onPress={onOpen}>
+        <Image source={outfit.image} style={styles.image} resizeMode="cover" />
+      </Pressable>
+
+      {/* Actions */}
+      <View style={styles.actions}>
+        <Pressable onPress={() => toggleLike(outfit.id)} hitSlop={8} style={styles.actionBtn}>
+          <HeartIcon
+            width={25} height={25}
+            stroke={liked ? WEROL_TOKENS.lime : WEROL_TOKENS.paper}
+            fill={liked ? WEROL_TOKENS.lime : 'none'}
+            strokeWidth={1.8}
+          />
+          <Text style={styles.actionCount}>{formatCount(outfit.likes + (liked ? 1 : 0))}</Text>
+        </Pressable>
+        <Pressable onPress={onOpen} hitSlop={8} style={styles.actionBtn}>
+          <SendIcon width={23} height={23} stroke={WEROL_TOKENS.paper} strokeWidth={1.8} fill="none" />
+          <Text style={styles.actionCount}>{outfit.comments.length}</Text>
+        </Pressable>
+        <View style={{ flex: 1 }} />
+        <Pressable onPress={() => toggleBookmark(outfit.id)} hitSlop={8} style={styles.actionBtn}>
+          <BookmarkIcon
+            width={24} height={24}
+            stroke={bookmarked ? WEROL_TOKENS.lime : WEROL_TOKENS.paper}
+            fill={bookmarked ? WEROL_TOKENS.lime : 'none'}
+            strokeWidth={1.8}
+          />
+        </Pressable>
       </View>
-    </Pressable>
+
+      {/* Caption + comments */}
+      {!!outfit.caption && (
+        <Text style={styles.caption}>
+          <Text style={styles.captionHandle}>@{outfit.ownerHandle} </Text>
+          {outfit.caption}
+        </Text>
+      )}
+      {outfit.comments.length > 0 && (
+        <Pressable onPress={onOpen}>
+          <Text style={styles.viewComments}>
+            Zobraziť všetkých {outfit.comments.length} komentárov
+          </Text>
+        </Pressable>
+      )}
+    </View>
   );
 }
 
@@ -97,121 +159,124 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: WEROL_TOKENS.pitch,
   },
-  topOverlay: {
+  topBar: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: SPACING.section,
-    paddingBottom: SPACING.md,
-    backgroundColor: 'rgba(10,10,12,0.85)',
-  },
-  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: SPACING.section,
+    paddingBottom: 10,
+    backgroundColor: 'rgba(10,10,12,0.92)',
   },
-  topRight: {
-    flexDirection: 'row',
-    gap: 12,
+  topTitle: {
+    fontFamily: FONTS.spaceGroteskBold,
+    fontSize: 20,
+    letterSpacing: 0.5,
+    color: WEROL_TOKENS.paper,
   },
-  iconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  addBtn: {
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(22,22,26,0.6)',
-    borderWidth: 1,
-    borderColor: WEROL_TOKENS.line,
   },
-  listHeader: {
-    paddingHorizontal: 4,
-    paddingBottom: 16,
-    paddingTop: 4,
-    gap: 8,
+  post: {
+    gap: 10,
   },
-  eyebrow: {
-    fontFamily: FONTS.jetbrainsMonoBold,
+  postHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: SPACING.section,
+  },
+  avatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitials: {
+    fontFamily: FONTS.archivoBold,
+    fontSize: 13,
+    color: WEROL_TOKENS.paper,
+    letterSpacing: -0.3,
+  },
+  handle: {
+    fontFamily: FONTS.spaceGroteskBold,
+    fontSize: 14,
+    color: WEROL_TOKENS.paper,
+  },
+  time: {
+    fontFamily: FONTS.inter,
     fontSize: 11,
-    letterSpacing: 3,
-    color: WEROL_TOKENS.lime,
+    color: WEROL_TOKENS.muted2,
+    marginTop: 1,
   },
-  title: {
-    fontFamily: FONTS.archivo,
-    fontSize: 32,
-    letterSpacing: -1.2,
-    lineHeight: 34,
-    color: WEROL_TOKENS.paper,
-  },
-  titleAccent: {
-    color: WEROL_TOKENS.lime,
-  },
-  row: {
-    gap: 12,
-  },
-  card: {
-    flex: 1,
-    aspectRatio: 0.72,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: WEROL_TOKENS.concrete,
-    position: 'relative',
-  },
-  cardImage: {
-    width: '100%',
-    height: '100%',
-  },
-  cardOverlay: {
-    position: 'absolute',
-    left: 8,
-    right: 8,
-    bottom: 8,
-    padding: 8,
-    backgroundColor: 'rgba(10,10,12,0.7)',
-    borderRadius: 8,
-  },
-  ownerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  ownerAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ownerInitials: {
-    fontFamily: FONTS.archivoBold,
-    fontSize: 10,
-    letterSpacing: -0.2,
-    color: WEROL_TOKENS.paper,
-  },
-  ownerHandle: {
-    flex: 1,
-    fontFamily: FONTS.jetbrainsMono,
-    fontSize: 10,
-    color: WEROL_TOKENS.paper,
-    letterSpacing: 0.4,
-  },
-  likeBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  followBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 9999,
     backgroundColor: WEROL_TOKENS.lime,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 8,
   },
-  likeText: {
+  followText: {
     fontFamily: FONTS.archivoBold,
     fontSize: 10,
+    letterSpacing: 0.6,
     color: WEROL_TOKENS.pitch,
-    letterSpacing: -0.2,
+  },
+  followingBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: WEROL_TOKENS.line2,
+  },
+  followingText: {
+    fontFamily: FONTS.archivoBold,
+    fontSize: 10,
+    letterSpacing: 0.6,
+    color: WEROL_TOKENS.muted,
+  },
+  image: {
+    width: '100%',
+    aspectRatio: 0.82,
+    backgroundColor: WEROL_TOKENS.concrete,
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 18,
+    paddingHorizontal: SPACING.section,
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  actionCount: {
+    fontFamily: FONTS.archivoBold,
+    fontSize: 13,
+    color: WEROL_TOKENS.paper,
+  },
+  caption: {
+    fontFamily: FONTS.inter,
+    fontSize: 14,
+    lineHeight: 19,
+    color: 'rgba(255,255,255,0.92)',
+    paddingHorizontal: SPACING.section,
+  },
+  captionHandle: {
+    fontFamily: FONTS.spaceGroteskBold,
+    color: WEROL_TOKENS.paper,
+  },
+  viewComments: {
+    fontFamily: FONTS.inter,
+    fontSize: 13,
+    color: WEROL_TOKENS.muted,
+    paddingHorizontal: SPACING.section,
   },
 });

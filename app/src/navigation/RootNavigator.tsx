@@ -7,6 +7,7 @@ import { TabSwipeWrapper } from '../components/TabSwipeWrapper';
 import { FeedScreen } from '../screens/FeedScreen';
 import { MessagesScreen } from '../screens/MessagesScreen';
 import { OutfitBuilderScreen } from '../screens/OutfitBuilderScreen';
+import { OutfitDetailScreen } from '../screens/OutfitDetailScreen';
 import { OutfitsFeedScreen } from '../screens/OutfitsFeedScreen';
 import { ProductDetailsScreen } from '../screens/ProductDetailsScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
@@ -23,6 +24,7 @@ import { useColors } from '../theme/useColors';
 const Tab = createBottomTabNavigator();
 const AuthStack = createNativeStackNavigator();
 const HomeStackNav = createNativeStackNavigator();
+const OutfitStackNav = createNativeStackNavigator();
 
 function AuthFlow() {
   const showToast = useShareStore((s) => s.showToast);
@@ -81,6 +83,22 @@ function HomeStack() {
   );
 }
 
+function OutfitStack() {
+  return (
+    <OutfitStackNav.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: '#0A0A0C' },
+        animation: 'slide_from_right',
+      }}
+    >
+      <OutfitStackNav.Screen name="OutfitsFeed" component={OutfitsFeedScreen} />
+      <OutfitStackNav.Screen name="OutfitDetail" component={OutfitDetailScreen} />
+      <OutfitStackNav.Screen name="ProductDetails" component={ProductDetailsScreen} />
+    </OutfitStackNav.Navigator>
+  );
+}
+
 export function RootNavigator() {
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
   const themeMode = useSettingsStore((s) => s.theme);
@@ -111,7 +129,7 @@ export function RootNavigator() {
             {() => <TabSwipeWrapper><HomeStack /></TabSwipeWrapper>}
           </Tab.Screen>
           <Tab.Screen name="Outfit">
-            {() => <TabSwipeWrapper><OutfitsFeedScreen /></TabSwipeWrapper>}
+            {() => <TabSwipeWrapper><OutfitStack /></TabSwipeWrapper>}
           </Tab.Screen>
           <Tab.Screen name="Fit">
             {() => <TabSwipeWrapper><OutfitBuilderScreen /></TabSwipeWrapper>}

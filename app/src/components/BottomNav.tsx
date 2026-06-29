@@ -62,7 +62,7 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
   const activeTab = state.routes[state.index] as { state?: { index?: number; routes?: { name: string }[] } };
   const nested = activeTab.state;
   const nestedRoute = nested?.routes?.[nested.index ?? 0]?.name;
-  if (nestedRoute === 'ProductDetails') return null;
+  if (nestedRoute === 'ProductDetails' || nestedRoute === 'OutfitDetail') return null;
 
   return (
     <View
