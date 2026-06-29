@@ -1,9 +1,8 @@
-// TopNav — Maroš v2 design.
-// WEROL. wordmark left, search + bell icon buttons right.
+// TopNav — WEROL wordmark left, search (magnifier) right. Transparent;
+// floats over the full-bleed feed image.
 
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import BellIcon from '../assets/icons/bell.svg';
 import SearchIcon from '../assets/icons/search.svg';
 import WordmarkOnDark from '../assets/logos/wordmark-on-dark.svg';
 import { WEROL_TOKENS } from '../theme/colors';
@@ -11,32 +10,23 @@ import { SPACING } from '../theme/spacing';
 
 type Props = {
   onSearch: () => void;
-  onNotifications?: () => void;
 };
 
-export function TopNav({ onSearch, onNotifications }: Props) {
+export function TopNav({ onSearch }: Props) {
   return (
     <View style={styles.root}>
       <View style={styles.logoArea}>
         <WordmarkOnDark width={108} height={20} />
       </View>
 
-      <View style={styles.rightArea}>
-        <Pressable
-          accessibilityLabel="Search"
-          onPress={onSearch}
-          style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.6 }]}
-        >
-          <SearchIcon width={20} height={20} stroke={WEROL_TOKENS.paper} strokeWidth={1.8} fill="none" />
-        </Pressable>
-        <Pressable
-          accessibilityLabel="Notifications"
-          onPress={onNotifications}
-          style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.6 }]}
-        >
-          <BellIcon width={20} height={20} stroke={WEROL_TOKENS.paper} strokeWidth={1.8} fill="none" />
-        </Pressable>
-      </View>
+      <Pressable
+        accessibilityLabel="Search"
+        onPress={onSearch}
+        hitSlop={10}
+        style={({ pressed }) => [styles.searchBtn, pressed && { opacity: 0.6 }]}
+      >
+        <SearchIcon width={25} height={25} stroke={WEROL_TOKENS.paper} strokeWidth={1.9} fill="none" />
+      </Pressable>
     </View>
   );
 }
@@ -47,27 +37,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.section,
-    paddingTop: 4,
-    paddingBottom: 4,
-    gap: SPACING.md,
+    paddingTop: 6,
+    paddingBottom: 6,
   },
   logoArea: {
     flexDirection: 'row',
     alignItems: 'center',
+    // subtle shadow so the white wordmark reads on light shots
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
   },
-  rightArea: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  iconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  searchBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(22,22,26,0.6)',
-    borderWidth: 1,
-    borderColor: WEROL_TOKENS.line,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
   },
 });
