@@ -5,6 +5,7 @@ import React from 'react';
 import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddIcon from '../assets/icons/add.svg';
+import WordmarkOnDark from '../assets/logos/wordmark-on-dark.svg';
 import BookmarkIcon from '../assets/icons/bookmark.svg';
 import HeartIcon from '../assets/icons/heart.svg';
 import SendIcon from '../assets/icons/send.svg';
@@ -60,7 +61,7 @@ export function OutfitsFeedScreen() {
 
       {/* Top bar */}
       <View style={[styles.topBar, { paddingTop: insets.top + 4 }]}>
-        <Text style={styles.topTitle}>FITS</Text>
+        <WordmarkOnDark width={104} height={19} />
         <Pressable
           onPress={() => showToast('Pridať vlastný fit — už čoskoro')}
           hitSlop={10}

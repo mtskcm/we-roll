@@ -16,6 +16,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import WordmarkOnDark from '../assets/logos/wordmark-on-dark.svg';
 import { LanguageSheet } from '../components/LanguageSheet';
 import { useT } from '../i18n';
 import { useProducts } from '../store/productsStore';
@@ -75,7 +76,7 @@ export function ProfileScreen() {
     <View style={styles.root}>
       {/* Top bar */}
       <View style={[styles.topBar, { paddingTop: insets.top + 4 }]}>
-        <Text style={styles.topHandle} numberOfLines={1}>@{profile.handle.replace(/^@/, '')}</Text>
+        <WordmarkOnDark width={104} height={19} />
         <View style={styles.topActions}>
           <Pressable onPress={() => navigation.navigate('Messages')} hitSlop={8} style={styles.topBtn}>
             <Ionicons name="notifications-outline" size={24} color={WEROL_TOKENS.paper} />
