@@ -11,7 +11,9 @@ export function currencySymbol(currency?: string): string {
   }
 }
 
-/** e.g. (39, 'EUR') → "39 €" */
+/** e.g. (39, 'EUR') → "39 €". Rounds to 2 decimals and strips trailing zeros
+ *  so float sums like 34.9 + 24.9 don't render as "59.800000000000004". */
 export function formatPrice(value: number, currency?: string): string {
-  return `${value} ${currencySymbol(currency)}`.trim();
+  const rounded = Number.isFinite(value) ? Number(value.toFixed(2)) : 0;
+  return `${rounded} ${currencySymbol(currency)}`.trim();
 }
