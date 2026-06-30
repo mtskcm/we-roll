@@ -14,6 +14,8 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import WordmarkOnDark from '../assets/logos/wordmark-on-dark.svg';
 import { StoryShareSheet } from '../components/StoryShareSheet';
@@ -107,6 +109,27 @@ export function FigureBuilderScreen() {
   // mismatch — that's why the bare figure used to render off-centre/stale).
   const figureSource = { uri: figureImg ?? MANNEQUIN[gender] };
 
+  // Drag the figure to tilt it gently left/right (2.5D), springs back on release.
+  // Runs on the UI thread (gesture-handler + reanimated) so it stays smooth.
+  const rot = useSharedValue(0);
+  const pan = useMemo(
+    () =>
+      Gesture.Pan()
+        .onUpdate((e) => {
+          'worklet';
+          const v = e.translationX * 0.16;
+          rot.value = v < -26 ? -26 : v > 26 ? 26 : v;
+        })
+        .onEnd(() => {
+          'worklet';
+          rot.value = withSpring(0, { damping: 14, stiffness: 120 });
+        }),
+    [rot],
+  );
+  const figureAnim = useAnimatedStyle(() => ({
+    transform: [{ perspective: 900 }, { rotateY: `${rot.value}deg` }, { scale: 1.05 }],
+  }));
+
   const renderStrip = (items: Product[], slot: 'top' | 'bottom') => (
     <View style={{ display: activeSlot === slot ? 'flex' : 'none' }}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
@@ -128,9 +151,15 @@ export function FigureBuilderScreen() {
 
   return (
     <View style={styles.root}>
-      {/* Full-bleed figure (like the feed); the bottom controls crop the legs,
-          so you see head-to-thighs. Centred mannequin → cover stays centred. */}
-      <Image source={figureSource} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      {/* Full-bleed figure (like the feed); drag to tilt it gently left/right.
+          The bottom controls crop the legs, so you see head-to-thighs. */}
+      <GestureDetector gesture={pan}>
+        <Animated.Image
+          source={figureSource}
+          style={[StyleSheet.absoluteFill, figureAnim]}
+          resizeMode="cover"
+        />
+      </GestureDetector>
 
       {/* Top gradient + WEROL bar + gender toggle */}
       <LinearGradient
