@@ -70,5 +70,7 @@ export type Outfit = {
   id: string;
   name: string;
   slots: SlotMap;
+  /** Dressed-figure snapshot (FASHN result URL) when saved from the AI builder. */
+  image?: string;
   createdAt: number;
 };

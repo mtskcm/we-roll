@@ -28,7 +28,7 @@ type Actions = {
   toggleBrand: (brand: string) => void;
   setSlot: (slot: OutfitSlotId, productId: string | undefined) => void;
   clearDraftOutfit: () => void;
-  saveOutfit: (name?: string) => void;
+  saveOutfit: (name?: string, image?: string) => void;
   deleteOutfit: (id: string) => void;
 };
 
@@ -83,7 +83,7 @@ export const useUserStore = create<State & Actions>()(
           return { draftOutfit: next };
         }),
       clearDraftOutfit: () => set({ draftOutfit: {} }),
-      saveOutfit: (name) =>
+      saveOutfit: (name, image) =>
         set((s) => {
           const slots = s.draftOutfit;
           const count = Object.keys(slots).length;
@@ -93,6 +93,7 @@ export const useUserStore = create<State & Actions>()(
             id: `fit-${Date.now()}`,
             name: name?.trim() || `FIT N°${num}`,
             slots: { ...slots },
+            image,
             createdAt: Date.now(),
           };
           return { savedOutfits: [outfit, ...s.savedOutfits], draftOutfit: {} };
