@@ -3,6 +3,18 @@
 import type { ImageSourcePropType } from 'react-native';
 import { PRODUCTS } from './products';
 
+// Curated full-body outfit photos for the FITS feed (mock community posts).
+const OUTFIT_IMAGES: ImageSourcePropType[] = [
+  require('../assets/outfits/o1.jpg'),
+  require('../assets/outfits/o2.jpg'),
+  require('../assets/outfits/o3.jpg'),
+  require('../assets/outfits/o4.jpg'),
+  require('../assets/outfits/o5.jpg'),
+  require('../assets/outfits/o6.jpg'),
+  require('../assets/outfits/o7.jpg'),
+  require('../assets/outfits/o8.jpg'),
+];
+
 export type OutfitComment = {
   id: string;
   authorHandle: string;
@@ -101,7 +113,7 @@ export const OUTFITS: UserOutfit[] = HANDLES.map(([handle, initials], i) => ({
   ownerHandle: handle,
   ownerInitials: initials,
   ownerTint: TINTS[i % TINTS.length],
-  image: PRODUCTS[i % PRODUCTS.length].image,
+  image: OUTFIT_IMAGES[i % OUTFIT_IMAGES.length],
   caption: CAPTIONS[i % CAPTIONS.length],
   likes: 80 + ((i * 137) % 920),
   savedCount: 10 + ((i * 53) % 180),

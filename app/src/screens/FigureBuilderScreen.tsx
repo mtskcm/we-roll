@@ -17,6 +17,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
+  FadeIn,
+  SlideInDown,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -98,7 +100,7 @@ export function FigureBuilderScreen() {
     [rot],
   );
   const figureAnim = useAnimatedStyle(() => ({
-    transform: [{ perspective: 900 }, { rotateY: `${rot.value}deg` }, { scale: 1.05 }],
+    transform: [{ perspective: 900 }, { rotateY: `${rot.value}deg` }, { scale: 1.04 }],
   }));
 
   const onDress = async () => {
@@ -199,10 +201,12 @@ export function FigureBuilderScreen() {
         )}
       </LinearGradient>
 
-      {/* Piece picker sheet */}
-      <Modal visible={pickerOpen} transparent animationType="slide" onRequestClose={() => setPickerOpen(false)}>
-        <Pressable style={styles.sheetBackdrop} onPress={() => setPickerOpen(false)} />
-        <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
+      {/* Piece picker sheet — backdrop fades in, sheet slides up */}
+      <Modal visible={pickerOpen} transparent statusBarTranslucent animationType="none" onRequestClose={() => setPickerOpen(false)}>
+        <Animated.View entering={FadeIn.duration(240)} style={StyleSheet.absoluteFill}>
+          <Pressable style={[StyleSheet.absoluteFill, styles.sheetBackdrop]} onPress={() => setPickerOpen(false)} />
+        </Animated.View>
+        <Animated.View entering={SlideInDown.duration(300)} style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
           <View style={styles.sheetHandle} />
           <Text style={styles.sheetTitle}>Vyber kúsky</Text>
 
@@ -248,7 +252,7 @@ export function FigureBuilderScreen() {
           >
             <Text style={styles.primaryText}>{hasPending ? 'OBLEČ FIGURÍNU (AI)' : 'OBLEČENÉ ✓'}</Text>
           </Pressable>
-        </View>
+        </Animated.View>
       </Modal>
 
       <StoryShareSheet
@@ -309,6 +313,10 @@ const styles = StyleSheet.create({
   // sheet
   sheetBackdrop: { flex: 1, backgroundColor: 'rgba(10,10,12,0.6)' },
   sheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: WEROL_TOKENS.concrete,
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
