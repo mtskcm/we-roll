@@ -24,7 +24,7 @@ type Props = {
 };
 
 export function SignUpScreen({ onSignIn }: Props) {
-  const register = useUserStore((s) => s.register);
+  const signUp = useUserStore((s) => s.signUp);
   const showToast = useShareStore((s) => s.showToast);
   const ssoStub = (provider: string) => () =>
     showToast(`${provider} sign-up — coming soon. Use email for now.`);
@@ -33,16 +33,21 @@ export function SignUpScreen({ onSignIn }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const canSubmit = name.trim().length >= 2 && emailValid && password.length >= 4;
+  const canSubmit = name.trim().length >= 2 && emailValid && password.length >= 4 && !loading;
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!canSubmit) {
       setError('Vyplň meno, platný email a heslo (min 4 znaky)');
       return;
     }
-    register(email.trim(), name.trim());
+    setLoading(true);
+    const { error: err, needsConfirm } = await signUp(email, password, name);
+    setLoading(false);
+    if (err) setError(err);
+    else if (needsConfirm) showToast('Skontroluj email na potvrdenie účtu');
   };
 
   return (

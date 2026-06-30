@@ -14,7 +14,6 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
   FadeIn,
@@ -22,7 +21,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -83,26 +81,6 @@ export function FigureBuilderScreen() {
     setAppliedBottom(null);
   }, [gender]);
 
-  // drag-to-tilt (UI thread → smooth)
-  const rot = useSharedValue(0);
-  const pan = useMemo(
-    () =>
-      Gesture.Pan()
-        .onUpdate((e) => {
-          'worklet';
-          const v = e.translationX * 0.16;
-          rot.value = v < -26 ? -26 : v > 26 ? 26 : v;
-        })
-        .onEnd(() => {
-          'worklet';
-          rot.value = withSpring(0, { damping: 14, stiffness: 120 });
-        }),
-    [rot],
-  );
-  const figureAnim = useAnimatedStyle(() => ({
-    transform: [{ perspective: 900 }, { rotateY: `${rot.value}deg` }, { scale: 1.04 }],
-  }));
-
   const onDress = async () => {
     if (!hasPending) return;
     setPickerOpen(false);
@@ -140,13 +118,9 @@ export function FigureBuilderScreen() {
 
   return (
     <View style={styles.root}>
-      {/* Full-bleed figure — drag to tilt. The transform is on the wrapper View
-          (not the Image) + backfaceVisibility hidden, so it doesn't flicker. */}
-      <GestureDetector gesture={pan}>
-        <Animated.View style={[StyleSheet.absoluteFill, styles.figureWrap, figureAnim]}>
-          <Image source={figureSource} style={StyleSheet.absoluteFill} resizeMode="cover" />
-        </Animated.View>
-      </GestureDetector>
+      {/* Full-bleed figure (static). A true turntable needs multi-angle frames —
+          a flat image rotated in 3D black-flickers, so the tilt was removed. */}
+      <Image source={figureSource} style={StyleSheet.absoluteFill} resizeMode="cover" />
 
       {/* Top gradient + WEROL bar + gender toggle */}
       <LinearGradient
@@ -289,7 +263,6 @@ function TryOnLoader() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: WEROL_TOKENS.pitch },
-  figureWrap: { backfaceVisibility: 'hidden', overflow: 'hidden' },
   topGrad: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: 20, paddingBottom: 24, zIndex: 5 },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   toggle: { flexDirection: 'row', backgroundColor: 'rgba(22,22,26,0.85)', borderRadius: 9999, padding: 3 },

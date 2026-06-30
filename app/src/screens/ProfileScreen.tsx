@@ -42,7 +42,7 @@ export function ProfileScreen() {
   const saved = useFeedStore((s) => s.saved);
   const profile = useUserStore((s) => s.profile);
   const savedOutfits = useUserStore((s) => s.savedOutfits);
-  const logout = useUserStore((s) => s.logout);
+  const signOut = useUserStore((s) => s.signOut);
   const unread = useUnreadCount();
 
   const language = useSettingsStore((s) => s.language);
@@ -198,7 +198,7 @@ export function ProfileScreen() {
             onPress={() => setLangOpen(true)}
           />
           <Pressable
-            onPress={logout}
+            onPress={() => signOut()}
             style={({ pressed }) => [styles.logoutBtn, pressed && { opacity: 0.7 }]}
           >
             <Ionicons name="log-out-outline" size={18} color="#E63946" />

@@ -31,15 +31,18 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 import { SplashScreen } from './src/screens/SplashScreen';
 import { useProductsStore } from './src/store/productsStore';
 import { useShareStore } from './src/store/shareStore';
+import { useUserStore } from './src/store/userStore';
 import { useLiveMessages } from './src/store/useLiveMessages';
 
 function AppShell() {
   useLiveMessages();
   const [splashDone, setSplashDone] = React.useState(false);
 
-  // Pull real products from Supabase on launch (falls back to mock if empty/offline).
+  // Pull real products from Supabase on launch (falls back to mock if empty/offline),
+  // and restore the auth session (sets isAuthenticated from the Supabase session).
   React.useEffect(() => {
     useProductsStore.getState().hydrate();
+    useUserStore.getState().bootstrap();
   }, []);
 
   const product = useShareStore((s) => s.product);

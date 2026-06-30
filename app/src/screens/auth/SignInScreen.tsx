@@ -20,20 +20,24 @@ type Props = {
 };
 
 export function SignInScreen({ onBack, onSignUp }: Props) {
-  const login = useUserStore((s) => s.login);
+  const signIn = useUserStore((s) => s.signIn);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const canSubmit = emailValid && password.length >= 4;
+  const canSubmit = emailValid && password.length >= 4 && !loading;
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     if (!canSubmit) {
       setError(emailValid ? 'Heslo musí mať aspoň 4 znaky' : 'Neplatný email');
       return;
     }
-    login(email.trim());
+    setLoading(true);
+    const { error: err } = await signIn(email, password);
+    setLoading(false);
+    if (err) setError(err);
   };
 
   return (
@@ -84,7 +88,7 @@ export function SignInScreen({ onBack, onSignUp }: Props) {
             pressed && canSubmit && { opacity: 0.85 },
           ]}
         >
-          <Text style={styles.ctaText}>SIGN IN →</Text>
+          <Text style={styles.ctaText}>{loading ? 'PRIHLASUJEM…' : 'SIGN IN →'}</Text>
         </Pressable>
 
         <Pressable
