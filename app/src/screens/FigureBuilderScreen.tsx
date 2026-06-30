@@ -27,10 +27,6 @@ import { FONTS } from '../theme/typography';
 import type { Product } from '../types';
 
 const BOTTOM_NAV_HEIGHT = 78;
-const MANNEQUIN_IMG: Record<Gender, any> = {
-  female: require('../assets/mannequins/female.png'),
-  male: require('../assets/mannequins/male.png'),
-};
 const TOP_CATS = ['tshirts', 'hoodies', 'jackets'];
 const BOTTOM_CATS = ['pants', 'shorts'];
 
@@ -107,7 +103,9 @@ export function FigureBuilderScreen() {
     showToast(`FIT uložený · ${selected.length} kúskov`);
   };
 
-  const figureSource = figureImg ? { uri: figureImg } : MANNEQUIN_IMG[gender];
+  // Both bare and dressed come from the same remote URL (no bundled-asset cache
+  // mismatch — that's why the bare figure used to render off-centre/stale).
+  const figureSource = { uri: figureImg ?? MANNEQUIN[gender] };
 
   const renderStrip = (items: Product[], slot: 'top' | 'bottom') => (
     <View style={{ display: activeSlot === slot ? 'flex' : 'none' }}>
@@ -115,7 +113,11 @@ export function FigureBuilderScreen() {
         {items.map((p) => {
           const on = draftOutfit[slot] === p.id;
           return (
-            <Pressable key={p.id} onPress={() => setSlot(slot, p.id)} style={[styles.swatch, on && styles.swatchOn]}>
+            <Pressable
+              key={p.id}
+              onPress={() => setSlot(slot, on ? undefined : p.id)}
+              style={[styles.swatch, on && styles.swatchOn]}
+            >
               <Image source={p.image} style={styles.swatchImg} resizeMode="contain" />
             </Pressable>
           );
