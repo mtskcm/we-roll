@@ -126,10 +126,9 @@ export function FigureBuilderScreen() {
 
   return (
     <View style={styles.root}>
-      {/* Whole figure, centred between the bar and the controls */}
-      <View style={[StyleSheet.absoluteFill, { paddingTop: insets.top + 40, paddingBottom: ctrlH - 18, alignItems: 'center', justifyContent: 'center' }]}>
-        <Image source={figureSource} style={styles.figure} resizeMode="contain" />
-      </View>
+      {/* Full-bleed figure (like the feed); the bottom controls crop the legs,
+          so you see head-to-thighs. Centred mannequin → cover stays centred. */}
+      <Image source={figureSource} style={StyleSheet.absoluteFill} resizeMode="cover" />
 
       {/* Top gradient + WEROL bar + gender toggle */}
       <LinearGradient
