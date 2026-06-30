@@ -15,9 +15,10 @@ const RAW = 'https://raw.githubusercontent.com/mtskcm/we-roll/main/app/src/asset
 
 export type Gender = 'female' | 'male';
 
+// ?v bumped whenever the mannequin images change, to bust the image/HTTP cache
 export const MANNEQUIN: Record<Gender, string> = {
-  female: `${RAW}/female.png`,
-  male: `${RAW}/male.png`,
+  female: `${RAW}/female.png?v=2`,
+  male: `${RAW}/male.png?v=2`,
 };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
