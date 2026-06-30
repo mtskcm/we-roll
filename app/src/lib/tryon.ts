@@ -43,6 +43,23 @@ async function runOne(modelImage: string, garmentImage: string, category: 'tops'
   throw new Error('Vypršal čas generovania');
 }
 
+// Dress a single garment onto whatever image is passed (the bare mannequin or
+// an already-dressed figure) — so pieces stack instead of resetting. Cached per
+// (input image + garment + category) so re-applying the same step is free.
+export async function dressGarment(
+  modelImage: string,
+  garmentUrl: string,
+  category: 'tops' | 'bottoms',
+): Promise<string> {
+  if (!KEY) throw new Error('Chýba FASHN kľúč (EXPO_PUBLIC_FASHN_KEY v app/.env)');
+  const cacheKey = `dress:${category}:${garmentUrl}:${modelImage}`;
+  const cached = await AsyncStorage.getItem(cacheKey);
+  if (cached) return cached;
+  const out = await runOne(modelImage, garmentUrl, category);
+  await AsyncStorage.setItem(cacheKey, out);
+  return out;
+}
+
 export type TryOnRequest = { gender: Gender; topUrl?: string; bottomUrl?: string };
 
 export async function tryOnOutfit({ gender, topUrl, bottomUrl }: TryOnRequest): Promise<string> {
