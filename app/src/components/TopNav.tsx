@@ -16,7 +16,7 @@ export function TopNav({ onSearch }: Props) {
   return (
     <View style={styles.root}>
       <View style={styles.logoArea}>
-        <WordmarkOnDark width={108} height={20} />
+        <WordmarkOnDark width={104} height={19} />
       </View>
 
       <Pressable

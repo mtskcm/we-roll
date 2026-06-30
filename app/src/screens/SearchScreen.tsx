@@ -21,6 +21,7 @@ import SearchIcon from '../assets/icons/search.svg';
 import TrendIcon from '../assets/icons/trend.svg';
 import { CATEGORIES, PRIMARY_CATEGORIES, type CategoryId } from '../data/categories';
 import { useProducts } from '../store/productsStore';
+import { formatPrice } from '../lib/format';
 import { buildRecommendations } from '../data/recommendations';
 import { useT } from '../i18n';
 import { useFeedStore } from '../store/feedStore';
@@ -99,7 +100,7 @@ export function SearchScreen() {
   return (
     <View style={[styles.root, { paddingTop: insets.top + SPACING.lg }]}>
       <View style={styles.header}>
-        <Text style={TEXT_STYLES.heading}>{t('search.title')}</Text>
+        <Text style={styles.title}>{t('search.title')}</Text>
         {hasInput && (
           <Text style={styles.sub}>{t('search.results', { n: results.length })}</Text>
         )}
@@ -178,11 +179,11 @@ export function SearchScreen() {
                 <Text style={styles.tileName} numberOfLines={2}>{item.name}</Text>
                 <View style={styles.tilePriceRow}>
                   <Text style={TEXT_STYLES.productPrice}>
-                    {item.price.current} {item.price.currency}
+                    {formatPrice(item.price.current, item.price.currency)}
                   </Text>
                   {item.price.original !== undefined && (
                     <Text style={TEXT_STYLES.priceOld}>
-                      {item.price.original} {item.price.currency}
+                      {formatPrice(item.price.original, item.price.currency)}
                     </Text>
                   )}
                 </View>
@@ -282,7 +283,7 @@ function Section({
             <Text style={TEXT_STYLES.productBrand} numberOfLines={1}>{item.brand}</Text>
             <Text style={styles.miniName} numberOfLines={2}>{item.name}</Text>
             <Text style={TEXT_STYLES.productPrice}>
-              {item.price.current} {item.price.currency}
+              {formatPrice(item.price.current, item.price.currency)}
             </Text>
           </Pressable>
         )}
@@ -376,8 +377,14 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     minHeight: 36,
   },
+  title: {
+    fontFamily: FONTS.spaceGroteskBold,
+    fontSize: 30,
+    letterSpacing: -0.6,
+    color: WEROL_TOKENS.paper,
+  },
   chipText: {
-    fontFamily: FONTS.archivoBold,
+    fontFamily: FONTS.spaceGroteskBold,
     fontSize: 12,
     letterSpacing: 0.3,
   },
@@ -425,7 +432,7 @@ const styles = StyleSheet.create({
     gap: SPACING.lg,
   },
   emptyTitle: {
-    fontFamily: FONTS.archivoBold,
+    fontFamily: FONTS.spaceGroteskBold,
     fontSize: 22,
     letterSpacing: -0.4,
     color: WEROL_TOKENS.paper,

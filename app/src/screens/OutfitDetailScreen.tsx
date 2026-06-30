@@ -3,8 +3,7 @@
 // across the bottom, action row (like / comment / share / bookmark),
 // caption, tagged products list, comments thread.
 
-import { BlurView } from 'expo-blur';
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   Image,
   Pressable,
@@ -28,6 +27,7 @@ import {
   useOutfitFeedStore,
 } from '../store/outfitFeedStore';
 import { useShareStore } from '../store/shareStore';
+import { formatPrice } from '../lib/format';
 import { WEROL_TOKENS } from '../theme/colors';
 import { SPACING } from '../theme/spacing';
 import { FONTS } from '../theme/typography';
@@ -65,6 +65,7 @@ export function OutfitDetailScreen({ route, navigation }: Props) {
   const toggleBookmark = useOutfitFeedStore((s) => s.toggleBookmark);
   const toggleFollow = useOutfitFeedStore((s) => s.toggleFollow);
   const showToast = useShareStore((s) => s.showToast);
+  const scrollRef = useRef<ScrollView>(null);
 
   const taggedProducts = outfit.taggedProductIds
     .map((id) => PRODUCTS.find((p) => p.id === id))
@@ -73,6 +74,7 @@ export function OutfitDetailScreen({ route, navigation }: Props) {
   return (
     <View style={styles.root}>
       <ScrollView
+        ref={scrollRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingTop: insets.top + 60,
@@ -80,15 +82,7 @@ export function OutfitDetailScreen({ route, navigation }: Props) {
         }}
       >
         <View style={styles.heroWrap}>
-          <Image
-            source={outfit.image}
-            style={styles.heroBackdrop}
-            resizeMode="cover"
-            blurRadius={28}
-          />
-          <View style={styles.heroDim} pointerEvents="none" />
-          <BlurView intensity={40} tint="dark" style={styles.heroBlur} pointerEvents="none" />
-          <Image source={outfit.image} style={styles.hero} resizeMode="contain" />
+          <Image source={outfit.image} style={styles.hero} resizeMode="cover" />
         </View>
 
         <View style={styles.body}>
@@ -133,15 +127,16 @@ export function OutfitDetailScreen({ route, navigation }: Props) {
             <ActionPill
               Icon={SendIcon}
               label={String(outfit.comments.length)}
-              onPress={() => {}}
+              onPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
             />
             <ActionPill
               Icon={ShareIcon}
               label="SHARE"
               onPress={() => {
                 if (taggedProducts[0]) {
-                  // Reuse product share sheet — picks first tagged product.
                   useShareStore.getState().openShare(taggedProducts[0]);
+                } else {
+                  showToast('Zdieľanie outfitu — už čoskoro');
                 }
               }}
             />
@@ -171,7 +166,7 @@ export function OutfitDetailScreen({ route, navigation }: Props) {
                     <Text style={styles.taggedName} numberOfLines={1}>{p.name}</Text>
                   </View>
                   <Text style={styles.taggedPrice}>
-                    {p.price.current} {p.price.currency}
+                    {formatPrice(p.price.current, p.price.currency)}
                   </Text>
                 </Pressable>
               ))}
@@ -261,12 +256,6 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   hero: { width: '100%', height: '100%' },
-  heroBackdrop: { ...StyleSheet.absoluteFillObject },
-  heroBlur: { ...StyleSheet.absoluteFillObject },
-  heroDim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,10,12,0.35)',
-  },
   body: {
     paddingHorizontal: SPACING.section,
     paddingTop: SPACING.lg,
@@ -285,19 +274,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ownerInitials: {
-    fontFamily: FONTS.archivoBold,
+    fontFamily: FONTS.spaceGroteskBold,
     fontSize: 13,
     color: WEROL_TOKENS.paper,
     letterSpacing: -0.3,
   },
   ownerHandle: {
-    fontFamily: FONTS.archivoBold,
+    fontFamily: FONTS.spaceGroteskBold,
     fontSize: 15,
     color: WEROL_TOKENS.paper,
     letterSpacing: -0.2,
   },
   ownerMeta: {
-    fontFamily: FONTS.jetbrainsMono,
+    fontFamily: FONTS.jetbrainsMonoBold,
     fontSize: 10,
     color: WEROL_TOKENS.muted2,
     letterSpacing: 0.4,
@@ -388,7 +377,7 @@ const styles = StyleSheet.create({
     color: WEROL_TOKENS.lime,
   },
   taggedName: {
-    fontFamily: FONTS.archivoBold,
+    fontFamily: FONTS.interSemibold,
     fontSize: 13,
     color: WEROL_TOKENS.paper,
     letterSpacing: -0.2,
@@ -413,7 +402,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   commentInitials: {
-    fontFamily: FONTS.archivoBold,
+    fontFamily: FONTS.spaceGroteskBold,
     fontSize: 10,
     color: WEROL_TOKENS.paper,
   },
@@ -423,7 +412,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   commentHandle: {
-    fontFamily: FONTS.archivoBold,
+    fontFamily: FONTS.spaceGroteskBold,
     fontSize: 12,
     color: WEROL_TOKENS.paper,
   },
@@ -453,7 +442,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(10,10,12,0.85)',
   },
   headerTitle: {
-    fontFamily: FONTS.archivoBold,
+    fontFamily: FONTS.spaceGroteskBold,
     fontSize: 14,
     color: WEROL_TOKENS.paper,
     letterSpacing: -0.2,
