@@ -6,7 +6,7 @@ import { BottomNav } from '../components/BottomNav';
 import { TabSwipeWrapper } from '../components/TabSwipeWrapper';
 import { FeedScreen } from '../screens/FeedScreen';
 import { MessagesScreen } from '../screens/MessagesScreen';
-import { OutfitBuilderScreen } from '../screens/OutfitBuilderScreen';
+import { FigureBuilderScreen } from '../screens/FigureBuilderScreen';
 import { OutfitDetailScreen } from '../screens/OutfitDetailScreen';
 import { OutfitsFeedScreen } from '../screens/OutfitsFeedScreen';
 import { ProductDetailsScreen } from '../screens/ProductDetailsScreen';
@@ -132,7 +132,7 @@ export function RootNavigator() {
             {() => <TabSwipeWrapper><OutfitStack /></TabSwipeWrapper>}
           </Tab.Screen>
           <Tab.Screen name="Fit">
-            {() => <TabSwipeWrapper><OutfitBuilderScreen /></TabSwipeWrapper>}
+            {() => <TabSwipeWrapper><FigureBuilderScreen /></TabSwipeWrapper>}
           </Tab.Screen>
           <Tab.Screen name="Saved">
             {() => <TabSwipeWrapper><SavedScreen /></TabSwipeWrapper>}

@@ -1,0 +1,128 @@
+// gen-cutout-capsule.mjs — build a capsule of *flat-lay* garment cutouts for the
+// dress-up figure. The 4F feed mixes flat-lay shots with on-model (kid) shots;
+// on-model cutouts would be a whole child, not a garment. So after the
+// background flood-fill we measure how much *skin* remains in the cutout and
+// keep only low-skin (= flat-lay garment) pieces.
+//
+//   node scripts/gen-cutout-capsule.mjs
+//
+// Outputs transparent PNGs to src/assets/cutouts/ + src/data/cutoutCapsule.ts.
+
+import Jimp from 'jimp';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const APP = path.resolve(__dirname, '..');
+const OUT_ASSETS = path.join(APP, 'src/assets/cutouts');
+const OUT_DATA = path.join(APP, 'src/data/cutoutCapsule.ts');
+
+const ANON =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjcmNjYWdubmplc2xucG1mZGt5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTAyMjAsImV4cCI6MjA5NDkyNjIyMH0.9k6gCQnr2dHuzMxiRcL9j3WTYmLsGOqB9elWU2S-5fI';
+const URL = 'https://hcrccagnnjeslnpmfdky.supabase.co';
+
+const PLAN = [
+  { slot: 'top', categories: ['tshirts', 'hoodies', 'jackets'], want: 8, scan: 70 },
+  { slot: 'bottom', categories: ['pants', 'shorts'], want: 8, scan: 55 },
+  { slot: 'feet', categories: ['sneakers'], want: 6, scan: 30 },
+];
+
+const THRESHOLD = 34;
+const SKIN_MAX = 0.05; // >5% skin pixels ⇒ treat as on-model, skip
+const safe = (id) => id.replace(/[^a-zA-Z0-9]+/g, '_');
+const isSkin = (r, g, b) =>
+  r > 95 && g > 40 && b > 20 && r > g && r > b && Math.abs(r - g) > 15 && Math.max(r, g, b) - Math.min(r, g, b) > 15;
+
+function cutoutAndScore(img) {
+  const { width: W, height: H, data } = img.bitmap;
+  let br = 0, bg = 0, bb = 0;
+  for (const [x, y] of [[0, 0], [W - 1, 0], [0, H - 1], [W - 1, H - 1]]) {
+    const i = (y * W + x) * 4; br += data[i]; bg += data[i + 1]; bb += data[i + 2];
+  }
+  br /= 4; bg /= 4; bb /= 4;
+  const visited = new Uint8Array(W * H);
+  const stack = [];
+  const push = (x, y) => {
+    if (x < 0 || y < 0 || x >= W || y >= H) return;
+    const p = y * W + x; if (visited[p]) return; visited[p] = 1; stack.push(p);
+  };
+  for (let x = 0; x < W; x++) { push(x, 0); push(x, H - 1); }
+  for (let y = 0; y < H; y++) { push(0, y); push(W - 1, y); }
+  const isBg = (i) => {
+    const dr = data[i] - br, dg = data[i + 1] - bg, db = data[i + 2] - bb;
+    return Math.sqrt(dr * dr + dg * dg + db * db) <= THRESHOLD;
+  };
+  while (stack.length) {
+    const p = stack.pop(); const i = p * 4;
+    if (!isBg(i)) continue;
+    data[i + 3] = 0;
+    const x = p % W, y = (p / W) | 0;
+    push(x + 1, y); push(x - 1, y); push(x, y + 1); push(x, y - 1);
+  }
+  // skin ratio over opaque pixels + bbox
+  let opaque = 0, skin = 0, minX = W, minY = H, maxX = 0, maxY = 0;
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      if (data[i + 3] !== 0) {
+        opaque++;
+        if (isSkin(data[i], data[i + 1], data[i + 2])) skin++;
+        if (x < minX) minX = x; if (x > maxX) maxX = x;
+        if (y < minY) minY = y; if (y > maxY) maxY = y;
+      }
+    }
+  const skinRatio = opaque ? skin / opaque : 1;
+  if (maxX >= minX && maxY >= minY) {
+    const pad = 6;
+    minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+    maxX = Math.min(W - 1, maxX + pad); maxY = Math.min(H - 1, maxY + pad);
+    img.crop(minX, minY, maxX - minX + 1, maxY - minY + 1);
+  }
+  return { skinRatio, fill: opaque / (W * H) };
+}
+
+async function fetchCandidates(categories, scan) {
+  const inList = categories.map((c) => `"${c}"`).join(',');
+  const q = `${URL}/rest/v1/products?select=id,brand,name,price_current,currency,image_url,category&category=in.(${inList})&limit=${scan}`;
+  const r = await fetch(q, { headers: { apikey: ANON, Authorization: `Bearer ${ANON}` } });
+  return r.json();
+}
+
+await fs.mkdir(OUT_ASSETS, { recursive: true });
+const capsule = {};
+for (const { slot, categories, want, scan } of PLAN) {
+  capsule[slot] = [];
+  const cands = await fetchCandidates(categories, scan);
+  let scanned = 0, skipModel = 0;
+  for (const p of cands) {
+    if (capsule[slot].length >= want) break;
+    scanned++;
+    try {
+      const img = await Jimp.read(p.image_url);
+      const { skinRatio, fill } = cutoutAndScore(img);
+      if (skinRatio > SKIN_MAX || fill < 0.04) { skipModel++; process.stdout.write('m'); continue; }
+      const file = `${safe(p.id)}.png`;
+      await img.writeAsync(path.join(OUT_ASSETS, file));
+      capsule[slot].push({ id: p.id, brand: p.brand, name: p.name, price: p.price_current, currency: p.currency || 'EUR', file });
+      process.stdout.write('.');
+    } catch (e) { process.stdout.write('x'); }
+  }
+  console.log(` ${slot}: ${capsule[slot].length} flat-lay (scanned ${scanned}, skipped ${skipModel} on-model)`);
+}
+
+let ts = `// AUTO-GENERATED by scripts/gen-cutout-capsule.mjs — do not edit by hand.\n`;
+ts += `// Flat-lay garment cutouts (transparent PNGs) for the dress-up figure.\n`;
+ts += `import type { ImageSourcePropType } from 'react-native';\n\n`;
+ts += `export type CutoutPiece = {\n  id: string;\n  brand: string;\n  name: string;\n  price: number;\n  currency: string;\n  cutout: ImageSourcePropType;\n};\n\n`;
+ts += `export type CutoutSlot = 'top' | 'bottom' | 'feet';\n\n`;
+ts += `export const CUTOUT_CAPSULE: Record<CutoutSlot, CutoutPiece[]> = {\n`;
+for (const slot of Object.keys(capsule)) {
+  ts += `  ${slot}: [\n`;
+  for (const it of capsule[slot])
+    ts += `    { id: ${JSON.stringify(it.id)}, brand: ${JSON.stringify(it.brand)}, name: ${JSON.stringify(it.name)}, price: ${it.price}, currency: ${JSON.stringify(it.currency)}, cutout: require('../assets/cutouts/${it.file}') },\n`;
+  ts += `  ],\n`;
+}
+ts += `};\n`;
+await fs.writeFile(OUT_DATA, ts);
+console.log(`\nwrote ${OUT_DATA}`);

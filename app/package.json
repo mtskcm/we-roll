@@ -45,6 +45,7 @@
     "@types/react": "~19.1.10",
     "babel-preset-expo": "^55.0.21",
     "fast-xml-parser": "^5.8.0",
+    "jimp": "^0.22.12",
     "typescript": "~5.9.2"
   },
   "private": true
