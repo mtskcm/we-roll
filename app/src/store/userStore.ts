@@ -1,4 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabaseClient';
@@ -31,6 +33,7 @@ type Actions = {
   bootstrap: () => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<AuthResult>;
   signIn: (email: string, password: string) => Promise<AuthResult>;
+  signInWithGoogle: () => Promise<AuthResult>;
   signOut: () => Promise<void>;
   loadProfile: (userId: string) => Promise<void>;
   savePreferences: (prefs: Record<string, unknown>) => Promise<void>;
@@ -104,6 +107,30 @@ export const useUserStore = create<State & Actions>()(
         set({ isAuthenticated: true, userId: data.user.id, email: data.user.email ?? null });
         await get().loadProfile(data.user.id);
         return {};
+      },
+
+      signInWithGoogle: async () => {
+        try {
+          const redirectTo = Linking.createURL('auth-callback');
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo, skipBrowserRedirect: true },
+          });
+          if (error || !data?.url) return { error: error?.message ?? 'Google sa nepodarilo spustiť' };
+          const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+          if (res.type !== 'success' || !res.url) return { error: 'Prihlásenie zrušené' };
+          const code = Linking.parse(res.url).queryParams?.code as string | undefined;
+          if (!code) return { error: 'Chýba auth code z Google' };
+          const { data: sess, error: exErr } = await supabase.auth.exchangeCodeForSession(code);
+          if (exErr) return { error: exErr.message };
+          const user = sess.session?.user;
+          if (!user) return { error: 'Session sa nezískala' };
+          set({ isAuthenticated: true, userId: user.id, email: user.email ?? null });
+          await get().loadProfile(user.id);
+          return {};
+        } catch (e: any) {
+          return { error: e?.message ?? 'Google chyba' };
+        }
       },
 
       signOut: async () => {

@@ -25,9 +25,14 @@ type Props = {
 
 export function SignUpScreen({ onSignIn }: Props) {
   const signUp = useUserStore((s) => s.signUp);
+  const signInWithGoogle = useUserStore((s) => s.signInWithGoogle);
   const showToast = useShareStore((s) => s.showToast);
   const ssoStub = (provider: string) => () =>
     showToast(`${provider} sign-up — coming soon. Use email for now.`);
+  const handleGoogle = async () => {
+    const { error: err } = await signInWithGoogle();
+    if (err) showToast('Google: ' + err);
+  };
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -69,7 +74,7 @@ export function SignUpScreen({ onSignIn }: Props) {
             <AuthButton
               icon={<GoogleIcon width={20} height={20} />}
               label="CONTINUE WITH GOOGLE"
-              onPress={ssoStub('Google')}
+              onPress={handleGoogle}
             />
             <AuthButton
               icon={<EmailIcon width={20} height={20} color={WEROL_TOKENS.pitch} />}
