@@ -200,7 +200,14 @@ export function FigureBuilderScreen() {
         </Animated.View>
         <Animated.View entering={SlideInDown.duration(300)} style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
           <View style={styles.sheetHandle} />
-          <Text style={styles.sheetTitle}>Vyber kúsky</Text>
+          <View style={styles.sheetHead}>
+            <Text style={styles.sheetTitle}>Vyber kúsky</Text>
+            {selected.length > 0 && (
+              <Pressable onPress={clearDraftOutfit} hitSlop={8}>
+                <Text style={styles.sheetClear}>Vymazať</Text>
+              </Pressable>
+            )}
+          </View>
 
           {/* Garment-type chips */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.typeRow}>
@@ -318,7 +325,9 @@ const styles = StyleSheet.create({
     borderColor: WEROL_TOKENS.line2,
   },
   sheetHandle: { alignSelf: 'center', width: 38, height: 4, borderRadius: 2, backgroundColor: WEROL_TOKENS.line2, marginBottom: 12 },
-  sheetTitle: { fontFamily: FONTS.spaceGroteskBold, fontSize: 18, color: WEROL_TOKENS.paper, marginBottom: 12 },
+  sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  sheetTitle: { fontFamily: FONTS.spaceGroteskBold, fontSize: 18, color: WEROL_TOKENS.paper },
+  sheetClear: { fontFamily: FONTS.interSemibold, fontSize: 13, color: WEROL_TOKENS.lime },
   strip: { gap: 8, paddingVertical: 2, paddingRight: 8, marginBottom: 10 },
   swatch: { width: 64, height: 64, borderRadius: 12, backgroundColor: '#F3F3F5', padding: 5, borderWidth: 2, borderColor: 'transparent' },
   swatchOn: { borderColor: WEROL_TOKENS.lime },
