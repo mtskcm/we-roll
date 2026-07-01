@@ -113,7 +113,9 @@ export const useUserStore = create<State & Actions>()(
         const WebBrowser = require('expo-web-browser') as typeof import('expo-web-browser');
         const Linking = require('expo-linking') as typeof import('expo-linking');
         try {
-          const redirectTo = Linking.createURL('auth-callback');
+          // Fixed app-scheme URL — NOT Linking.createURL(), which returns the
+          // dev-server localhost URL in development and breaks the return.
+          const redirectTo = 'werol://auth-callback';
           const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: { redirectTo, skipBrowserRedirect: true },
