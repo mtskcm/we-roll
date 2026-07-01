@@ -5,14 +5,14 @@ import { PRODUCTS } from './products';
 
 // Curated full-body outfit photos for the FITS feed (mock community posts).
 const OUTFIT_IMAGES: ImageSourcePropType[] = [
-  require('../assets/outfits/fit1.jpg'),
-  require('../assets/outfits/fit2.jpg'),
-  require('../assets/outfits/fit3.jpg'),
-  require('../assets/outfits/fit4.jpg'),
-  require('../assets/outfits/fit5.jpg'),
-  require('../assets/outfits/fit6.jpg'),
-  require('../assets/outfits/fit7.jpg'),
-  require('../assets/outfits/fit8.jpg'),
+  require('../assets/outfits/street1.jpg'),
+  require('../assets/outfits/street2.jpg'),
+  require('../assets/outfits/street3.jpg'),
+  require('../assets/outfits/street4.jpg'),
+  require('../assets/outfits/street5.jpg'),
+  require('../assets/outfits/street6.jpg'),
+  require('../assets/outfits/street7.jpg'),
+  require('../assets/outfits/street8.jpg'),
 ];
 
 export type OutfitComment = {
