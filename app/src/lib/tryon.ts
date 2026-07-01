@@ -29,14 +29,7 @@ async function runOne(modelImage: string, garmentImage: string, category: 'tops'
     headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model_name: 'tryon-v1.6',
-      inputs: {
-        model_image: modelImage,
-        garment_image: garmentImage,
-        category,               // explicit tops/bottoms → correct region
-        mode: 'quality',        // best fit accuracy (slower)
-        garment_photo_type: 'auto',
-        segmentation_free: false,
-      },
+      inputs: { model_image: modelImage, garment_image: garmentImage, category },
     }),
   });
   const j = await run.json();
@@ -60,7 +53,7 @@ export async function dressGarment(
   category: 'tops' | 'bottoms',
 ): Promise<string> {
   if (!KEY) throw new Error('Chýba FASHN kľúč (EXPO_PUBLIC_FASHN_KEY v app/.env)');
-  const cacheKey = `dress:${category}:${garmentUrl}:${modelImage}`;
+  const cacheKey = `dress:v2:${category}:${garmentUrl}:${modelImage}`;
   const cached = await AsyncStorage.getItem(cacheKey);
   if (cached) return cached;
   const out = await runOne(modelImage, garmentUrl, category);
