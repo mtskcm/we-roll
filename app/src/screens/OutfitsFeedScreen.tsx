@@ -129,7 +129,7 @@ function OutfitCard({
 
   return (
     <View style={[styles.card, { height }]}>
-      <Image source={outfit.image} style={StyleSheet.absoluteFill} resizeMode="contain" />
+      <Image source={outfit.image} style={StyleSheet.absoluteFill} resizeMode="cover" />
       <Pressable style={StyleSheet.absoluteFill} onPress={onOpen} />
 
       <LinearGradient
