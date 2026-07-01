@@ -259,19 +259,27 @@ function OutfitCard({
   return (
     <Pressable onPress={onPress} style={s.card}>
       <View style={s.left}>
-        <View style={s.thumbStack}>
-          {products.slice(0, 4).map((p, i) => (
-            <View
-              key={p.id}
-              style={[
-                s.thumb,
-                { marginLeft: i === 0 ? 0 : -16, zIndex: 10 - i },
-              ]}
-            >
-              <Image source={p.image} style={s.thumbImg} resizeMode="contain" />
-            </View>
-          ))}
-        </View>
+        {outfit.image ? (
+          <Image
+            source={{ uri: outfit.image }}
+            style={{ width: 58, height: 78, borderRadius: 10, backgroundColor: C.ink2 }}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={s.thumbStack}>
+            {products.slice(0, 4).map((p, i) => (
+              <View
+                key={p.id}
+                style={[
+                  s.thumb,
+                  { marginLeft: i === 0 ? 0 : -16, zIndex: 10 - i },
+                ]}
+              >
+                <Image source={p.image} style={s.thumbImg} resizeMode="contain" />
+              </View>
+            ))}
+          </View>
+        )}
       </View>
       <View style={s.right}>
         <Text style={s.name}>{outfit.name}</Text>
