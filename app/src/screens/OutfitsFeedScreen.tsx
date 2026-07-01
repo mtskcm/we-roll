@@ -129,7 +129,7 @@ function OutfitCard({
 
   return (
     <View style={[styles.card, { height }]}>
-      <Image source={outfit.image} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      <Image source={outfit.image} style={StyleSheet.absoluteFill} resizeMode="contain" />
       <Pressable style={StyleSheet.absoluteFill} onPress={onOpen} />
 
       <LinearGradient
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   addBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', ...SHADOW },
-  card: { width: '100%', backgroundColor: WEROL_TOKENS.concrete },
+  card: { width: '100%', backgroundColor: WEROL_TOKENS.pitch },
   topGradient: { position: 'absolute', left: 0, right: 0, top: 0, height: 130 },
   bottomGradient: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   rail: { position: 'absolute', right: 12, gap: 20, alignItems: 'center' },
