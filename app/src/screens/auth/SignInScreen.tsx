@@ -8,9 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import GoogleIcon from '../../assets/auth/google.svg';
 import { AuthFrame } from '../../components/AuthFrame';
-import { useShareStore } from '../../store/shareStore';
 import { useUserStore } from '../../store/userStore';
 import { WEROL_TOKENS } from '../../theme/colors';
 import { RADII } from '../../theme/spacing';
@@ -23,8 +21,6 @@ type Props = {
 
 export function SignInScreen({ onBack, onSignUp }: Props) {
   const signIn = useUserStore((s) => s.signIn);
-  const signInWithGoogle = useUserStore((s) => s.signInWithGoogle);
-  const showToast = useShareStore((s) => s.showToast);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -44,11 +40,6 @@ export function SignInScreen({ onBack, onSignUp }: Props) {
     if (err) setError(err);
   };
 
-  const handleGoogle = async () => {
-    const { error: err } = await signInWithGoogle();
-    if (err) showToast('Google: ' + err);
-  };
-
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -58,15 +49,6 @@ export function SignInScreen({ onBack, onSignUp }: Props) {
         eyebrow="WELCOME BACK"
         hero={['One feed.', 'Every drop.', 'Your people.']}
       >
-        <Pressable
-          onPress={handleGoogle}
-          style={({ pressed }) => [styles.googleBtn, pressed && { opacity: 0.85 }]}
-        >
-          <GoogleIcon width={18} height={18} />
-          <Text style={styles.googleText}>CONTINUE WITH GOOGLE</Text>
-        </Pressable>
-        <Text style={styles.orText}>or use email</Text>
-
         <TextInput
           value={email}
           onChangeText={(v) => {
@@ -134,29 +116,6 @@ export function SignInScreen({ onBack, onSignUp }: Props) {
 }
 
 const styles = StyleSheet.create({
-  googleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    backgroundColor: WEROL_TOKENS.paper,
-    paddingVertical: 16,
-    borderRadius: RADII.md,
-  },
-  googleText: {
-    fontFamily: FONTS.archivoBold,
-    fontSize: 13,
-    letterSpacing: 0.4,
-    color: WEROL_TOKENS.pitch,
-  },
-  orText: {
-    fontFamily: FONTS.jetbrainsMono,
-    fontSize: 10,
-    letterSpacing: 2,
-    color: WEROL_TOKENS.muted2,
-    textAlign: 'center',
-    marginVertical: 2,
-  },
   input: {
     backgroundColor: WEROL_TOKENS.concrete,
     borderRadius: RADII.md,

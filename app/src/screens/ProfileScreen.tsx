@@ -144,7 +144,9 @@ export function ProfileScreen() {
                     onPress={() => navigation.navigate('Saved')}
                     style={[styles.tile, { width: tile, height: tile }]}
                   >
-                    {first ? (
+                    {o.image ? (
+                      <Image source={{ uri: o.image }} style={styles.tileImg} resizeMode="cover" />
+                    ) : first ? (
                       <Image source={first.image} style={styles.tileImg} resizeMode="cover" />
                     ) : (
                       <View style={styles.tileImg} />

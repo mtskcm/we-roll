@@ -28,8 +28,13 @@ const OutfitStackNav = createNativeStackNavigator();
 
 function AuthFlow() {
   const showToast = useShareStore((s) => s.showToast);
+  const signInWithGoogle = useUserStore((s) => s.signInWithGoogle);
   const ssoStub = (provider: string) => () =>
     showToast(`${provider} login — coming soon. Use email for now.`);
+  const handleGoogle = async () => {
+    const { error } = await signInWithGoogle();
+    if (error) showToast('Google: ' + error);
+  };
 
   return (
     <AuthStack.Navigator
@@ -45,7 +50,7 @@ function AuthFlow() {
             onSignIn={() => navigation.navigate('SignIn')}
             onSignUp={() => navigation.navigate('SignUp')}
             onAppleSignIn={ssoStub('Apple')}
-            onGoogleSignIn={ssoStub('Google')}
+            onGoogleSignIn={handleGoogle}
           />
         )}
       </AuthStack.Screen>
