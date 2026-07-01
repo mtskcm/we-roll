@@ -28,6 +28,7 @@ import WordmarkOnDark from '../assets/logos/wordmark-on-dark.svg';
 import { StoryShareSheet } from '../components/StoryShareSheet';
 import { formatPrice } from '../lib/format';
 import { dressGarment, MANNEQUIN, type Gender } from '../lib/tryon';
+import { useFeedStore } from '../store/feedStore';
 import { useProducts } from '../store/productsStore';
 import { useShareStore } from '../store/shareStore';
 import { useUserStore } from '../store/userStore';
@@ -36,8 +37,18 @@ import { FONTS } from '../theme/typography';
 import type { Product } from '../types';
 
 const BOTTOM_NAV_HEIGHT = 78;
-const TOP_CATS = ['tshirts', 'hoodies', 'jackets'];
 const BOTTOM_CATS = ['pants', 'shorts'];
+
+// Garment types shown as picker chips → each maps to a FASHN try-on region.
+// (FASHN handles tops/bottoms only — caps/shoes aren't garment try-on.)
+const GARMENT_TYPES = [
+  { key: 'tshirts', label: 'Tričká' },
+  { key: 'hoodies', label: 'Mikiny' },
+  { key: 'jackets', label: 'Bundy' },
+  { key: 'shorts', label: 'Šortky' },
+  { key: 'pants', label: 'Nohavice' },
+];
+const regionOf = (cat: string): 'top' | 'bottom' => (BOTTOM_CATS.includes(cat) ? 'bottom' : 'top');
 
 const urlOf = (p?: Product): string | undefined => {
   const img = p?.image as { uri?: string } | undefined;
@@ -50,11 +61,13 @@ export function FigureBuilderScreen() {
 
   const draftOutfit = useUserStore((u) => u.draftOutfit);
   const setSlot = useUserStore((u) => u.setSlot);
+  const clearDraftOutfit = useUserStore((u) => u.clearDraftOutfit);
   const saveOutfit = useUserStore((u) => u.saveOutfit);
+  const saved = useFeedStore((s) => s.saved);
   const showToast = useShareStore((sh) => sh.showToast);
 
   const [gender, setGender] = useState<Gender>('female');
-  const [activeSlot, setActiveSlot] = useState<'top' | 'bottom'>('top');
+  const [activeType, setActiveType] = useState<string>('tshirts');
   const [figureImg, setFigureImg] = useState<string | null>(null);
   const [appliedTop, setAppliedTop] = useState<string | null>(null);
   const [appliedBottom, setAppliedBottom] = useState<string | null>(null);
@@ -62,8 +75,12 @@ export function FigureBuilderScreen() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [storyOpen, setStoryOpen] = useState(false);
 
-  const tops = useMemo(() => PRODUCTS.filter((p) => TOP_CATS.includes(p.category) && urlOf(p)).slice(0, 40), [PRODUCTS]);
-  const bottoms = useMemo(() => PRODUCTS.filter((p) => BOTTOM_CATS.includes(p.category) && urlOf(p)).slice(0, 40), [PRODUCTS]);
+  // Only YOUR saved pieces are pickable for the figure.
+  const savedProducts = useMemo(
+    () => PRODUCTS.filter((p) => saved.includes(p.id) && urlOf(p)),
+    [PRODUCTS, saved],
+  );
+  const typeItems = savedProducts.filter((p) => p.category === activeType);
 
   const topProduct = PRODUCTS.find((p) => p.id === draftOutfit.top);
   const bottomProduct = PRODUCTS.find((p) => p.id === draftOutfit.bottom);
@@ -105,6 +122,7 @@ export function FigureBuilderScreen() {
     setFigureImg(null);
     setAppliedTop(null);
     setAppliedBottom(null);
+    clearDraftOutfit(); // full fresh start — bare figure, no selected pieces
   };
 
   const onSave = () => {
@@ -184,40 +202,41 @@ export function FigureBuilderScreen() {
           <View style={styles.sheetHandle} />
           <Text style={styles.sheetTitle}>Vyber kúsky</Text>
 
-          {(['top', 'bottom'] as const).map((slot) => {
-            const items = slot === 'top' ? tops : bottoms;
-            return (
-              <View key={slot} style={{ display: activeSlot === slot ? 'flex' : 'none' }}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
-                  {items.map((p) => {
-                    const on = draftOutfit[slot] === p.id;
-                    return (
-                      <Pressable
-                        key={p.id}
-                        onPress={() => setSlot(slot, on ? undefined : p.id)}
-                        style={[styles.swatch, on && styles.swatchOn]}
-                      >
-                        <Image source={p.image} style={styles.swatchImg} resizeMode="contain" />
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-            );
-          })}
-
-          <View style={styles.chips}>
-            {(['top', 'bottom'] as const).map((s) => {
-              const p = s === 'top' ? topProduct : bottomProduct;
-              const active = activeSlot === s;
+          {/* Garment-type chips */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.typeRow}>
+            {GARMENT_TYPES.map((t) => {
+              const active = activeType === t.key;
+              const count = savedProducts.filter((p) => p.category === t.key).length;
               return (
-                <Pressable key={s} onPress={() => setActiveSlot(s)} style={[styles.chip, active && styles.chipActive]}>
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{s === 'top' ? 'Vrch' : 'Spodok'}</Text>
-                  {p && <Text style={[styles.chipPrice, active && styles.chipTextActive]} numberOfLines={1}>{formatPrice(p.price.current, p.price.currency)}</Text>}
+                <Pressable key={t.key} onPress={() => setActiveType(t.key)} style={[styles.typeChip, active && styles.chipActive]}>
+                  <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                    {t.label}{count ? `  ${count}` : ''}
+                  </Text>
                 </Pressable>
               );
             })}
-          </View>
+          </ScrollView>
+
+          {/* Your saved pieces of the active type */}
+          {typeItems.length === 0 ? (
+            <Text style={styles.emptyHint}>Žiadne uložené kúsky tohto typu. Ulož si ich vo feede (🔖).</Text>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
+              {typeItems.map((p) => {
+                const region = regionOf(p.category);
+                const on = draftOutfit[region] === p.id;
+                return (
+                  <Pressable
+                    key={p.id}
+                    onPress={() => setSlot(region, on ? undefined : p.id)}
+                    style={[styles.swatch, on && styles.swatchOn]}
+                  >
+                    <Image source={p.image} style={styles.swatchImg} resizeMode="contain" />
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          )}
 
           <Pressable
             onPress={onDress}
@@ -304,12 +323,12 @@ const styles = StyleSheet.create({
   swatch: { width: 64, height: 64, borderRadius: 12, backgroundColor: '#F3F3F5', padding: 5, borderWidth: 2, borderColor: 'transparent' },
   swatchOn: { borderColor: WEROL_TOKENS.lime },
   swatchImg: { width: '100%', height: '100%' },
-  chips: { flexDirection: 'row', gap: 8, marginBottom: 14 },
-  chip: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: 12, backgroundColor: WEROL_TOKENS.pitch },
+  typeRow: { gap: 8, paddingBottom: 12 },
+  typeChip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12, backgroundColor: WEROL_TOKENS.pitch },
   chipActive: { backgroundColor: WEROL_TOKENS.lime },
   chipText: { fontFamily: FONTS.spaceGroteskBold, fontSize: 12, color: WEROL_TOKENS.paper },
   chipTextActive: { color: WEROL_TOKENS.pitch },
-  chipPrice: { fontFamily: FONTS.inter, fontSize: 10, color: WEROL_TOKENS.muted, marginTop: 2 },
+  emptyHint: { fontFamily: FONTS.inter, fontSize: 13, color: WEROL_TOKENS.muted, paddingVertical: 22, textAlign: 'center' },
 
   // branded loader
   loaderOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(10,10,12,0.7)', zIndex: 8 },

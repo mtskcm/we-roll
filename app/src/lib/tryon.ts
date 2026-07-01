@@ -29,7 +29,14 @@ async function runOne(modelImage: string, garmentImage: string, category: 'tops'
     headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model_name: 'tryon-v1.6',
-      inputs: { model_image: modelImage, garment_image: garmentImage, category },
+      inputs: {
+        model_image: modelImage,
+        garment_image: garmentImage,
+        category,               // explicit tops/bottoms → correct region
+        mode: 'quality',        // best fit accuracy (slower)
+        garment_photo_type: 'auto',
+        segmentation_free: false,
+      },
     }),
   });
   const j = await run.json();
