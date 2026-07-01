@@ -56,7 +56,7 @@ function relTime(ts: number): string {
 
 export function OutfitsFeedScreen() {
   const insets = useSafeAreaInsets();
-  const { height: winHeight } = useWindowDimensions();
+  const { width: winWidth, height: winHeight } = useWindowDimensions();
   const navigation = useNavigation<any>();
   const showToast = useShareStore((s) => s.showToast);
 
@@ -77,6 +77,7 @@ export function OutfitsFeedScreen() {
         renderItem={({ item }) => (
           <OutfitCard
             outfit={item}
+            width={winWidth}
             height={winHeight}
             bottomSafeArea={insets.bottom}
             onOpen={() => navigation.navigate('OutfitDetail', { outfitId: item.id })}
@@ -110,11 +111,13 @@ export function OutfitsFeedScreen() {
 
 function OutfitCard({
   outfit,
+  width,
   height,
   bottomSafeArea = 0,
   onOpen,
 }: {
   outfit: UserOutfit;
+  width: number;
   height: number;
   bottomSafeArea?: number;
   onOpen: () => void;
@@ -128,8 +131,8 @@ function OutfitCard({
   const toggleFollow = useOutfitFeedStore((s) => s.toggleFollow);
 
   return (
-    <View style={[styles.card, { height }]}>
-      <Image source={outfit.image} style={StyleSheet.absoluteFill} resizeMode="cover" />
+    <View style={[styles.card, { width, height }]}>
+      <Image source={outfit.image} style={{ width, height }} resizeMode="cover" />
       <Pressable style={StyleSheet.absoluteFill} onPress={onOpen} />
 
       <LinearGradient
@@ -228,7 +231,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   addBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', ...SHADOW },
-  card: { width: '100%', backgroundColor: WEROL_TOKENS.pitch },
+  card: { backgroundColor: WEROL_TOKENS.pitch, overflow: 'hidden' },
   topGradient: { position: 'absolute', left: 0, right: 0, top: 0, height: 130 },
   bottomGradient: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   rail: { position: 'absolute', right: 12, gap: 20, alignItems: 'center' },
