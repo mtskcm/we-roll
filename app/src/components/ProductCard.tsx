@@ -90,7 +90,7 @@ export function ProductCard({ product, height, bottomSafeArea = 0, onBuy, onDeta
         <View style={[styles.info, { bottom: infoBottomOffset }]} pointerEvents="box-none">
           <View style={styles.textBlock}>
             <BrandBadge brand={product.brand} height={22} />
-            <Text style={styles.name} numberOfLines={1}>{product.name}</Text>
+            <Text style={styles.name} numberOfLines={2}>{product.name}</Text>
             <View style={styles.priceRow}>
               <Text style={styles.price}>
                 {formatPrice(product.price.current, product.price.currency)}
@@ -212,6 +212,7 @@ const styles = StyleSheet.create({
   name: {
     fontFamily: FONTS.spaceGrotesk,
     fontSize: 16,
+    lineHeight: 20,
     color: 'rgba(255,255,255,0.92)',
     letterSpacing: 0,
   },
