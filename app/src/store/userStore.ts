@@ -1,6 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Linking from 'expo-linking';
-import * as WebBrowser from 'expo-web-browser';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabaseClient';
@@ -110,6 +108,10 @@ export const useUserStore = create<State & Actions>()(
       },
 
       signInWithGoogle: async () => {
+        // Lazy-loaded so the app still starts on a build that doesn't yet bundle
+        // these native modules (Google just needs a rebuild to work).
+        const WebBrowser = require('expo-web-browser') as typeof import('expo-web-browser');
+        const Linking = require('expo-linking') as typeof import('expo-linking');
         try {
           const redirectTo = Linking.createURL('auth-callback');
           const { data, error } = await supabase.auth.signInWithOAuth({
