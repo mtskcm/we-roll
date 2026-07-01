@@ -8,6 +8,7 @@ import {
   FlatList,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -36,6 +37,9 @@ import {
   useOutfitFeedStore,
 } from '../store/outfitFeedStore';
 import { useShareStore } from '../store/shareStore';
+import { useProducts } from '../store/productsStore';
+import { formatPrice } from '../lib/format';
+import type { Product } from '../types';
 import { WEROL_TOKENS } from '../theme/colors';
 import { SPACING } from '../theme/spacing';
 import { FONTS } from '../theme/typography';
@@ -59,6 +63,7 @@ export function OutfitsFeedScreen() {
   const { width: winWidth, height: winHeight } = useWindowDimensions();
   const navigation = useNavigation<any>();
   const showToast = useShareStore((s) => s.showToast);
+  const PRODUCTS = useProducts();
 
   const getItemLayout = useCallback(
     (_: ArrayLike<UserOutfit> | null | undefined, index: number) => ({
@@ -80,6 +85,8 @@ export function OutfitsFeedScreen() {
             width={winWidth}
             height={winHeight}
             bottomSafeArea={insets.bottom}
+            products={PRODUCTS}
+            onProduct={(id) => navigation.navigate('ProductDetails', { productId: id })}
             onOpen={() => navigation.navigate('OutfitDetail', { outfitId: item.id })}
           />
         )}
@@ -114,15 +121,23 @@ function OutfitCard({
   width,
   height,
   bottomSafeArea = 0,
+  products,
+  onProduct,
   onOpen,
 }: {
   outfit: UserOutfit;
   width: number;
   height: number;
   bottomSafeArea?: number;
+  products: Product[];
+  onProduct: (id: string) => void;
   onOpen: () => void;
 }) {
   const infoBottomOffset = BOTTOM_NAV_HEIGHT + bottomSafeArea + 8;
+  const tagged = outfit.taggedProductIds
+    .map((id) => products.find((p) => p.id === id))
+    .filter((p): p is Product => !!p)
+    .slice(0, 6);
   const liked = useIsOutfitLiked(outfit.id);
   const bookmarked = useIsOutfitBookmarked(outfit.id);
   const followed = useIsFollowed(outfit.ownerHandle);
@@ -170,12 +185,29 @@ function OutfitCard({
         <RailAction Icon={ShareIcon} onPress={() => {}} />
       </View>
 
-      {/* Bottom-left: owner + caption */}
+      {/* Bottom-left: owner + caption + shop the look */}
       <View style={[styles.info, { bottom: infoBottomOffset }]} pointerEvents="box-none">
         <Text style={styles.handle}>@{outfit.ownerHandle}</Text>
         <Text style={styles.meta}>{relTime(outfit.createdAt)} · {outfit.taggedProductIds.length} kúskov</Text>
         {!!outfit.caption && (
           <Text style={styles.caption} numberOfLines={2}>{outfit.caption}</Text>
+        )}
+        {tagged.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.shopStrip}
+          >
+            {tagged.map((p) => (
+              <Pressable key={p.id} onPress={() => onProduct(p.id)} style={styles.shopTag}>
+                <Image source={p.image} style={styles.shopThumb} resizeMode="contain" />
+                <View style={styles.shopInfo}>
+                  <Text style={styles.shopBrand} numberOfLines={1}>{p.brand || 'SHOP'}</Text>
+                  <Text style={styles.shopPrice}>{formatPrice(p.price.current, p.price.currency)}</Text>
+                </View>
+              </Pressable>
+            ))}
+          </ScrollView>
         )}
         {outfit.comments.length > 0 && (
           <Pressable onPress={onOpen} hitSlop={6}>
@@ -264,4 +296,19 @@ const styles = StyleSheet.create({
   meta: { fontFamily: FONTS.inter, fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2, ...SHADOW },
   caption: { fontFamily: FONTS.inter, fontSize: 14, lineHeight: 19, color: 'rgba(255,255,255,0.92)', marginTop: 8, ...SHADOW },
   viewComments: { fontFamily: FONTS.inter, fontSize: 13, color: 'rgba(255,255,255,0.6)', marginTop: 6 },
+  shopStrip: { gap: 8, paddingTop: 12, paddingRight: 8 },
+  shopTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.94)',
+    borderRadius: 10,
+    paddingRight: 12,
+    paddingVertical: 5,
+    paddingLeft: 5,
+  },
+  shopThumb: { width: 34, height: 34, borderRadius: 7, backgroundColor: '#F3F3F5' },
+  shopInfo: { gap: 1 },
+  shopBrand: { fontFamily: FONTS.jetbrainsMonoBold, fontSize: 8, letterSpacing: 1, color: WEROL_TOKENS.muted2 },
+  shopPrice: { fontFamily: FONTS.archivoBold, fontSize: 13, color: WEROL_TOKENS.pitch },
 });
