@@ -36,15 +36,6 @@
         --line2: #2A2A2E;
         --muted: #A0A0A6;
         --muted2: #6E6E73;
-
-        /* PARTNER TINTS (accent only) */
-        --tint-orange: #FF6B2C;
-        --tint-red: #E63946;
-        --tint-yellow: #F2C94C;
-        --tint-sunset: #FF7A2B;
-        --tint-magenta: #FF3D8A;
-        --tint-violet: #A78BFA;
-        --tint-cyan: #22D3EE;
       }
 
       * { box-sizing: border-box; }
@@ -315,64 +306,6 @@
         margin: 0;
       }
 
-      /* === PARTNERS === */
-      .partners {
-        background: var(--concrete);
-        border-top: 1px solid var(--line);
-        border-bottom: 1px solid var(--line);
-        padding: 64px 0;
-        overflow: hidden;
-      }
-      .partners-title {
-        text-align: center;
-        font-family: 'JetBrains Mono', monospace;
-        font-weight: 500;
-        font-size: 12px;
-        letter-spacing: 0.22em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin: 0 0 40px;
-      }
-      .marquee {
-        overflow: hidden;
-        mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
-        -webkit-mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
-      }
-      .marquee-track {
-        display: flex;
-        gap: 40px;
-        width: max-content;
-        align-items: center;
-        animation: scroll 50s linear infinite;
-      }
-      @keyframes scroll {
-        from { transform: translateX(0); }
-        to { transform: translateX(-50%); }
-      }
-      .partner-name {
-        font-family: 'Archivo', sans-serif;
-        font-weight: 800;
-        font-size: clamp(22px, 3.2vw, 32px);
-        color: var(--muted);
-        white-space: nowrap;
-        letter-spacing: -0.025em;
-        text-transform: uppercase;
-        opacity: 0.75;
-        transition: opacity 0.2s, color 0.2s;
-        flex-shrink: 0;
-      }
-      .partner-name:hover {
-        opacity: 1;
-        color: var(--paper);
-      }
-      .partner-sep {
-        color: var(--lime);
-        font-family: 'Archivo', sans-serif;
-        font-weight: 900;
-        font-size: 24px;
-        flex-shrink: 0;
-      }
-
       /* === CTA === */
       .cta {
         text-align: center;
@@ -495,63 +428,6 @@
                 sa objaví restock. Najprv ty, potom všetci ostatní.
               </p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="partners">
-        <p class="partners-title">Partner shops</p>
-        <div class="marquee">
-          <div class="marquee-track">
-            <span class="partner-name">Footshop</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">Queens</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">Zalando</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">About You</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">Answear</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">Supersklep</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">Freshment</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">Sizeer</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">Shooos</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">JD Sports</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">Glami</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">The Streets</span>
-            <span class="partner-sep">·</span>
-            <!-- duplicate for seamless loop -->
-            <span class="partner-name">Footshop</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">Queens</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">Zalando</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">About You</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">Answear</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">Supersklep</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">Freshment</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">Sizeer</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">Shooos</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">JD Sports</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">Glami</span>
-            <span class="partner-sep">·</span>
-            <span class="partner-name">The Streets</span>
-            <span class="partner-sep">·</span>
           </div>
         </div>
       </section>
