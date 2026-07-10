@@ -62,25 +62,28 @@ function rankForUser(products: Product[]): Product[] {
   return diversify(ranked);
 }
 
-/** Diversity pass — never more than 2 of the same category in a row, so a
- * strong taste boosts a category without flooding the feed with it. */
-function diversify(sorted: Product[], maxRun = 2): Product[] {
+/** Diversity pass — max 2 same-category and max 3 same-shop posts in a row.
+ * A strong taste boosts what you love without flooding the feed, and every
+ * shop keeps surfacing even when your favourite brands live elsewhere. */
+function diversify(sorted: Product[], maxCatRun = 2, maxShopRun = 3): Product[] {
   const pool = sorted.slice();
   const out: Product[] = [];
   let runCat = '';
-  let runLen = 0;
+  let catLen = 0;
+  let runShop = '';
+  let shopLen = 0;
   while (pool.length) {
-    let idx = 0;
-    if (runLen >= maxRun) {
-      const alt = pool.findIndex((p) => p.category !== runCat);
-      if (alt !== -1) idx = alt;
-    }
+    let idx = pool.findIndex((p) => {
+      const catOk = p.category !== runCat || catLen < maxCatRun;
+      const shopOk = p.shop.name !== runShop || shopLen < maxShopRun;
+      return catOk && shopOk;
+    });
+    if (idx === -1) idx = 0; // nothing satisfies both — relax rather than stall
     const p = pool.splice(idx, 1)[0];
-    if (p.category === runCat) runLen++;
-    else {
-      runCat = p.category;
-      runLen = 1;
-    }
+    catLen = p.category === runCat ? catLen + 1 : 1;
+    runCat = p.category;
+    shopLen = p.shop.name === runShop ? shopLen + 1 : 1;
+    runShop = p.shop.name;
     out.push(p);
   }
   return out;
