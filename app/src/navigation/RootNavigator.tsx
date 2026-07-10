@@ -1,30 +1,26 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import { BottomNav } from '../components/BottomNav';
-import { TabSwipeWrapper } from '../components/TabSwipeWrapper';
+import { DiscoverScreen } from '../screens/DiscoverScreen';
 import { FeedScreen } from '../screens/FeedScreen';
 import { MessagesScreen } from '../screens/MessagesScreen';
 import { FigureBuilderScreen } from '../screens/FigureBuilderScreen';
-import { OutfitDetailScreen } from '../screens/OutfitDetailScreen';
-import { OutfitsFeedScreen } from '../screens/OutfitsFeedScreen';
 import { ProductDetailsScreen } from '../screens/ProductDetailsScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
-import { SavedScreen } from '../screens/SavedScreen';
-import { SearchScreen } from '../screens/SearchScreen';
 import { SignInScreen } from '../screens/auth/SignInScreen';
 import { SignUpScreen } from '../screens/auth/SignUpScreen';
 import { WelcomeScreen } from '../screens/auth/WelcomeScreen';
-import { useSettingsStore } from '../store/settingsStore';
+import { OnboardingFlow } from '../screens/onboarding/OnboardingFlow';
 import { useShareStore } from '../store/shareStore';
 import { useUserStore } from '../store/userStore';
-import { useColors } from '../theme/useColors';
+import { WEROL_TOKENS } from '../theme/colors';
 
 const Tab = createBottomTabNavigator();
 const AuthStack = createNativeStackNavigator();
 const HomeStackNav = createNativeStackNavigator();
-const OutfitStackNav = createNativeStackNavigator();
+const DiscoverStackNav = createNativeStackNavigator();
 
 function AuthFlow() {
   const showToast = useShareStore((s) => s.showToast);
@@ -40,7 +36,7 @@ function AuthFlow() {
     <AuthStack.Navigator
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#0A0A0C' },
+        contentStyle: { backgroundColor: WEROL_TOKENS.pitch },
         animation: 'slide_from_right',
       }}
     >
@@ -78,7 +74,7 @@ function HomeStack() {
     <HomeStackNav.Navigator
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#0A0A0C' },
+        contentStyle: { backgroundColor: WEROL_TOKENS.pitch },
         animation: 'slide_from_right',
       }}
     >
@@ -88,71 +84,59 @@ function HomeStack() {
   );
 }
 
-function OutfitStack() {
+function DiscoverStack() {
   return (
-    <OutfitStackNav.Navigator
+    <DiscoverStackNav.Navigator
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#0A0A0C' },
+        contentStyle: { backgroundColor: WEROL_TOKENS.pitch },
         animation: 'slide_from_right',
       }}
     >
-      <OutfitStackNav.Screen name="OutfitsFeed" component={OutfitsFeedScreen} />
-      <OutfitStackNav.Screen name="OutfitDetail" component={OutfitDetailScreen} />
-      <OutfitStackNav.Screen name="ProductDetails" component={ProductDetailsScreen} />
-    </OutfitStackNav.Navigator>
+      <DiscoverStackNav.Screen name="DiscoverHome" component={DiscoverScreen} />
+      <DiscoverStackNav.Screen name="ProductDetails" component={ProductDetailsScreen} />
+    </DiscoverStackNav.Navigator>
   );
 }
 
+const navTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: WEROL_TOKENS.pitch,
+    card: WEROL_TOKENS.concrete,
+    text: WEROL_TOKENS.paper,
+    primary: WEROL_TOKENS.lime,
+    border: WEROL_TOKENS.line,
+  },
+};
+
 export function RootNavigator() {
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
-  const themeMode = useSettingsStore((s) => s.theme);
-  const C = useColors();
+  const authReady = useUserStore((s) => s.authReady);
+  const needsOnboarding = useUserStore((s) => s.needsOnboarding);
 
-  const navTheme = {
-    ...(themeMode === 'dark' ? DarkTheme : DefaultTheme),
-    colors: {
-      ...(themeMode === 'dark' ? DarkTheme : DefaultTheme).colors,
-      background: C.ink,
-      card: C.ink2,
-      text: C.cream,
-      primary: C.teal,
-      border: C.ink3,
-    },
-  };
+  // Until the stored session is restored, render nothing (the splash overlay
+  // covers this) — prevents the Welcome screen flashing for signed-in users.
+  if (!authReady) return null;
 
   return (
     <NavigationContainer theme={navTheme}>
       {!isAuthenticated ? (
         <AuthFlow />
+      ) : needsOnboarding ? (
+        <OnboardingFlow />
       ) : (
         <Tab.Navigator
           screenOptions={{ headerShown: false }}
           tabBar={(props) => <BottomNav {...props} />}
         >
-          <Tab.Screen name="Home">
-            {() => <TabSwipeWrapper><HomeStack /></TabSwipeWrapper>}
-          </Tab.Screen>
-          <Tab.Screen name="Outfit">
-            {() => <TabSwipeWrapper><OutfitStack /></TabSwipeWrapper>}
-          </Tab.Screen>
-          <Tab.Screen name="Fit">
-            {() => <TabSwipeWrapper><FigureBuilderScreen /></TabSwipeWrapper>}
-          </Tab.Screen>
-          <Tab.Screen name="Saved">
-            {() => <TabSwipeWrapper><SavedScreen /></TabSwipeWrapper>}
-          </Tab.Screen>
-          <Tab.Screen name="Messages">
-            {() => <TabSwipeWrapper><MessagesScreen /></TabSwipeWrapper>}
-          </Tab.Screen>
-          <Tab.Screen name="Profile">
-            {() => <TabSwipeWrapper><ProfileScreen /></TabSwipeWrapper>}
-          </Tab.Screen>
-          <Tab.Screen
-            name="Search"
-            component={SearchScreen}
-            options={{ tabBarButton: () => null }}
-          />
+          {/* No swipe-between-tabs gesture — tab bar taps only (design decision) */}
+          <Tab.Screen name="Home" component={HomeStack} />
+          <Tab.Screen name="Discover" component={DiscoverStack} />
+          <Tab.Screen name="Fit" component={FigureBuilderScreen} />
+          <Tab.Screen name="Messages" component={MessagesScreen} />
+          <Tab.Screen name="Profile" component={ProfileScreen} />
         </Tab.Navigator>
       )}
     </NavigationContainer>

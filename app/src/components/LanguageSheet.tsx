@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
@@ -10,7 +10,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useT } from '../i18n';
 import { useSettingsStore, type Language } from '../store/settingsStore';
-import { COLORS } from '../theme/colors';
+import { WEROL_TOKENS } from '../theme/colors';
 import { RADII, SPACING } from '../theme/spacing';
 import { FONTS } from '../theme/typography';
 
@@ -33,17 +33,24 @@ export function LanguageSheet({ visible, onClose }: Props) {
   const backdropOpacity = useSharedValue(0);
   const sheetTranslate = useSharedValue(400);
 
+  // Keep the Modal mounted while the exit animation plays — unmounting the
+  // moment `visible` flips false would cut the slide-out short.
+  const [rendered, setRendered] = useState(visible);
+
   useEffect(() => {
     if (visible) {
+      setRendered(true);
       backdropOpacity.value = withTiming(1, { duration: 220 });
       sheetTranslate.value = withTiming(0, {
         duration: 280,
         easing: Easing.out(Easing.cubic),
       });
-    } else {
-      backdropOpacity.value = withTiming(0, { duration: 180 });
-      sheetTranslate.value = withTiming(400, { duration: 220 });
+      return undefined;
     }
+    backdropOpacity.value = withTiming(0, { duration: 180 });
+    sheetTranslate.value = withTiming(400, { duration: 220 });
+    const timer = setTimeout(() => setRendered(false), 240);
+    return () => clearTimeout(timer);
   }, [visible, backdropOpacity, sheetTranslate]);
 
   const backdropStyle = useAnimatedStyle(() => ({ opacity: backdropOpacity.value }));
@@ -57,7 +64,7 @@ export function LanguageSheet({ visible, onClose }: Props) {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
+    <Modal visible={rendered} transparent animationType="none" onRequestClose={onClose}>
       <Animated.View style={[styles.backdrop, backdropStyle]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <Animated.View
@@ -79,10 +86,10 @@ export function LanguageSheet({ visible, onClose }: Props) {
                   ]}
                 >
                   <Text style={styles.flag}>{opt.flag}</Text>
-                  <Text style={[styles.label, active && { color: COLORS.cream }]}>
+                  <Text style={[styles.label, active && { color: WEROL_TOKENS.paper }]}>
                     {t(opt.labelKey)}
                   </Text>
-                  {active && <Ionicons name="checkmark" size={20} color={COLORS.teal} />}
+                  {active && <Ionicons name="checkmark" size={20} color={WEROL_TOKENS.lime} />}
                 </Pressable>
               );
             })}
@@ -100,7 +107,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: COLORS.ink2,
+    backgroundColor: WEROL_TOKENS.concrete,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: SPACING.section,
@@ -112,13 +119,13 @@ const styles = StyleSheet.create({
     width: 38,
     height: 4,
     borderRadius: 2,
-    backgroundColor: COLORS.ink4,
+    backgroundColor: WEROL_TOKENS.line2,
     marginBottom: SPACING.sm,
   },
   title: {
     fontFamily: FONTS.archivoBold,
     fontSize: 24,
-    color: COLORS.cream,
+    color: WEROL_TOKENS.paper,
     letterSpacing: -0.3,
   },
   list: {
@@ -128,7 +135,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.lg,
-    backgroundColor: COLORS.ink3,
+    backgroundColor: WEROL_TOKENS.line,
     borderRadius: RADII.md,
     paddingVertical: SPACING.lg,
     paddingHorizontal: SPACING.lg,
@@ -136,7 +143,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   rowActive: {
-    borderColor: COLORS.teal,
+    borderColor: WEROL_TOKENS.lime,
   },
   rowPressed: {
     opacity: 0.7,
@@ -146,8 +153,8 @@ const styles = StyleSheet.create({
   },
   label: {
     flex: 1,
-    fontFamily: FONTS.interSemibold,
+    fontFamily: FONTS.archivoSemibold,
     fontSize: 15,
-    color: COLORS.cream2,
+    color: WEROL_TOKENS.muted,
   },
 });

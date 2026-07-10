@@ -1,7 +1,7 @@
 // ProductDetailsScreen — clean (HYPE-style). Header (back · brand · share),
 // big title, product image on a light card, a details list, sticky BUY bar.
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BackIcon from '../assets/icons/back.svg';
@@ -10,10 +10,13 @@ import CartIcon from '../assets/icons/cart.svg';
 import HeartIcon from '../assets/icons/heart.svg';
 import ShareIcon from '../assets/icons/share.svg';
 import { BrandBadge } from '../components/BrandBadge';
+import { useEngagementStore } from '../store/engagementStore';
+import { useOrdersStore } from '../store/ordersStore';
 import { useProducts } from '../store/productsStore';
 import { useFeedStore, useIsLiked, useIsSaved } from '../store/feedStore';
 import { useShareStore } from '../store/shareStore';
 import { formatPrice } from '../lib/format';
+import { shareProduct } from '../lib/shareProduct';
 import { WEROL_TOKENS } from '../theme/colors';
 import { SPACING } from '../theme/spacing';
 import { FONTS } from '../theme/typography';
@@ -27,12 +30,42 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets();
   const PRODUCTS = useProducts();
   const productId = route?.params?.productId;
-  const product = PRODUCTS.find((p) => p.id === productId) ?? PRODUCTS[0];
-  const liked = useIsLiked(product.id);
-  const saved = useIsSaved(product.id);
+  const product = PRODUCTS.find((p) => p.id === productId);
+  const liked = useIsLiked(product?.id ?? '');
+  const saved = useIsSaved(product?.id ?? '');
   const toggleLike = useFeedStore((s) => s.toggleLike);
   const toggleSaved = useFeedStore((s) => s.toggleSaved);
-  const openShare = useShareStore((s) => s.openShare);
+  const recordEngagement = useEngagementStore((s) => s.record);
+  const showToast = useShareStore((s) => s.showToast);
+
+  // Opening a detail = a click-through signal for the algorithm.
+  useEffect(() => {
+    if (product) recordEngagement(product, 'click');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?.id]);
+
+  // No silent fallback to another product — a stale/unknown id gets an honest
+  // not-found state instead of rendering the wrong item with a live BUY link.
+  if (!product) {
+    return (
+      <View style={styles.root}>
+        <View style={[styles.header, { paddingTop: insets.top + 4 }]}>
+          <Pressable
+            accessibilityLabel="Back"
+            onPress={() => navigation?.goBack?.()}
+            hitSlop={10}
+            style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.6 }]}
+          >
+            <BackIcon width={22} height={22} stroke={WEROL_TOKENS.paper} strokeWidth={1.9} fill="none" />
+          </Pressable>
+        </View>
+        <View style={styles.notFoundWrap}>
+          <Text style={styles.notFoundTitle}>Product not found</Text>
+          <Text style={styles.notFoundBody}>This piece is no longer available or the catalog has refreshed.</Text>
+        </View>
+      </View>
+    );
+  }
 
   const sku = product.id.includes(':') ? product.id.split(':')[1] : product.id;
   const rows: Array<[string, string]> = [
@@ -64,7 +97,7 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
         </View>
         <Pressable
           accessibilityLabel="Share"
-          onPress={() => openShare(product)}
+          onPress={() => shareProduct(product)}
           hitSlop={10}
           style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.6 }]}
         >
@@ -98,7 +131,10 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
       {/* Sticky bottom bar — like / save / BUY */}
       <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <Pressable
-          onPress={() => toggleLike(product.id)}
+          onPress={() => {
+            recordEngagement(product, liked ? 'unlike' : 'like');
+            toggleLike(product.id);
+          }}
           style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.7 }]}
         >
           <HeartIcon
@@ -110,7 +146,10 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
           />
         </Pressable>
         <Pressable
-          onPress={() => toggleSaved(product.id)}
+          onPress={() => {
+            recordEngagement(product, saved ? 'unsave' : 'save');
+            toggleSaved(product.id);
+          }}
           style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.7 }]}
         >
           <BookmarkIcon
@@ -122,7 +161,11 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
           />
         </Pressable>
         <Pressable
-          onPress={() => Linking.openURL(product.takeItUrl).catch(() => {})}
+          onPress={() => {
+            recordEngagement(product, 'buy');
+            useOrdersStore.getState().addOrder(product); // bought-through-WEROL history
+            Linking.openURL(product.takeItUrl).catch(() => showToast("Couldn't open the shop"));
+          }}
           style={({ pressed }) => [styles.buyBtn, pressed && { opacity: 0.88 }]}
         >
           <CartIcon width={15} height={15} stroke={WEROL_TOKENS.pitch} strokeWidth={2} fill="none" />
@@ -159,10 +202,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontFamily: FONTS.spaceGroteskBold,
-    fontSize: 24,
-    lineHeight: 30,
-    letterSpacing: -0.4,
+    fontFamily: FONTS.serif,
+    fontSize: 26,
+    lineHeight: 33,
     color: WEROL_TOKENS.paper,
     paddingHorizontal: SPACING.section,
     paddingTop: 6,
@@ -172,7 +214,7 @@ const styles = StyleSheet.create({
     marginHorizontal: SPACING.section,
     aspectRatio: 1,
     borderRadius: 18,
-    backgroundColor: '#F3F3F5',
+    backgroundColor: WEROL_TOKENS.frame,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
@@ -183,7 +225,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   sectionTitle: {
-    fontFamily: FONTS.spaceGroteskBold,
+    fontFamily: FONTS.archivoSemibold,
     fontSize: 17,
     color: WEROL_TOKENS.paper,
     letterSpacing: -0.2,
@@ -204,14 +246,14 @@ const styles = StyleSheet.create({
     borderTopColor: WEROL_TOKENS.line,
   },
   detailLabel: {
-    fontFamily: FONTS.inter,
+    fontFamily: FONTS.archivoRegular,
     fontSize: 15,
     color: WEROL_TOKENS.muted,
   },
   detailValue: {
     flex: 1,
     textAlign: 'right',
-    fontFamily: FONTS.interSemibold,
+    fontFamily: FONTS.archivoSemibold,
     fontSize: 15,
     color: WEROL_TOKENS.paper,
   },
@@ -250,9 +292,30 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
   },
   buyText: {
-    fontFamily: FONTS.archivoBold,
+    fontFamily: FONTS.button,
     fontSize: 14,
     letterSpacing: 0.4,
     color: WEROL_TOKENS.pitch,
+  },
+  notFoundWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: SPACING.section,
+    paddingBottom: 80,
+  },
+  notFoundTitle: {
+    fontFamily: FONTS.archivoBold,
+    fontSize: 20,
+    color: WEROL_TOKENS.paper,
+    letterSpacing: -0.3,
+  },
+  notFoundBody: {
+    fontFamily: FONTS.archivoRegular,
+    fontSize: 14,
+    color: WEROL_TOKENS.muted,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

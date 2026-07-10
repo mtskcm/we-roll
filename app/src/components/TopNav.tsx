@@ -3,16 +3,18 @@
 
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import SearchIcon from '../assets/icons/search.svg';
+import FilterIcon from '../assets/icons/filter.svg';
 import WordmarkOnDark from '../assets/logos/wordmark-on-dark.svg';
 import { WEROL_TOKENS } from '../theme/colors';
 import { SPACING } from '../theme/spacing';
 
 type Props = {
   onSearch: () => void;
+  /** Volt-tinted magnifier while a feed filter is active. */
+  filterActive?: boolean;
 };
 
-export function TopNav({ onSearch }: Props) {
+export function TopNav({ onSearch, filterActive }: Props) {
   return (
     <View style={styles.root}>
       <View style={styles.logoArea}>
@@ -20,12 +22,18 @@ export function TopNav({ onSearch }: Props) {
       </View>
 
       <Pressable
-        accessibilityLabel="Search"
+        accessibilityLabel="Filter feed"
         onPress={onSearch}
         hitSlop={10}
         style={({ pressed }) => [styles.searchBtn, pressed && { opacity: 0.6 }]}
       >
-        <SearchIcon width={25} height={25} stroke={WEROL_TOKENS.paper} strokeWidth={1.9} fill="none" />
+        <FilterIcon
+          width={25}
+          height={25}
+          stroke={filterActive ? WEROL_TOKENS.lime : WEROL_TOKENS.paper}
+          strokeWidth={2.3}
+          fill="none"
+        />
       </Pressable>
     </View>
   );

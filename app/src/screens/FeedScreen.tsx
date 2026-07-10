@@ -1,13 +1,23 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Linking, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { FlatList, Linking, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import type { ViewToken } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FilterSheet } from '../components/FilterSheet';
 import { ProductCard } from '../components/ProductCard';
 import { SwipeHint } from '../components/SwipeHint';
 import { TopNav } from '../components/TopNav';
-import { useProducts } from '../store/productsStore';
+import { useEngagementStore } from '../store/engagementStore';
+import { useOrdersStore } from '../store/ordersStore';
+import {
+  getAllProducts,
+  useFeedFilter,
+  useFeedProducts,
+  useProductsStore,
+} from '../store/productsStore';
+import { FONTS } from '../theme/typography';
 import { useFeedStore } from '../store/feedStore';
+import { useShareStore } from '../store/shareStore';
 import { useUiStore } from '../store/uiStore';
 import { WEROL_TOKENS } from '../theme/colors';
 import type { Product } from '../types';
@@ -17,7 +27,9 @@ export function FeedScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const listRef = useRef<FlatList<Product>>(null);
-  const PRODUCTS = useProducts();
+  const PRODUCTS = useFeedProducts();
+  const feedFilter = useFeedFilter();
+  const [filterOpen, setFilterOpen] = useState(false);
 
   // Full-bleed: each card fills the whole screen; the image runs edge-to-edge
   // to the very top (behind the status bar) and the TopNav floats over it.
@@ -29,35 +41,61 @@ export function FeedScreen() {
   const dismissSwipeHint = useFeedStore((s) => s.dismissSwipeHint);
   const consumePendingFeedIndex = useFeedStore((s) => s.consumePendingFeedIndex);
   const setChromeHidden = useUiStore((s) => s.setChromeHidden);
-
-  const [, setActiveProduct] = useState<Product>(
-    PRODUCTS[currentIndex] ?? PRODUCTS[0],
-  );
+  const zenMode = useUiStore((s) => s.zenMode);
+  const showToast = useShareStore((s) => s.showToast);
 
   useEffect(() => {
     const unsubFocus = navigation.addListener('focus', () => {
       const idx = consumePendingFeedIndex();
-      if (idx !== null && idx >= 0 && idx < PRODUCTS.length) {
+      // Read the catalog through the store getter, not the closure — the
+      // listener registers once and the array is swapped by hydrate().
+      const catalog = getAllProducts();
+      if (idx !== null && idx >= 0 && idx < catalog.length) {
         setCurrentIndex(idx);
-        setActiveProduct(PRODUCTS[idx]);
         requestAnimationFrame(() => {
           listRef.current?.scrollToIndex({ index: idx, animated: false });
         });
       }
     });
-    const unsubBlur = navigation.addListener('blur', () => setChromeHidden(false));
+    const unsubBlur = navigation.addListener('blur', () => {
+      setChromeHidden(false);
+      flushDwell(); // leaving the feed ends the current post's watch time
+    });
+    // IG behaviour: tapping the Home tab while already on the feed scrolls
+    // back to the top and refreshes the catalog (hydrate reshuffles → fresh mix).
+    const tabNav = navigation.getParent();
+    const unsubTab = tabNav?.addListener('tabPress', () => {
+      if (!navigation.isFocused()) return; // first tap just returns to the feed
+      listRef.current?.scrollToOffset({ offset: 0, animated: true });
+      setCurrentIndex(0);
+      setChromeHidden(false);
+      useProductsStore.getState().hydrate();
+    });
     return () => {
       unsubFocus();
       unsubBlur();
+      unsubTab?.();
     };
   }, [navigation, consumePendingFeedIndex, setCurrentIndex, setChromeHidden]);
+
+  // Dwell tracking — how long each post is actually watched feeds the
+  // recommendation algorithm (recorded when the user scrolls away).
+  const dwellRef = useRef<{ product: Product; since: number } | null>(null);
+  const flushDwell = useRef(() => {
+    const d = dwellRef.current;
+    if (d) {
+      useEngagementStore.getState().record(d.product, 'dwell', (Date.now() - d.since) / 1000);
+      dwellRef.current = null;
+    }
+  }).current;
 
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     const first = viewableItems[0];
     if (first && first.index !== null && first.index !== undefined) {
       setCurrentIndex(first.index);
-      const p = first.item as Product;
-      if (p) setActiveProduct(p);
+      flushDwell();
+      const product = first.item as Product | undefined;
+      if (product) dwellRef.current = { product, since: Date.now() };
     }
   }).current;
 
@@ -83,8 +121,12 @@ export function FeedScreen() {
             product={item}
             height={itemHeight}
             bottomSafeArea={insets.bottom}
-            onBuy={() => Linking.openURL(item.takeItUrl).catch(() => {})}
-            onDetails={() => navigation.navigate('ProductDetails', { productId: item.id })}
+            topSafeArea={insets.top}
+            onBuy={() => {
+              useEngagementStore.getState().record(item, 'buy');
+              useOrdersStore.getState().addOrder(item); // bought-through-WEROL history
+              Linking.openURL(item.takeItUrl).catch(() => showToast("Couldn't open the shop"));
+            }}
           />
         )}
         pagingEnabled
@@ -101,16 +143,34 @@ export function FeedScreen() {
         }}
         onScrollEndDrag={() => setChromeHidden(false)}
         onMomentumScrollEnd={() => setChromeHidden(false)}
-        initialScrollIndex={currentIndex}
+        initialScrollIndex={Math.min(Math.max(currentIndex, 0), Math.max(PRODUCTS.length - 1, 0))}
         initialNumToRender={2}
         windowSize={3}
         maxToRenderPerBatch={2}
+        ListEmptyComponent={
+          <View style={[styles.empty, { height: winHeight }]}>
+            <Text style={styles.emptyTitle}>Nothing matches your filter</Text>
+            <Text style={styles.emptyHint}>Tap the magnifier and adjust it</Text>
+          </View>
+        }
       />
 
-      {/* TopNav floats transparently over the full-bleed image */}
-      <View style={[styles.topOverlay, { paddingTop: insets.top }]} pointerEvents="box-none">
-        <TopNav onSearch={() => navigation.navigate('Search')} />
-      </View>
+      {/* TopNav floats transparently over the full-bleed image (hidden in zen mode) */}
+      {!zenMode && (
+        <View style={[styles.topOverlay, { paddingTop: insets.top }]} pointerEvents="box-none">
+          <TopNav onSearch={() => setFilterOpen(true)} filterActive={!!feedFilter} />
+        </View>
+      )}
+
+      {/* Feed filter (magnifier) — filtered browsing is excluded from the algorithm */}
+      <FilterSheet
+        visible={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        onApplied={() => {
+          setCurrentIndex(0);
+          requestAnimationFrame(() => listRef.current?.scrollToOffset({ offset: 0, animated: false }));
+        }}
+      />
 
       {!swipeHintDismissed && (
         <View pointerEvents="none" style={styles.hintHolder}>
@@ -138,5 +198,23 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 120,
     alignItems: 'center',
+  },
+  empty: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 40,
+  },
+  emptyTitle: {
+    fontFamily: FONTS.manropeBold,
+    fontSize: 18,
+    color: WEROL_TOKENS.paper,
+    textAlign: 'center',
+  },
+  emptyHint: {
+    fontFamily: FONTS.manropeMedium,
+    fontSize: 14,
+    color: WEROL_TOKENS.muted,
+    textAlign: 'center',
   },
 });

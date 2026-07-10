@@ -17,3 +17,18 @@ export function formatPrice(value: number, currency?: string): string {
   const rounded = Number.isFinite(value) ? Number(value.toFixed(2)) : 0;
   return `${rounded} ${currencySymbol(currency)}`.trim();
 }
+
+/** Compact social count: 1234 → "1.2K". */
+export function formatCount(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K`;
+  return String(n);
+}
+
+/** Compact relative age: "3m" / "3h" / "3d" — one format everywhere. */
+export function relTime(ts: number): string {
+  const m = Math.floor((Date.now() - ts) / 60000);
+  if (m < 60) return `${Math.max(1, m)}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
+}

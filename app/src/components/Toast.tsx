@@ -7,7 +7,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { COLORS } from '../theme/colors';
+import { WEROL_TOKENS } from '../theme/colors';
 import { RADII, SPACING } from '../theme/spacing';
 import { FONTS } from '../theme/typography';
 
@@ -33,7 +33,7 @@ export function Toast({ visible, message, onHide }: Props) {
       return () => clearTimeout(timer);
     }
     return undefined;
-  }, [visible, opacity, translateY, onHide]);
+  }, [visible, message, opacity, translateY, onHide]);
 
   const animStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -46,7 +46,7 @@ export function Toast({ visible, message, onHide }: Props) {
     <View pointerEvents="none" style={styles.holder}>
       <Animated.View style={[styles.toast, animStyle]}>
         <View style={styles.iconCircle}>
-          <Ionicons name="checkmark" size={14} color={COLORS.ink} />
+          <Ionicons name="checkmark" size={14} color={WEROL_TOKENS.pitch} />
         </View>
         <Text style={styles.text}>{message}</Text>
       </Animated.View>
@@ -67,24 +67,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
-    backgroundColor: COLORS.ink2,
+    backgroundColor: WEROL_TOKENS.concrete,
     borderRadius: RADII.pill,
     paddingVertical: 10,
     paddingHorizontal: SPACING.lg,
     borderWidth: 1,
-    borderColor: COLORS.ink3,
+    borderColor: WEROL_TOKENS.line,
   },
   iconCircle: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: COLORS.teal,
+    backgroundColor: WEROL_TOKENS.lime,
     alignItems: 'center',
     justifyContent: 'center',
   },
   text: {
-    fontFamily: FONTS.interSemibold,
+    fontFamily: FONTS.archivoSemibold,
     fontSize: 13,
-    color: COLORS.cream,
+    color: WEROL_TOKENS.paper,
   },
 });

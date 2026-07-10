@@ -1,6 +1,10 @@
+// BottomNav — UI kit tab bar (Edition 03): floating surface1 card, radius 26,
+// icon-only tabs (2.5 stroke), volt = active. Hides while scrolling the feed
+// (chromeHidden) and in long-press zen mode.
+
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import React, { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -9,13 +13,12 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddIcon from '../assets/icons/add.svg';
-import HangerIcon from '../assets/icons/hanger.svg';
 import HomeIcon from '../assets/icons/home.svg';
+import SearchIcon from '../assets/icons/search.svg';
 import UserIcon from '../assets/icons/user.svg';
-import { useT, type TKey } from '../i18n';
 import { useUiStore } from '../store/uiStore';
 import { WEROL_TOKENS } from '../theme/colors';
-import { FONTS } from '../theme/typography';
+import { RADII } from '../theme/spacing';
 
 type IconComponent = React.FC<{
   width?: number;
@@ -25,20 +28,21 @@ type IconComponent = React.FC<{
   fill?: string;
 }>;
 
-const ICONS: Record<string, { Icon: IconComponent; labelKey: TKey }> = {
-  Home: { Icon: HomeIcon, labelKey: 'tab.feed' },        // HOME — main feed
-  Outfit: { Icon: HangerIcon, labelKey: 'tab.outfit' },  // FITS — community outfits
-  Fit: { Icon: AddIcon, labelKey: 'tab.fit' },           // FIT — outfit builder
-  Profile: { Icon: UserIcon, labelKey: 'tab.profile' },  // ME — profile
+const ICONS: Record<string, { Icon: IconComponent; label: string }> = {
+  Home: { Icon: HomeIcon, label: 'Home' },            // HOME — main feed
+  Discover: { Icon: SearchIcon, label: 'Discover' },  // DISCOVER — catalog grid
+  Fit: { Icon: AddIcon, label: 'Create' },            // CREATE — outfit builder
+  Profile: { Icon: UserIcon, label: 'Profile' },
 };
 
-// Saved + Inbox were removed from the bar (reached elsewhere).
-const TAB_ORDER = ['Home', 'Outfit', 'Fit', 'Profile'];
+// Home · Discover · Create · Profile (FITS removed per design).
+const TAB_ORDER = ['Home', 'Discover', 'Fit', 'Profile'];
+
+const INACTIVE = '#8A8B90';
 
 export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const chromeHidden = useUiStore((s) => s.chromeHidden);
-  const t = useT();
+  const chromeHidden = useUiStore((s) => s.chromeHidden || s.zenMode);
 
   const orderedRoutes = TAB_ORDER
     .map((name) => state.routes.find((r) => r.name === name))
@@ -62,7 +66,7 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
   const activeTab = state.routes[state.index] as { state?: { index?: number; routes?: { name: string }[] } };
   const nested = activeTab.state;
   const nestedRoute = nested?.routes?.[nested.index ?? 0]?.name;
-  if (nestedRoute === 'ProductDetails' || nestedRoute === 'OutfitDetail') return null;
+  if (nestedRoute === 'ProductDetails') return null;
 
   return (
     <View
@@ -74,7 +78,7 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
           const index = state.routes.findIndex((r) => r.key === route.key);
           const isFocused = state.index === index;
           const meta = ICONS[route.name] ?? ICONS.Home;
-          const color = isFocused ? WEROL_TOKENS.lime : WEROL_TOKENS.muted;
+          const color = isFocused ? WEROL_TOKENS.lime : INACTIVE;
           const { options } = descriptors[route.key];
           const { Icon } = meta;
 
@@ -94,14 +98,11 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
               key={route.key}
               accessibilityRole="button"
               accessibilityState={isFocused ? { selected: true } : {}}
-              accessibilityLabel={options.tabBarAccessibilityLabel ?? route.name}
+              accessibilityLabel={options.tabBarAccessibilityLabel ?? meta.label}
               onPress={onPress}
               style={styles.tab}
             >
-              <Icon width={23} height={23} stroke={color} strokeWidth={1.8} fill="none" />
-              <Text style={[styles.label, { color }]} numberOfLines={1}>
-                {t(meta.labelKey)}
-              </Text>
+              <Icon width={26} height={26} stroke={color} strokeWidth={2.5} fill="none" />
             </Pressable>
           );
         })}
@@ -123,15 +124,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'stretch',
-    backgroundColor: 'rgba(16,16,20,0.94)',
-    borderRadius: 28,
+    backgroundColor: WEROL_TOKENS.concrete,
+    borderRadius: RADII.sheet,
     borderWidth: 1,
-    borderColor: WEROL_TOKENS.line2,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    borderColor: WEROL_TOKENS.line,
+    paddingVertical: 17,
+    paddingHorizontal: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
+    shadowOpacity: 0.35,
     shadowRadius: 16,
     elevation: 12,
   },
@@ -139,12 +140,5 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 2,
-  },
-  label: {
-    fontFamily: FONTS.spaceGroteskBold,
-    fontSize: 11,
-    letterSpacing: 0.5,
   },
 });

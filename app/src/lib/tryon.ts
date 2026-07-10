@@ -2,12 +2,13 @@
 // (male/female) with real product photos, chaining top → bottom. Results are
 // cached per outfit so the same combo is generated only once.
 //
-// DEV NOTE: the FASHN key is read from EXPO_PUBLIC_FASHN_KEY (app/.env, gitignored).
-// EXPO_PUBLIC_* vars are embedded in the app bundle — fine for a private dev
-// build, but before any public release move this call behind a Supabase Edge
-// Function so the key never ships to the device.
+// SECURITY: production calls go through the `fashn-tryon` Supabase Edge
+// Function (signed-in users only) — the FASHN key never ships in the bundle.
+// DEV fallback: if EXPO_PUBLIC_FASHN_KEY is set (app/.env, gitignored), FASHN
+// is called directly — handy before the function is deployed.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from './supabaseClient';
 
 const KEY = process.env.EXPO_PUBLIC_FASHN_KEY;
 const BASE = 'https://api.fashn.ai/v1';
@@ -24,24 +25,37 @@ export const MANNEQUIN: Record<Gender, string> = {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function runOne(modelImage: string, garmentImage: string, category: 'tops' | 'bottoms'): Promise<string> {
-  const run = await fetch(`${BASE}/run`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model_name: 'tryon-v1.6',
-      inputs: { model_image: modelImage, garment_image: garmentImage, category },
-    }),
-  });
-  const j = await run.json();
-  if (!run.ok || !j.id) throw new Error(j?.error?.message || JSON.stringify(j?.error) || `run ${run.status}`);
-  for (let i = 0; i < 60; i++) {
-    await sleep(2000);
-    const st = await fetch(`${BASE}/status/${j.id}`, { headers: { Authorization: `Bearer ${KEY}` } });
-    const s = await st.json();
-    if (s.status === 'completed' && s.output?.[0]) return s.output[0];
-    if (s.status === 'failed') throw new Error(s?.error?.message || 'Generovanie zlyhalo');
+  // DEV path — direct FASHN call with the local key.
+  if (KEY) {
+    const run = await fetch(`${BASE}/run`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model_name: 'tryon-v1.6',
+        inputs: { model_image: modelImage, garment_image: garmentImage, category },
+      }),
+    });
+    const j = await run.json();
+    if (!run.ok || !j.id) throw new Error(j?.error?.message || JSON.stringify(j?.error) || `run ${run.status}`);
+    for (let i = 0; i < 60; i++) {
+      await sleep(2000);
+      const st = await fetch(`${BASE}/status/${j.id}`, { headers: { Authorization: `Bearer ${KEY}` } });
+      const s = await st.json();
+      if (s.status === 'completed' && s.output?.[0]) return s.output[0];
+      if (s.status === 'failed') throw new Error(s?.error?.message || 'Generation failed');
+    }
+    throw new Error('Generation timed out');
   }
-  throw new Error('Vypršal čas generovania');
+
+  // PRODUCTION path — secure Edge Function (key stays server-side; requires a
+  // signed-in Supabase session).
+  const { data, error } = await supabase.functions.invoke('fashn-tryon', {
+    body: { model_image: modelImage, garment_image: garmentImage, category },
+  });
+  if (error) throw new Error(error.message || 'Try-on service unavailable');
+  if (data?.error) throw new Error(data.error);
+  if (!data?.output) throw new Error('Try-on returned no image');
+  return data.output as string;
 }
 
 // Dress a single garment onto whatever image is passed (the bare mannequin or
@@ -52,7 +66,6 @@ export async function dressGarment(
   garmentUrl: string,
   category: 'tops' | 'bottoms',
 ): Promise<string> {
-  if (!KEY) throw new Error('Chýba FASHN kľúč (EXPO_PUBLIC_FASHN_KEY v app/.env)');
   const cacheKey = `dress:v2:${category}:${garmentUrl}:${modelImage}`;
   const cached = await AsyncStorage.getItem(cacheKey);
   if (cached) return cached;
@@ -64,8 +77,7 @@ export async function dressGarment(
 export type TryOnRequest = { gender: Gender; topUrl?: string; bottomUrl?: string };
 
 export async function tryOnOutfit({ gender, topUrl, bottomUrl }: TryOnRequest): Promise<string> {
-  if (!KEY) throw new Error('Chýba FASHN kľúč (EXPO_PUBLIC_FASHN_KEY v app/.env)');
-  if (!topUrl && !bottomUrl) throw new Error('Vyber aspoň jeden kúsok');
+  if (!topUrl && !bottomUrl) throw new Error('Pick at least one piece');
   const cacheKey = `tryon:${gender}:${topUrl || '-'}:${bottomUrl || '-'}`;
   const cached = await AsyncStorage.getItem(cacheKey);
   if (cached) return cached;

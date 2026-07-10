@@ -21,6 +21,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard';
 import CloseIcon from '../assets/icons/close.svg';
 import InstagramIcon from '../assets/icons/instagram.svg';
 import SendIcon from '../assets/icons/send.svg';
@@ -88,8 +89,11 @@ export function StoryShareSheet({ visible, outfit, onClose, onCopied }: Props) {
     tryLinkOrShare('snapchat://creativekit/preview?text=werol', summary);
   const handleWhatsapp = () =>
     tryLinkOrShare(`whatsapp://send?text=${encodeURIComponent(summary)}`, summary);
-  const handleCopy = () => {
-    onCopied?.();
+  const handleCopy = async () => {
+    try {
+      await Clipboard.setStringAsync(summary);
+      onCopied?.();
+    } catch {}
     onClose();
   };
 

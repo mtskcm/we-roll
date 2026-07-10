@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getAllProducts } from '../store/productsStore';
 import { useT } from '../i18n';
 import { useMessagesStore, useUnreadCount } from '../store/messagesStore';
-import { COLORS, getShopColor } from '../theme/colors';
+import { WEROL_TOKENS, getShopColor } from '../theme/colors';
 import { RADII, SPACING } from '../theme/spacing';
 import { FONTS, TEXT_STYLES } from '../theme/typography';
 import type { Message, MessageType } from '../types';
@@ -81,7 +81,7 @@ export function MessagesScreen() {
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="mail-open-outline" size={36} color={COLORS.dim} />
+            <Ionicons name="mail-open-outline" size={36} color={WEROL_TOKENS.muted2} />
             <Text style={styles.emptyTitle}>{t('notif.empty.title')}</Text>
             <Text style={styles.emptyBody}>{t('notif.empty.body')}</Text>
           </View>
@@ -107,7 +107,7 @@ function MessageRow({
   return (
     <Pressable
       onPress={onPress}
-      android_ripple={{ color: COLORS.ink3 }}
+      android_ripple={{ color: WEROL_TOKENS.line }}
       style={({ pressed }) => [
         styles.row,
         pressed && styles.rowPressed,
@@ -119,7 +119,7 @@ function MessageRow({
       </View>
       <View style={styles.text}>
         <View style={styles.rowTop}>
-          <Text style={[styles.shop, { color: COLORS.cream }]} numberOfLines={1}>
+          <Text style={[styles.shop, { color: WEROL_TOKENS.paper }]} numberOfLines={1}>
             {message.shopName}
           </Text>
           <Text style={styles.time}>{relativeTime(message.timestamp)}</Text>
@@ -135,7 +135,7 @@ function MessageRow({
       <View style={styles.trailing}>
         {!message.read && <View style={styles.unreadDot} />}
         {message.productId && (
-          <Ionicons name="chevron-forward" size={16} color={COLORS.dim} />
+          <Ionicons name="chevron-forward" size={16} color={WEROL_TOKENS.muted2} />
         )}
       </View>
     </Pressable>
@@ -145,7 +145,7 @@ function MessageRow({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: COLORS.ink,
+    backgroundColor: WEROL_TOKENS.pitch,
     paddingHorizontal: SPACING.section,
   },
   header: {
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.jetbrainsMono,
     fontSize: 10,
     letterSpacing: 1,
-    color: COLORS.cream3,
+    color: WEROL_TOKENS.muted2,
     marginTop: 4,
     textTransform: 'uppercase',
   },
@@ -167,12 +167,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: RADII.pill,
     borderWidth: 1,
-    borderColor: COLORS.ink3,
+    borderColor: WEROL_TOKENS.line,
   },
   markAllText: {
-    fontFamily: FONTS.interSemibold,
+    fontFamily: FONTS.archivoSemibold,
     fontSize: 11,
-    color: COLORS.cream2,
+    color: WEROL_TOKENS.muted,
   },
   list: {
     gap: SPACING.lg,
@@ -181,20 +181,20 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: SPACING.lg,
-    backgroundColor: COLORS.ink2,
+    backgroundColor: WEROL_TOKENS.concrete,
     borderRadius: RADII.md,
     padding: SPACING.lg,
     borderWidth: 1,
-    borderColor: COLORS.ink3,
+    borderColor: WEROL_TOKENS.line,
     alignItems: 'flex-start',
   },
   rowPressed: {
-    backgroundColor: COLORS.ink3,
+    backgroundColor: WEROL_TOKENS.line,
     transform: [{ scale: 0.99 }],
   },
   rowRead: {
-    backgroundColor: COLORS.ink,
-    borderColor: COLORS.ink2,
+    backgroundColor: WEROL_TOKENS.pitch,
+    borderColor: WEROL_TOKENS.concrete,
   },
   trailing: {
     alignItems: 'center',
@@ -230,17 +230,17 @@ const styles = StyleSheet.create({
   time: {
     fontFamily: FONTS.jetbrainsMono,
     fontSize: 10,
-    color: COLORS.cream3,
+    color: WEROL_TOKENS.muted2,
   },
   title: {
-    fontFamily: FONTS.interSemibold,
+    fontFamily: FONTS.archivoSemibold,
     fontSize: 14,
-    color: COLORS.cream,
+    color: WEROL_TOKENS.paper,
   },
   body: {
-    fontFamily: FONTS.inter,
+    fontFamily: FONTS.archivoRegular,
     fontSize: 13,
-    color: COLORS.cream,
+    color: WEROL_TOKENS.paper,
     lineHeight: 18,
     opacity: 0.85,
   },
@@ -255,9 +255,9 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: COLORS.teal,
+    backgroundColor: WEROL_TOKENS.lime,
     borderWidth: 2,
-    borderColor: COLORS.ink2,
+    borderColor: WEROL_TOKENS.concrete,
   },
   empty: {
     alignItems: 'center',
@@ -268,13 +268,13 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontFamily: FONTS.archivoBold,
     fontSize: 22,
-    color: COLORS.cream,
+    color: WEROL_TOKENS.paper,
     letterSpacing: -0.3,
   },
   emptyBody: {
-    fontFamily: FONTS.inter,
+    fontFamily: FONTS.archivoRegular,
     fontSize: 13,
-    color: COLORS.cream2,
+    color: WEROL_TOKENS.muted,
     textAlign: 'center',
     lineHeight: 18,
     maxWidth: 280,

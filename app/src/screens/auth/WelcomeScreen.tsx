@@ -18,7 +18,7 @@ type Props = {
 export function WelcomeScreen({ onSignIn, onSignUp, onAppleSignIn, onGoogleSignIn }: Props) {
   return (
     <AuthFrame
-      eyebrow="WELCOME BACK"
+      eyebrow="STREETWEAR FEED"
       hero={['One feed.', 'Every drop.', 'Your people.']}
     >
       <AuthButton
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   swapText: {
-    fontFamily: FONTS.inter,
+    fontFamily: FONTS.archivoRegular,
     fontSize: 13,
     color: WEROL_TOKENS.muted,
   },

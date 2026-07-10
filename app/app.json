@@ -9,7 +9,10 @@
     "newArchEnabled": true,
     "splash": {
       "resizeMode": "contain",
-      "backgroundColor": "#0c0c0a"
+      "backgroundColor": "#0A0A0C"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     },
     "ios": {
       "supportsTablet": false,
@@ -18,10 +21,7 @@
     "android": {
       "package": "com.werol.app",
       "adaptiveIcon": {
-        "backgroundColor": "#0c0c0a"
-      },
-      "runtimeVersion": {
-        "policy": "appVersion"
+        "backgroundColor": "#0A0A0C"
       }
     },
     "web": {

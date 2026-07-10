@@ -1,23 +1,20 @@
-// FigureBuilderScreen (CREATE) — AI try-on studio. The figure is shown full and
-// uncluttered (drag to tilt it). Tap "Vytvoriť outfit" → a sheet to pick pieces →
-// "Obleč figurínu" → FASHN dresses a white mannequin with the real product photos
-// → the whole dressed figure shows → "Uložiť outfit" stores that snapshot.
+// FigureBuilderScreen (CREATE) — AI try-on studio, UI kit layout:
+// header (logo + Women/Men segmented) · mannequin stage in a radius-22 card ·
+// persistent "Pick your pieces" panel (chips with counts, swatches, volt CTA).
+// FASHN dresses the mannequin with your SAVED pieces; saving publishes the fit.
 
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Image,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   Easing,
-  FadeIn,
-  SlideInDown,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -27,13 +24,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import WordmarkOnDark from '../assets/logos/wordmark-on-dark.svg';
 import { StoryShareSheet } from '../components/StoryShareSheet';
 import { formatPrice } from '../lib/format';
+import { publishOutfit } from '../lib/publishOutfit';
 import { dressGarment, MANNEQUIN, type Gender } from '../lib/tryon';
 import { useFeedStore } from '../store/feedStore';
+import { useOutfitsStore } from '../store/outfitsStore';
 import { useProducts } from '../store/productsStore';
 import { useShareStore } from '../store/shareStore';
 import { useUserStore } from '../store/userStore';
 import { WEROL_TOKENS } from '../theme/colors';
+import { RADII } from '../theme/spacing';
 import { FONTS } from '../theme/typography';
+import { SegmentedControl } from '../ui/SegmentedControl';
+import { Sheet } from '../ui/Sheet';
 import type { Product } from '../types';
 
 const BOTTOM_NAV_HEIGHT = 78;
@@ -42,11 +44,11 @@ const BOTTOM_CATS = ['pants', 'shorts'];
 // Garment types shown as picker chips → each maps to a FASHN try-on region.
 // (FASHN handles tops/bottoms only — caps/shoes aren't garment try-on.)
 const GARMENT_TYPES = [
-  { key: 'tshirts', label: 'Tričká' },
-  { key: 'hoodies', label: 'Mikiny' },
-  { key: 'jackets', label: 'Bundy' },
-  { key: 'shorts', label: 'Šortky' },
-  { key: 'pants', label: 'Nohavice' },
+  { key: 'tshirts', label: 'Tees' },
+  { key: 'hoodies', label: 'Hoodies' },
+  { key: 'jackets', label: 'Jackets' },
+  { key: 'shorts', label: 'Shorts' },
+  { key: 'pants', label: 'Pants' },
 ];
 const regionOf = (cat: string): 'top' | 'bottom' => (BOTTOM_CATS.includes(cat) ? 'bottom' : 'top');
 
@@ -100,7 +102,6 @@ export function FigureBuilderScreen() {
 
   const onDress = async () => {
     if (!hasPending) return;
-    setPickerOpen(false);
     setLoading(true);
     try {
       let img = figureImg ?? MANNEQUIN[gender];
@@ -112,7 +113,7 @@ export function FigureBuilderScreen() {
       setAppliedTop(nextTop);
       setAppliedBottom(nextBottom);
     } catch (e: any) {
-      showToast('AI: ' + (e?.message || 'chyba'));
+      showToast('AI: ' + (e?.message || 'error'));
     } finally {
       setLoading(false);
     }
@@ -127,133 +128,160 @@ export function FigureBuilderScreen() {
 
   const onSave = () => {
     if (!figureImg || !selected.length) return;
-    saveOutfit(undefined, figureImg); // snapshot of the dressed figure
-    showToast(`Outfit uložený · ${selected.length} kúskov`);
+    const tagged = selected.map((p) => p.id); // capture before saveOutfit clears the draft
+    saveOutfit(undefined, figureImg); // snapshot of the dressed figure (local)
+    showToast(`Outfit saved · ${selected.length} ${selected.length === 1 ? 'piece' : 'pieces'}`);
+    // Publish (Supabase) so it shows on the profile — fire & forget with toasts.
+    const { isAuthenticated, userId } = useUserStore.getState();
+    if (isAuthenticated && userId) {
+      publishOutfit({ userId, imageUrl: figureImg, taggedProductIds: tagged })
+        .then((r) => {
+          if (r.error) showToast(`Publishing failed: ${r.error}`);
+          else {
+            showToast('Your fit is live ✓');
+            useOutfitsStore.getState().hydrate();
+          }
+        });
+    }
   };
 
   const figureSource = useMemo(() => ({ uri: figureImg ?? MANNEQUIN[gender] }), [figureImg, gender]);
   const dressed = !!figureImg;
+  const canSave = dressed && !hasPending && selected.length > 0;
 
   return (
     <View style={styles.root}>
-      {/* Full-bleed figure (static). A true turntable needs multi-angle frames —
-          a flat image rotated in 3D black-flickers, so the tilt was removed. */}
+      {/* Full-bleed figure — exactly as the original CREATE (cover, whole screen) */}
       <Image source={figureSource} style={StyleSheet.absoluteFill} resizeMode="cover" />
 
-      {/* Top gradient + WEROL bar + gender toggle */}
+      {/* Floating header: logo + gender segmented on a dark top gradient */}
       <LinearGradient
-        colors={['rgba(10,10,12,0.92)', 'rgba(10,10,12,0.35)', 'transparent']}
+        colors={['rgba(0,0,0,0.9)', 'rgba(0,0,0,0.35)', 'transparent']}
         style={[styles.topGrad, { paddingTop: insets.top + 8 }]}
       >
         <View style={styles.topBar}>
           <WordmarkOnDark width={104} height={19} />
-          <View style={styles.toggle}>
-            {(['female', 'male'] as Gender[]).map((g) => (
-              <Pressable key={g} onPress={() => setGender(g)} style={[styles.toggleBtn, gender === g && styles.toggleBtnOn]}>
-                <Text style={[styles.toggleText, gender === g && styles.toggleTextOn]}>{g === 'female' ? 'Žena' : 'Muž'}</Text>
-              </Pressable>
-            ))}
-          </View>
+          <SegmentedControl
+            compact
+            options={[
+              { key: 'female', label: 'Women' },
+              { key: 'male', label: 'Men' },
+            ]}
+            value={gender}
+            onChange={(g) => setGender(g as Gender)}
+          />
         </View>
       </LinearGradient>
 
-      {/* Branded AI loader */}
       {loading && <TryOnLoader />}
 
-      {/* Bottom: single CTA (clean) */}
+      {/* Spacer pushes the panel to the bottom over the figure */}
+      <View style={{ flex: 1 }} pointerEvents="none" />
+
+      {/* Bottom actions — float over the figure on a dark gradient; the piece
+          picker itself opens as a sheet so it never covers the mannequin */}
       <LinearGradient
-        colors={['transparent', 'rgba(10,10,12,0.6)', 'rgba(10,10,12,0.96)']}
-        style={[styles.bottomGrad, { paddingBottom: insets.bottom + BOTTOM_NAV_HEIGHT + 8 }]}
+        colors={['transparent', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.95)']}
+        style={[styles.bottomGrad, { paddingBottom: insets.bottom + BOTTOM_NAV_HEIGHT + 10 }]}
       >
-        {dressed ? (
+        {canSave ? (
           <>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>{selected.length} KÚSKY</Text>
+              <Text style={styles.summaryLabel}>
+                {selected.length} {selected.length === 1 ? 'PIECE' : 'PIECES'}
+              </Text>
               <Text style={styles.summaryTotal}>{formatPrice(totalPrice, currency)}</Text>
             </View>
             <Pressable onPress={onSave} style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]}>
-              <Text style={styles.primaryText}>ULOŽIŤ OUTFIT</Text>
+              <Text style={styles.primaryText}>SAVE OUTFIT</Text>
             </Pressable>
-            <View style={styles.secondaryRow}>
-              <Pressable onPress={() => setPickerOpen(true)} style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.7 }]}>
-                <Text style={styles.secondaryText}>UPRAVIŤ</Text>
+            <View style={styles.ctaRow}>
+              <Pressable onPress={() => setPickerOpen(true)} style={({ pressed }) => [styles.ghostBtn, pressed && { opacity: 0.7 }]}>
+                <Text style={styles.ghostText}>EDIT PIECES</Text>
               </Pressable>
-              <Pressable onPress={() => setStoryOpen(true)} style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.7 }]}>
-                <Text style={styles.secondaryText}>ZDIEĽAŤ</Text>
+              <Pressable onPress={() => setStoryOpen(true)} style={({ pressed }) => [styles.ghostBtn, pressed && { opacity: 0.7 }]}>
+                <Text style={styles.ghostText}>SHARE</Text>
               </Pressable>
-              <Pressable onPress={onReset} style={({ pressed }) => [styles.resetBtn, pressed && { opacity: 0.7 }]}>
-                <Text style={styles.resetText}>↺</Text>
+              <Pressable onPress={onReset} style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.7 }]}>
+                <Text style={styles.iconBtnText}>↺</Text>
               </Pressable>
             </View>
           </>
         ) : (
-          <Pressable onPress={() => setPickerOpen(true)} style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }]}>
-            <Text style={styles.primaryText}>VYTVORIŤ OUTFIT</Text>
+          <Pressable
+            onPress={hasPending ? onDress : () => setPickerOpen(true)}
+            disabled={loading}
+            style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }, loading && styles.primaryDisabled]}
+          >
+            <Text style={[styles.primaryText, loading && styles.primaryTextDisabled]}>
+              {loading ? 'DRESSING…' : hasPending ? 'DRESS THE MANNEQUIN (AI)' : 'PICK YOUR PIECES'}
+            </Text>
           </Pressable>
         )}
       </LinearGradient>
 
-      {/* Piece picker sheet — backdrop fades in, sheet slides up */}
-      <Modal visible={pickerOpen} transparent statusBarTranslucent animationType="none" onRequestClose={() => setPickerOpen(false)}>
-        <Animated.View entering={FadeIn.duration(240)} style={StyleSheet.absoluteFill}>
-          <Pressable style={[StyleSheet.absoluteFill, styles.sheetBackdrop]} onPress={() => setPickerOpen(false)} />
-        </Animated.View>
-        <Animated.View entering={SlideInDown.duration(300)} style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
-          <View style={styles.sheetHandle} />
-          <View style={styles.sheetHead}>
-            <Text style={styles.sheetTitle}>Vyber kúsky</Text>
-            {selected.length > 0 && (
-              <Pressable onPress={clearDraftOutfit} hitSlop={8}>
-                <Text style={styles.sheetClear}>Vymazať</Text>
-              </Pressable>
-            )}
-          </View>
+      {/* Piece picker sheet — revealed on demand */}
+      <Sheet visible={pickerOpen} onClose={() => setPickerOpen(false)}>
+        <View style={styles.panelHead}>
+          <Text style={styles.panelTitle}>Pick your pieces</Text>
+          {selected.length > 0 && (
+            <Pressable onPress={clearDraftOutfit} hitSlop={8}>
+              <Text style={styles.panelClear}>Clear</Text>
+            </Pressable>
+          )}
+        </View>
 
-          {/* Garment-type chips */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.typeRow}>
-            {GARMENT_TYPES.map((t) => {
-              const active = activeType === t.key;
-              const count = savedProducts.filter((p) => p.category === t.key).length;
+        {/* Garment-type chips (with saved counts) */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.typeRow}>
+          {GARMENT_TYPES.map((t) => {
+            const active = activeType === t.key;
+            const count = savedProducts.filter((p) => p.category === t.key).length;
+            return (
+              <Pressable key={t.key} onPress={() => setActiveType(t.key)} style={[styles.typeChip, active && styles.chipActive]}>
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                  {t.label}
+                  {count ? <Text style={active ? styles.chipCountActive : styles.chipCount}>  {count}</Text> : null}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        {/* Your saved pieces of the active type */}
+        {typeItems.length === 0 ? (
+          <Text style={styles.emptyHint}>No saved pieces of this type yet — save some from the feed (🔖).</Text>
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
+            {typeItems.map((p) => {
+              const region = regionOf(p.category);
+              const on = draftOutfit[region] === p.id;
               return (
-                <Pressable key={t.key} onPress={() => setActiveType(t.key)} style={[styles.typeChip, active && styles.chipActive]}>
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                    {t.label}{count ? `  ${count}` : ''}
-                  </Text>
+                <Pressable
+                  key={p.id}
+                  onPress={() => setSlot(region, on ? undefined : p.id)}
+                  style={[styles.swatch, on && styles.swatchOn]}
+                >
+                  <Image source={p.image} style={styles.swatchImg} resizeMode="contain" />
                 </Pressable>
               );
             })}
           </ScrollView>
+        )}
 
-          {/* Your saved pieces of the active type */}
-          {typeItems.length === 0 ? (
-            <Text style={styles.emptyHint}>Žiadne uložené kúsky tohto typu. Ulož si ich vo feede (🔖).</Text>
-          ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
-              {typeItems.map((p) => {
-                const region = regionOf(p.category);
-                const on = draftOutfit[region] === p.id;
-                return (
-                  <Pressable
-                    key={p.id}
-                    onPress={() => setSlot(region, on ? undefined : p.id)}
-                    style={[styles.swatch, on && styles.swatchOn]}
-                  >
-                    <Image source={p.image} style={styles.swatchImg} resizeMode="contain" />
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          )}
-
-          <Pressable
-            onPress={onDress}
-            disabled={!hasPending}
-            style={({ pressed }) => [styles.primaryBtn, !hasPending && { opacity: 0.4 }, pressed && { opacity: 0.85 }]}
-          >
-            <Text style={styles.primaryText}>{hasPending ? 'OBLEČ FIGURÍNU (AI)' : 'OBLEČENÉ ✓'}</Text>
-          </Pressable>
-        </Animated.View>
-      </Modal>
+        <Pressable
+          onPress={() => { setPickerOpen(false); onDress(); }}
+          disabled={!hasPending}
+          style={({ pressed }) => [
+            styles.primaryBtn,
+            !hasPending && styles.primaryDisabled,
+            pressed && hasPending && { opacity: 0.85 },
+          ]}
+        >
+          <Text style={[styles.primaryText, !hasPending && styles.primaryTextDisabled]}>
+            {hasPending ? 'DRESS THE MANNEQUIN (AI)' : dressed ? 'DRESSED ✓' : 'PICK PIECES ABOVE'}
+          </Text>
+        </Pressable>
+      </Sheet>
 
       <StoryShareSheet
         visible={storyOpen}
@@ -265,7 +293,7 @@ export function FigureBuilderScreen() {
   );
 }
 
-// Branded AI loader — spinning lime ring + pulsing label, on a dark blur.
+// Branded AI loader — spinning volt ring + pulsing label over the stage.
 function TryOnLoader() {
   const spin = useSharedValue(0);
   const pulse = useSharedValue(0.5);
@@ -281,66 +309,112 @@ function TryOnLoader() {
         <Animated.View style={[styles.loaderGlow, glowStyle]} />
         <Animated.View style={[styles.loaderRing, ringStyle]} />
       </View>
-      <Animated.Text style={[styles.loaderLabel, glowStyle]}>AI OBLIEKA FIGURÍNU</Animated.Text>
-      <Text style={styles.loaderSub}>~15 sekúnd</Text>
+      <Animated.Text style={[styles.loaderLabel, glowStyle]}>AI IS DRESSING THE MANNEQUIN</Animated.Text>
+      <Text style={styles.loaderSub}>~15 seconds</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: WEROL_TOKENS.pitch },
-  topGrad: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: 20, paddingBottom: 24, zIndex: 5 },
-  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  toggle: { flexDirection: 'row', backgroundColor: 'rgba(22,22,26,0.85)', borderRadius: 9999, padding: 3 },
-  toggleBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 9999 },
-  toggleBtnOn: { backgroundColor: WEROL_TOKENS.lime },
-  toggleText: { fontFamily: FONTS.spaceGroteskBold, fontSize: 11, color: WEROL_TOKENS.paper },
-  toggleTextOn: { color: WEROL_TOKENS.pitch },
-
-  bottomGrad: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 60 },
-  summaryRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 },
-  summaryLabel: { fontFamily: FONTS.jetbrainsMonoBold, fontSize: 10, letterSpacing: 1.5, color: WEROL_TOKENS.muted },
-  summaryTotal: { fontFamily: FONTS.archivo, fontSize: 22, letterSpacing: -0.6, color: WEROL_TOKENS.paper },
-  primaryBtn: { alignItems: 'center', backgroundColor: WEROL_TOKENS.lime, borderRadius: 14, paddingVertical: 16 },
-  primaryText: { fontFamily: FONTS.archivoBold, fontSize: 14, letterSpacing: 0.5, color: WEROL_TOKENS.pitch },
-  secondaryRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
-  secondaryBtn: { flex: 1, alignItems: 'center', paddingVertical: 13, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
-  secondaryText: { fontFamily: FONTS.archivoBold, fontSize: 12, letterSpacing: 0.5, color: WEROL_TOKENS.paper },
-  resetBtn: { width: 50, alignItems: 'center', justifyContent: 'center', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
-  resetText: { fontFamily: FONTS.spaceGroteskBold, fontSize: 18, color: WEROL_TOKENS.paper },
-
-  // sheet
-  sheetBackdrop: { flex: 1, backgroundColor: 'rgba(10,10,12,0.6)' },
-  sheet: {
+  topGrad: {
     position: 'absolute',
+    top: 0,
     left: 0,
     right: 0,
-    bottom: 0,
-    backgroundColor: WEROL_TOKENS.concrete,
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderColor: WEROL_TOKENS.line2,
+    paddingBottom: 24,
+    zIndex: 5,
   },
-  sheetHandle: { alignSelf: 'center', width: 38, height: 4, borderRadius: 2, backgroundColor: WEROL_TOKENS.line2, marginBottom: 12 },
-  sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  sheetTitle: { fontFamily: FONTS.spaceGroteskBold, fontSize: 18, color: WEROL_TOKENS.paper },
-  sheetClear: { fontFamily: FONTS.interSemibold, fontSize: 13, color: WEROL_TOKENS.lime },
-  strip: { gap: 8, paddingVertical: 2, paddingRight: 8, marginBottom: 10 },
-  swatch: { width: 64, height: 64, borderRadius: 12, backgroundColor: '#F3F3F5', padding: 5, borderWidth: 2, borderColor: 'transparent' },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+  },
+
+  bottomGrad: {
+    paddingHorizontal: 20,
+    paddingTop: 56,
+  },
+  panelHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
+  panelTitle: { fontFamily: FONTS.manropeExtraBold, fontSize: 18, color: WEROL_TOKENS.paper },
+  panelClear: { fontFamily: FONTS.manropeBold, fontSize: 14, color: WEROL_TOKENS.lime },
+
+  typeRow: { gap: 10, paddingBottom: 14 },
+  typeChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: RADII.pill,
+    backgroundColor: WEROL_TOKENS.surface2,
+  },
+  chipActive: { backgroundColor: WEROL_TOKENS.lime },
+  chipText: { fontFamily: FONTS.manropeSemibold, fontSize: 13, color: '#D6D7DB' },
+  chipTextActive: { fontFamily: FONTS.manropeBold, color: WEROL_TOKENS.pitch },
+  chipCount: { color: WEROL_TOKENS.muted2 },
+  chipCountActive: { color: 'rgba(10,11,12,0.6)' },
+
+  strip: { gap: 10, paddingVertical: 2, paddingRight: 8, marginBottom: 16 },
+  swatch: {
+    width: 66,
+    height: 66,
+    borderRadius: 14,
+    backgroundColor: WEROL_TOKENS.frame,
+    padding: 5,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
   swatchOn: { borderColor: WEROL_TOKENS.lime },
   swatchImg: { width: '100%', height: '100%' },
-  typeRow: { gap: 8, paddingBottom: 12 },
-  typeChip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12, backgroundColor: WEROL_TOKENS.pitch },
-  chipActive: { backgroundColor: WEROL_TOKENS.lime },
-  chipText: { fontFamily: FONTS.spaceGroteskBold, fontSize: 12, color: WEROL_TOKENS.paper },
-  chipTextActive: { color: WEROL_TOKENS.pitch },
-  emptyHint: { fontFamily: FONTS.inter, fontSize: 13, color: WEROL_TOKENS.muted, paddingVertical: 22, textAlign: 'center' },
+  emptyHint: {
+    fontFamily: FONTS.manropeMedium,
+    fontSize: 13,
+    color: WEROL_TOKENS.muted,
+    paddingVertical: 20,
+    textAlign: 'center',
+  },
+
+  summaryRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 },
+  summaryLabel: { fontFamily: FONTS.manropeBold, fontSize: 11, letterSpacing: 1.8, color: WEROL_TOKENS.muted },
+  summaryTotal: { fontFamily: FONTS.manropeExtraBold, fontSize: 22, letterSpacing: -0.5, color: WEROL_TOKENS.paper },
+
+  primaryBtn: {
+    alignItems: 'center',
+    backgroundColor: WEROL_TOKENS.lime,
+    borderRadius: RADII.pill,
+    paddingVertical: 16,
+  },
+  primaryDisabled: { backgroundColor: '#2A2B2E' },
+  primaryText: { fontFamily: FONTS.manropeExtraBold, fontSize: 15, letterSpacing: 0.5, color: WEROL_TOKENS.pitch },
+  primaryTextDisabled: { color: '#5A5B60' },
+  ctaRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginTop: 10 },
+  ghostBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 13,
+    borderRadius: RADII.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
+  ghostText: { fontFamily: FONTS.manropeBold, fontSize: 12, letterSpacing: 0.5, color: WEROL_TOKENS.paper },
+  iconBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: RADII.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconBtnText: { fontFamily: FONTS.manropeBold, fontSize: 20, color: WEROL_TOKENS.paper },
 
   // branded loader
-  loaderOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(10,10,12,0.7)', zIndex: 8 },
+  loaderOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // light scrim — the mannequin stays visible while the AI dresses it
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
   loaderRingWrap: { width: 72, height: 72, alignItems: 'center', justifyContent: 'center' },
   loaderGlow: { position: 'absolute', width: 72, height: 72, borderRadius: 36, backgroundColor: WEROL_TOKENS.lime, opacity: 0.25 },
   loaderRing: {
@@ -351,6 +425,14 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.15)',
     borderTopColor: WEROL_TOKENS.lime,
   },
-  loaderLabel: { fontFamily: FONTS.spaceGroteskBold, fontSize: 14, letterSpacing: 1, color: WEROL_TOKENS.paper, marginTop: 18 },
-  loaderSub: { fontFamily: FONTS.jetbrainsMonoBold, fontSize: 10, letterSpacing: 1.5, color: WEROL_TOKENS.lime, marginTop: 6 },
+  loaderLabel: {
+    fontFamily: FONTS.manropeExtraBold,
+    fontSize: 13,
+    letterSpacing: 1,
+    color: WEROL_TOKENS.paper,
+    marginTop: 18,
+    textAlign: 'center',
+    paddingHorizontal: 24,
+  },
+  loaderSub: { fontFamily: FONTS.manropeBold, fontSize: 11, letterSpacing: 1.5, color: WEROL_TOKENS.lime, marginTop: 6 },
 });

@@ -68,15 +68,31 @@ function rowToProduct(r: ProductRow): Product {
   };
 }
 
-/** Fetch products from Supabase. Throws on network/HTTP error; returns [] if empty. */
-export async function fetchProducts(limit = 500): Promise<Product[]> {
-  const url =
-    `${SUPABASE_URL}/rest/v1/products` +
-    `?select=*&order=updated_at.desc&limit=${limit}`;
-  const res = await fetch(url, {
-    headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` },
-  });
-  if (!res.ok) throw new Error(`Supabase products fetch failed: HTTP ${res.status}`);
-  const rows = (await res.json()) as ProductRow[];
+/**
+ * Fetch products from Supabase. Throws on network/HTTP error; returns [] if empty.
+ *
+ * PostgREST caps each response at 1000 rows, so we page through by `id` (a
+ * stable, unique key — avoids the row skips/dupes that offset+updated_at ties
+ * cause) until the catalog is loaded or `max` is reached. Ordering here doesn't
+ * matter for display: the store shuffles so every shop/category interleaves.
+ */
+export async function fetchProducts(max = 6000): Promise<Product[]> {
+  const PAGE = 1000;
+  const rows: ProductRow[] = [];
+  let after = '';
+  while (rows.length < max) {
+    const cursor = after ? `&id=gt.${encodeURIComponent(after)}` : '';
+    const url =
+      `${SUPABASE_URL}/rest/v1/products` +
+      `?select=*&order=id.asc&limit=${PAGE}${cursor}`;
+    const res = await fetch(url, {
+      headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` },
+    });
+    if (!res.ok) throw new Error(`Supabase products fetch failed: HTTP ${res.status}`);
+    const page = (await res.json()) as ProductRow[];
+    rows.push(...page);
+    if (page.length < PAGE) break; // last page
+    after = page[page.length - 1].id;
+  }
   return rows.map(rowToProduct);
 }

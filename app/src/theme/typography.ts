@@ -1,172 +1,92 @@
-// WEROL — Typography (Edition 01 · 2026 · Maroš)
-// Three families. One system. Strict roles — never swap.
+// WEROL — Typography (Edition 03 — "Streetwear app UI kit design-3")
+// ONE family: Manrope, weights 400–800. Legacy FONT keys are kept as aliases
+// (archivo* / jetbrainsMono*) so every screen restyles itself without renames;
+// new code should prefer the manrope* keys.
+//
+// Kit scale: Display/logo 800·52/-3.5% · Screen title 700·34/-2% ·
+// Heading/product 600·22 · Body 500·17 (#D6D7DB) · Technical label 700·13/+20% UPPER.
 
 import type { TextStyle } from 'react-native';
-import { COLORS } from './colors';
+import { WEROL_TOKENS } from './colors';
 
 export const FONTS = {
-  // Display — Archivo Black (wordmark, H1/H2/H3, buttons)
-  archivo: 'Archivo_900Black',
-  archivoBold: 'Archivo_800ExtraBold',
-  archivoMedium: 'Archivo_500Medium',
-  archivoRegular: 'Archivo_400Regular',
+  // Canonical Manrope keys
+  manrope: 'Manrope_400Regular',
+  manropeMedium: 'Manrope_500Medium',
+  manropeSemibold: 'Manrope_600SemiBold',
+  manropeBold: 'Manrope_700Bold',
+  manropeExtraBold: 'Manrope_800ExtraBold',
 
-  // Body — Inter (paragraphs, long-form copy)
-  inter: 'Inter_400Regular',
-  interMedium: 'Inter_500Medium',
-  interSemibold: 'Inter_600SemiBold',
-  interBold: 'Inter_700Bold',
+  // Accents (per Matúš): serif for product name + price, Prosto One for buttons
+  serif: 'CactusClassicalSerif_400Regular',
+  button: 'ProstoOne_400Regular',
 
-  // Technical — JetBrains Mono (labels, prices, SKUs, uppercase micro-type)
-  jetbrainsMono: 'JetBrainsMono_500Medium',
-  jetbrainsMonoRegular: 'JetBrainsMono_400Regular',
-  jetbrainsMonoBold: 'JetBrainsMono_700Bold',
-
-  // Nav / accent — Space Grotesk (tab labels, modern micro-type)
-  spaceGrotesk: 'SpaceGrotesk_500Medium',
-  spaceGroteskBold: 'SpaceGrotesk_600SemiBold',
-
-  // Backward-compat aliases (old code calls these — point to new families)
-  cormorantLight: 'Archivo_900Black',
-  cormorantRegular: 'Archivo_800ExtraBold',
-  cormorantItalic: 'Archivo_900Black',
-  dmSansRegular: 'Inter_400Regular',
-  dmSansSemibold: 'Inter_500Medium',
-  spaceMonoRegular: 'JetBrainsMono_500Medium',
-  spaceMonoBold: 'JetBrainsMono_700Bold',
+  // Legacy aliases — value swap restyles the whole app in one move
+  archivo: 'Manrope_800ExtraBold',        // display / big numbers
+  archivoBold: 'Manrope_700Bold',         // headings, CTAs, prices
+  archivoSemibold: 'Manrope_600SemiBold', // subheads, product names, handles
+  archivoMedium: 'Manrope_500Medium',     // emphasized body
+  archivoRegular: 'Manrope_400Regular',   // body copy, captions, inputs
+  jetbrainsMono: 'Manrope_600SemiBold',   // ex-technical accent → gray label
+  jetbrainsMonoBold: 'Manrope_700Bold',   // ex-technical bold → label 700
 } as const;
 
 export const TEXT_STYLES = {
-  // === WORDMARK ===
-  wordmark: {
-    fontFamily: FONTS.archivo,
-    fontSize: 28,
-    letterSpacing: -1.2,
-    color: COLORS.cream,
-  } satisfies TextStyle,
-  wordmarkAccent: {
-    // Old "italic O" used to be teal-colored; now we render as part of SVG.
-    // Kept for legacy compat — same as wordmark but lime tint.
-    fontFamily: FONTS.archivo,
-    fontSize: 28,
-    letterSpacing: -1.2,
-    color: COLORS.teal,
-  } satisfies TextStyle,
-
-  // === HEADINGS ===
-  heading: {
-    fontFamily: FONTS.archivoBold,
-    fontSize: 32,
-    letterSpacing: -1,
-    lineHeight: 36,
-    color: COLORS.cream,
-  } satisfies TextStyle,
-  headingLarge: {
-    fontFamily: FONTS.archivo,
-    fontSize: 48,
-    letterSpacing: -2,
+  /** Display / wordmark-weight statements (kit: 800 · 52 · -3.5%) */
+  display: {
+    fontFamily: FONTS.manropeExtraBold,
+    fontSize: 52,
+    letterSpacing: -1.8,
     lineHeight: 52,
-    color: COLORS.cream,
+    color: WEROL_TOKENS.paper,
   } satisfies TextStyle,
-
-  // === PRODUCT ===
-  productName: {
-    fontFamily: FONTS.archivoBold,
+  /** Screen title (kit: 700 · 34 · -2%) */
+  heading: {
+    fontFamily: FONTS.manropeBold,
+    fontSize: 34,
+    letterSpacing: -0.7,
+    lineHeight: 38,
+    color: WEROL_TOKENS.paper,
+  } satisfies TextStyle,
+  /** Section / product heading (kit: 600 · 22) */
+  subheading: {
+    fontFamily: FONTS.manropeSemibold,
     fontSize: 22,
-    letterSpacing: -0.5,
-    lineHeight: 26,
-    color: COLORS.cream,
+    letterSpacing: -0.2,
+    color: WEROL_TOKENS.paper,
+  } satisfies TextStyle,
+  /** Body copy (kit: 500 · 17 · #D6D7DB) */
+  body: {
+    fontFamily: FONTS.manropeMedium,
+    fontSize: 17,
+    lineHeight: 24,
+    color: WEROL_TOKENS.body,
+  } satisfies TextStyle,
+  /** Technical label (kit: 700 · 13 · +20% · UPPER) */
+  label: {
+    fontFamily: FONTS.manropeBold,
+    fontSize: 13,
+    letterSpacing: 2.6,
+    textTransform: 'uppercase',
+    color: WEROL_TOKENS.muted2,
   } satisfies TextStyle,
   productBrand: {
-    fontFamily: FONTS.jetbrainsMonoBold,
+    fontFamily: FONTS.manropeBold,
     fontSize: 11,
-    letterSpacing: 2.2,
-    color: COLORS.teal,
+    letterSpacing: 1.8,
+    color: WEROL_TOKENS.lime,
     textTransform: 'uppercase',
   } satisfies TextStyle,
   productPrice: {
-    fontFamily: FONTS.archivoBold,
+    fontFamily: FONTS.manropeExtraBold,
     fontSize: 18,
     letterSpacing: -0.4,
-    color: COLORS.cream,
+    color: WEROL_TOKENS.paper,
   } satisfies TextStyle,
   priceOld: {
-    fontFamily: FONTS.inter,
+    fontFamily: FONTS.manrope,
     fontSize: 13,
-    color: COLORS.cream3,
+    color: WEROL_TOKENS.muted2,
     textDecorationLine: 'line-through',
-  } satisfies TextStyle,
-
-  // === SHOP ===
-  shopName: {
-    fontFamily: FONTS.archivoBold,
-    fontSize: 13,
-    letterSpacing: -0.2,
-    color: COLORS.cream,
-  } satisfies TextStyle,
-  shopUrl: {
-    fontFamily: FONTS.jetbrainsMono,
-    fontSize: 10,
-    letterSpacing: 1.5,
-    color: COLORS.cream3,
-    textTransform: 'uppercase',
-  } satisfies TextStyle,
-
-  // === NAVIGATION ===
-  navLabel: {
-    fontFamily: FONTS.jetbrainsMono,
-    fontSize: 9,
-    letterSpacing: 1.5,
-    color: COLORS.dim,
-    textTransform: 'uppercase',
-  } satisfies TextStyle,
-
-  // === ACTIONS ===
-  actionCount: {
-    fontFamily: FONTS.jetbrainsMonoBold,
-    fontSize: 11,
-    color: COLORS.cream2,
-  } satisfies TextStyle,
-  takeItText: {
-    fontFamily: FONTS.archivoBold,
-    fontSize: 14,
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
-  } satisfies TextStyle,
-
-  // === BODY ===
-  body: {
-    fontFamily: FONTS.inter,
-    fontSize: 15,
-    lineHeight: 22,
-    color: COLORS.cream,
-  } satisfies TextStyle,
-  bodyMuted: {
-    fontFamily: FONTS.inter,
-    fontSize: 15,
-    lineHeight: 22,
-    color: COLORS.cream2,
-  } satisfies TextStyle,
-  caption: {
-    fontFamily: FONTS.inter,
-    fontSize: 13,
-    lineHeight: 18,
-    color: COLORS.cream3,
-  } satisfies TextStyle,
-
-  // === TECHNICAL LABELS (uppercase mono) ===
-  techLabel: {
-    fontFamily: FONTS.jetbrainsMono,
-    fontSize: 11,
-    letterSpacing: 2.2,
-    color: COLORS.cream3,
-    textTransform: 'uppercase',
-  } satisfies TextStyle,
-  techLabelAccent: {
-    fontFamily: FONTS.jetbrainsMono,
-    fontSize: 11,
-    letterSpacing: 2.2,
-    color: COLORS.teal,
-    textTransform: 'uppercase',
   } satisfies TextStyle,
 };

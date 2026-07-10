@@ -1,76 +1,94 @@
 // ProfileScreen (ME) — IG/TikTok-style: header (avatar · name · stats · edit),
 // segment control (My FITS · Saved · Liked) → grid, settings behind the gear.
-// Also the entry points for Inbox (bell) and Saved that left the bottom bar.
+// Owns the edit-profile sheet and the full-screen outfit viewer.
 
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React, { useMemo, useRef, useState } from 'react';
 import {
   Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
+  TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import WordmarkOnDark from '../assets/logos/wordmark-on-dark.svg';
 import { LanguageSheet } from '../components/LanguageSheet';
-import { useT } from '../i18n';
+import { formatPrice, relTime } from '../lib/format';
 import { useProducts } from '../store/productsStore';
+import { useOrders } from '../store/ordersStore';
 import { useFeedStore } from '../store/feedStore';
 import { useSettingsStore } from '../store/settingsStore';
+import { useShareStore } from '../store/shareStore';
 import { useUserStore } from '../store/userStore';
 import { useUnreadCount } from '../store/messagesStore';
 import { WEROL_TOKENS } from '../theme/colors';
 import { SPACING } from '../theme/spacing';
 import { FONTS } from '../theme/typography';
-import type { Product } from '../types';
+import type { Outfit, Product } from '../types';
 
-type Segment = 'fits' | 'saved' | 'liked';
+// NOTE: likes are intentionally NOT shown on the profile — a like is a private
+// recommendation-algorithm signal (with dwell time, shares, click-throughs).
+type Segment = 'fits' | 'saved' | 'orders';
 
 export function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { width: winWidth } = useWindowDimensions();
   const navigation = useNavigation<any>();
-  const t = useT();
   const PRODUCTS = useProducts();
 
-  const liked = useFeedStore((s) => s.liked);
   const saved = useFeedStore((s) => s.saved);
+  const orders = useOrders();
   const profile = useUserStore((s) => s.profile);
+  const email = useUserStore((s) => s.email);
   const savedOutfits = useUserStore((s) => s.savedOutfits);
+  const deleteOutfit = useUserStore((s) => s.deleteOutfit);
   const signOut = useUserStore((s) => s.signOut);
+  const resetPassword = useUserStore((s) => s.resetPassword);
   const unread = useUnreadCount();
+  const showToast = useShareStore((s) => s.showToast);
 
   const language = useSettingsStore((s) => s.language);
   const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
   const toggleNotifications = useSettingsStore((s) => s.toggleNotifications);
-  const themeMode = useSettingsStore((s) => s.theme);
-  const setTheme = useSettingsStore((s) => s.setTheme);
 
   const [segment, setSegment] = useState<Segment>('fits');
   const [langOpen, setLangOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [viewedOutfit, setViewedOutfit] = useState<Outfit | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const settingsY = useRef(0);
 
-  const likedProducts = useMemo(
-    () => PRODUCTS.filter((p) => liked.includes(p.id)),
-    [PRODUCTS, liked],
-  );
   const savedProducts = useMemo(
     () => PRODUCTS.filter((p) => saved.includes(p.id)),
     [PRODUCTS, saved],
   );
 
-  const tile = (winWidth - SPACING.section * 2 - 4) / 3;
+  // 3 columns, gap 8, 3:4 tiles (kit)
+  const tile = (winWidth - SPACING.section * 2 - 16) / 3;
+  const tileH = Math.round(tile * (4 / 3));
 
   const openProduct = (p: Product) =>
     navigation.navigate('Home', { screen: 'ProductDetails', params: { productId: p.id } });
 
-  const gridProducts = segment === 'liked' ? likedProducts : segment === 'saved' ? savedProducts : [];
+  const handlePasswordReset = async () => {
+    if (!email) {
+      showToast('No account email');
+      return;
+    }
+    const { error } = await resetPassword(email);
+    showToast(error ? error : `Password reset link sent to ${email}`);
+  };
+
+  const gridProducts = segment === 'saved' ? savedProducts : [];
 
   return (
     <View style={styles.root}>
@@ -104,36 +122,47 @@ export function ProfileScreen() {
           </View>
           <Text style={styles.name}>{profile.name}</Text>
           <Text style={styles.handle}>@{profile.handle.replace(/^@/, '')}</Text>
+          {!!profile.bio && <Text style={styles.bio}>{profile.bio}</Text>}
+          {!!profile.joinedAt && (
+            <Text style={styles.joined}>MEMBER SINCE {profile.joinedAt}</Text>
+          )}
 
           <View style={styles.stats}>
-            <Stat value={savedOutfits.length} label="OUTFITY" onPress={() => setSegment('fits')} />
+            <Stat value={savedOutfits.length} label="Outfits" onPress={() => setSegment('fits')} />
             <View style={styles.statDivider} />
-            <Stat value={liked.length} label="LAJKY" onPress={() => setSegment('liked')} />
+            <Stat value={orders.length} label="Orders" onPress={() => setSegment('orders')} />
             <View style={styles.statDivider} />
-            <Stat value={saved.length} label="ULOŽENÉ" onPress={() => setSegment('saved')} />
+            <Stat value={saved.length} label="Saved" onPress={() => setSegment('saved')} />
           </View>
 
           <Pressable
-            onPress={() => {}}
+            onPress={() => setEditOpen(true)}
             style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.7 }]}
           >
-            <Text style={styles.editText}>Upraviť profil</Text>
+            <Text style={styles.editText}>Edit profile</Text>
           </Pressable>
         </View>
 
         {/* Segments */}
         <View style={styles.segments}>
-          <Seg label="My FITS" active={segment === 'fits'} onPress={() => setSegment('fits')} />
+          <Seg label="My Fits" active={segment === 'fits'} onPress={() => setSegment('fits')} />
           <Seg label="Saved" active={segment === 'saved'} onPress={() => setSegment('saved')} />
-          <Seg label="Liked" active={segment === 'liked'} onPress={() => setSegment('liked')} />
+          <Seg label="Orders" active={segment === 'orders'} onPress={() => setSegment('orders')} />
         </View>
 
         {/* Grid */}
         {segment === 'fits' ? (
           savedOutfits.length === 0 ? (
-            <Empty text="Zatiaľ žiadne outfity. Zostav si fit v CREATE." />
+            <Empty text="No fits yet. Build one in CREATE." />
           ) : (
             <View style={styles.grid}>
+              {/* "+" tile → CREATE (kit) */}
+              <Pressable
+                onPress={() => navigation.navigate('Fit')}
+                style={[styles.addTile, { width: tile, height: tileH }]}
+              >
+                <Text style={styles.addTileText}>+</Text>
+              </Pressable>
               {savedOutfits.map((o) => {
                 const first = Object.values(o.slots)
                   .map((id) => PRODUCTS.find((p) => p.id === id))
@@ -141,8 +170,8 @@ export function ProfileScreen() {
                 return (
                   <Pressable
                     key={o.id}
-                    onPress={() => navigation.navigate('Saved')}
-                    style={[styles.tile, { width: tile, height: tile }]}
+                    onPress={() => setViewedOutfit(o)}
+                    style={[styles.tile, { width: tile, height: tileH }]}
                   >
                     {o.image ? (
                       <Image source={{ uri: o.image }} style={styles.tileImg} resizeMode="cover" />
@@ -156,15 +185,52 @@ export function ProfileScreen() {
               })}
             </View>
           )
+        ) : segment === 'orders' ? (
+          orders.length === 0 ? (
+            <Empty text="No orders yet — tap BUY on a piece you love." />
+          ) : (
+            <View style={styles.ordersList}>
+              {orders.map((o) => {
+                const p = PRODUCTS.find((x) => x.id === o.productId);
+                return (
+                  <Pressable
+                    key={`${o.productId}-${o.at}`}
+                    onPress={() => p && openProduct(p)}
+                    disabled={!p}
+                    style={({ pressed }) => [styles.orderRow, pressed && p && { opacity: 0.7 }]}
+                  >
+                    <View style={styles.orderThumbWrap}>
+                      {p ? (
+                        <Image source={p.image} style={styles.orderThumb} resizeMode="cover" />
+                      ) : (
+                        <View style={styles.orderThumb} />
+                      )}
+                    </View>
+                    <View style={styles.orderInfo}>
+                      <Text style={styles.orderName} numberOfLines={1}>{o.name}</Text>
+                      <Text style={styles.orderMeta} numberOfLines={1}>
+                        {(o.brand || 'WEROL').toUpperCase()} · {relTime(o.at)}
+                      </Text>
+                    </View>
+                    {p && (
+                      <Text style={styles.orderPrice}>
+                        {formatPrice(p.price.current, p.price.currency)}
+                      </Text>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+          )
         ) : gridProducts.length === 0 ? (
-          <Empty text={segment === 'liked' ? 'Zatiaľ nič nelajknuté.' : 'Žiadne uložené kúsky.'} />
+          <Empty text="Nothing saved yet — save pieces from the feed (🔖)." />
         ) : (
           <View style={styles.grid}>
             {gridProducts.map((p) => (
               <Pressable
                 key={p.id}
                 onPress={() => openProduct(p)}
-                style={[styles.tile, { width: tile, height: tile }]}
+                style={[styles.tile, { width: tile, height: tileH }]}
               >
                 <Image source={p.image} style={styles.tileImg} resizeMode="cover" />
               </Pressable>
@@ -174,8 +240,9 @@ export function ProfileScreen() {
 
         {/* Settings */}
         <View onLayout={(e) => (settingsY.current = e.nativeEvent.layout.y)} style={styles.settings}>
-          <Text style={styles.settingsTitle}>Nastavenia</Text>
-          <SettingRow icon="notifications-outline" label="Notifikácie">
+          <Text style={styles.settingsTitle}>Settings</Text>
+          {!!email && <SettingRow icon="mail-outline" label="Email" trailing={email} />}
+          <SettingRow icon="notifications-outline" label="Notifications">
             <Switch
               value={notificationsEnabled}
               onValueChange={toggleNotifications}
@@ -184,33 +251,199 @@ export function ProfileScreen() {
               ios_backgroundColor={WEROL_TOKENS.line2}
             />
           </SettingRow>
-          <SettingRow icon={themeMode === 'dark' ? 'moon-outline' : 'sunny-outline'} label="Tmavá téma">
-            <Switch
-              value={themeMode === 'dark'}
-              onValueChange={(v) => setTheme(v ? 'dark' : 'light')}
-              trackColor={{ false: WEROL_TOKENS.line2, true: WEROL_TOKENS.lime }}
-              thumbColor={WEROL_TOKENS.paper}
-              ios_backgroundColor={WEROL_TOKENS.line2}
-            />
-          </SettingRow>
           <SettingRow
             icon="globe-outline"
-            label="Jazyk"
+            label="Language"
             trailing={language === 'sk' ? 'Slovenčina' : 'English'}
             onPress={() => setLangOpen(true)}
           />
+          <SettingRow icon="key-outline" label="Change password" onPress={handlePasswordReset} />
           <Pressable
             onPress={() => signOut()}
             style={({ pressed }) => [styles.logoutBtn, pressed && { opacity: 0.7 }]}
           >
-            <Ionicons name="log-out-outline" size={18} color="#E63946" />
-            <Text style={styles.logoutText}>Odhlásiť sa</Text>
+            <Ionicons name="log-out-outline" size={18} color={WEROL_TOKENS.tintRed} />
+            <Text style={styles.logoutText}>Log out</Text>
           </Pressable>
         </View>
       </ScrollView>
 
       <LanguageSheet visible={langOpen} onClose={() => setLangOpen(false)} />
+      <EditProfileSheet visible={editOpen} onClose={() => setEditOpen(false)} />
+      <OutfitViewer
+        outfit={viewedOutfit}
+        products={PRODUCTS}
+        onClose={() => setViewedOutfit(null)}
+        onOpenProduct={(p) => {
+          setViewedOutfit(null);
+          openProduct(p);
+        }}
+        onDelete={(o) => {
+          deleteOutfit(o.id);
+          setViewedOutfit(null);
+          showToast('Outfit deleted');
+        }}
+      />
     </View>
+  );
+}
+
+// Edit-profile bottom sheet — name / handle / bio, saved to Supabase profiles.
+function EditProfileSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const insets = useSafeAreaInsets();
+  const profile = useUserStore((s) => s.profile);
+  const updateProfile = useUserStore((s) => s.updateProfile);
+  const showToast = useShareStore((s) => s.showToast);
+
+  const [name, setName] = useState(profile.name);
+  const [handle, setHandle] = useState(profile.handle.replace(/^@/, ''));
+  const [bio, setBio] = useState(profile.bio ?? '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Re-seed the form whenever the sheet opens with fresh profile data.
+  const wasVisible = useRef(false);
+  if (visible && !wasVisible.current) {
+    wasVisible.current = true;
+    if (name !== profile.name) setName(profile.name);
+    if (handle !== profile.handle.replace(/^@/, '')) setHandle(profile.handle.replace(/^@/, ''));
+    if (bio !== (profile.bio ?? '')) setBio(profile.bio ?? '');
+  } else if (!visible && wasVisible.current) {
+    wasVisible.current = false;
+  }
+
+  const canSave = name.trim().length >= 2 && handle.trim().length >= 3 && !saving;
+
+  const onSave = async () => {
+    if (!canSave) return;
+    setSaving(true);
+    setError(null);
+    const { error: err } = await updateProfile({ name, handle, bio });
+    setSaving(false);
+    if (err) {
+      setError(err);
+      return;
+    }
+    showToast('Profile saved');
+    onClose();
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.sheetBackdrop}
+      >
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) + 12 }]}>
+          <View style={styles.sheetHead}>
+            <Text style={styles.sheetLabel}>EDIT PROFILE</Text>
+            <Pressable onPress={onClose} hitSlop={12}>
+              <Ionicons name="close" size={20} color={WEROL_TOKENS.paper} />
+            </Pressable>
+          </View>
+          <Text style={styles.fieldLabel}>NAME</Text>
+          <TextInput
+            value={name}
+            onChangeText={(v) => { setName(v); setError(null); }}
+            style={styles.input}
+            placeholder="Your name"
+            placeholderTextColor={WEROL_TOKENS.muted2}
+            maxLength={40}
+          />
+          <Text style={styles.fieldLabel}>HANDLE</Text>
+          <TextInput
+            value={handle}
+            onChangeText={(v) => { setHandle(v.toLowerCase().replace(/[^a-z0-9]/g, '')); setError(null); }}
+            style={styles.input}
+            placeholder="handle"
+            placeholderTextColor={WEROL_TOKENS.muted2}
+            autoCapitalize="none"
+            autoCorrect={false}
+            maxLength={24}
+          />
+          <Text style={styles.fieldLabel}>BIO</Text>
+          <TextInput
+            value={bio}
+            onChangeText={setBio}
+            style={[styles.input, styles.inputMultiline]}
+            placeholder="A few words about your style…"
+            placeholderTextColor={WEROL_TOKENS.muted2}
+            multiline
+            maxLength={160}
+          />
+          {error && <Text style={styles.sheetError}>{error}</Text>}
+          <Pressable
+            onPress={onSave}
+            disabled={!canSave}
+            style={({ pressed }) => [styles.saveBtn, !canSave && { opacity: 0.4 }, pressed && canSave && { opacity: 0.85 }]}
+          >
+            <Text style={styles.saveText}>{saving ? 'SAVING…' : 'ULOŽIŤ'}</Text>
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+// Full-screen viewer for a saved FIT — snapshot, pieces, delete.
+function OutfitViewer({
+  outfit,
+  products,
+  onClose,
+  onOpenProduct,
+  onDelete,
+}: {
+  outfit: Outfit | null;
+  products: Product[];
+  onClose: () => void;
+  onOpenProduct: (p: Product) => void;
+  onDelete: (o: Outfit) => void;
+}) {
+  const insets = useSafeAreaInsets();
+  if (!outfit) return null;
+  const pieces = Object.values(outfit.slots)
+    .map((id) => products.find((p) => p.id === id))
+    .filter((p): p is Product => !!p);
+  const first = pieces[0];
+
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+      <View style={styles.viewerRoot}>
+        {outfit.image ? (
+          <Image source={{ uri: outfit.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        ) : first ? (
+          <Image source={first.image} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        ) : null}
+        <View style={styles.viewerScrim} />
+
+        <View style={[styles.viewerTop, { paddingTop: insets.top + 8 }]}>
+          <Pressable onPress={onClose} hitSlop={10} style={styles.viewerBtn}>
+            <Ionicons name="close" size={22} color={WEROL_TOKENS.paper} />
+          </Pressable>
+          <Text style={styles.viewerTitle}>{outfit.name}</Text>
+          <Pressable onPress={() => onDelete(outfit)} hitSlop={10} style={styles.viewerBtn}>
+            <Ionicons name="trash-outline" size={20} color={WEROL_TOKENS.tintRed} />
+          </Pressable>
+        </View>
+
+        {pieces.length > 0 && (
+          <View style={[styles.viewerPieces, { paddingBottom: insets.bottom + 20 }]}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.viewerStrip}>
+              {pieces.map((p) => (
+                <Pressable key={p.id} onPress={() => onOpenProduct(p)} style={styles.viewerTag}>
+                  <Image source={p.image} style={styles.viewerThumb} resizeMode="contain" />
+                  <View>
+                    <Text style={styles.viewerBrand} numberOfLines={1}>{p.brand || 'SHOP'}</Text>
+                    <Text style={styles.viewerName} numberOfLines={1}>{p.name}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+      </View>
+    </Modal>
   );
 }
 
@@ -260,7 +493,7 @@ function SettingRow({
     >
       <Ionicons name={icon} size={20} color={WEROL_TOKENS.muted} />
       <Text style={styles.settingLabel}>{label}</Text>
-      {trailing ? <Text style={styles.settingTrailing}>{trailing}</Text> : null}
+      {trailing ? <Text style={styles.settingTrailing} numberOfLines={1}>{trailing}</Text> : null}
       {children}
       {onPress && !children ? (
         <Ionicons name="chevron-forward" size={18} color={WEROL_TOKENS.muted2} />
@@ -284,12 +517,6 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     backgroundColor: 'rgba(10,10,12,0.92)',
   },
-  topHandle: {
-    flex: 1,
-    fontFamily: FONTS.spaceGroteskBold,
-    fontSize: 18,
-    color: WEROL_TOKENS.paper,
-  },
   topActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   topBtn: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   dot: {
@@ -299,7 +526,7 @@ const styles = StyleSheet.create({
     width: 9,
     height: 9,
     borderRadius: 5,
-    backgroundColor: '#E63946',
+    backgroundColor: WEROL_TOKENS.tintRed,
     borderWidth: 1.5,
     borderColor: WEROL_TOKENS.pitch,
   },
@@ -326,51 +553,73 @@ const styles = StyleSheet.create({
     color: WEROL_TOKENS.paper,
   },
   name: {
-    fontFamily: FONTS.spaceGroteskBold,
+    fontFamily: FONTS.archivoSemibold,
     fontSize: 21,
     color: WEROL_TOKENS.paper,
     marginTop: 12,
   },
   handle: {
-    fontFamily: FONTS.inter,
+    fontFamily: FONTS.archivoRegular,
     fontSize: 14,
     color: WEROL_TOKENS.muted,
     marginTop: 2,
   },
-  stats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 18,
-  },
-  stat: { alignItems: 'center', paddingHorizontal: 22 },
-  statValue: {
-    fontFamily: FONTS.archivo,
-    fontSize: 22,
-    letterSpacing: -0.6,
+  bio: {
+    fontFamily: FONTS.archivoRegular,
+    fontSize: 14,
+    lineHeight: 19,
     color: WEROL_TOKENS.paper,
+    textAlign: 'center',
+    marginTop: 10,
+    paddingHorizontal: 12,
   },
-  statLabel: {
+  joined: {
     fontFamily: FONTS.jetbrainsMono,
     fontSize: 9,
     letterSpacing: 1.4,
     color: WEROL_TOKENS.muted2,
-    marginTop: 3,
+    marginTop: 8,
   },
-  statDivider: { width: 1, height: 28, backgroundColor: WEROL_TOKENS.line },
-  editBtn: {
+  // Stat block — kit: surface card, big 800 numbers, gray labels
+  stats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'stretch',
     marginTop: 18,
+    backgroundColor: WEROL_TOKENS.concrete,
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+  },
+  stat: { flex: 1, alignItems: 'center' },
+  statValue: {
+    fontFamily: FONTS.manropeExtraBold,
+    fontSize: 23,
+    letterSpacing: -0.4,
+    color: WEROL_TOKENS.paper,
+  },
+  statLabel: {
+    fontFamily: FONTS.manropeSemibold,
+    fontSize: 13,
+    color: '#8A8B90',
+    marginTop: 2,
+  },
+  statDivider: { width: 1, alignSelf: 'stretch', backgroundColor: 'rgba(255,255,255,0.09)' },
+  // Edit profile — kit secondary pill
+  editBtn: {
+    marginTop: 14,
     alignSelf: 'stretch',
     alignItems: 'center',
-    paddingVertical: 11,
-    borderRadius: 10,
+    paddingVertical: 14,
+    borderRadius: 9999,
+    backgroundColor: WEROL_TOKENS.surface2,
     borderWidth: 1,
     borderColor: WEROL_TOKENS.line2,
   },
   editText: {
-    fontFamily: FONTS.spaceGroteskBold,
-    fontSize: 13,
+    fontFamily: FONTS.manropeBold,
+    fontSize: 15,
     color: WEROL_TOKENS.paper,
-    letterSpacing: 0.2,
   },
   segments: {
     flexDirection: 'row',
@@ -387,7 +636,7 @@ const styles = StyleSheet.create({
   },
   segActive: { backgroundColor: WEROL_TOKENS.lime },
   segText: {
-    fontFamily: FONTS.spaceGroteskBold,
+    fontFamily: FONTS.archivoSemibold,
     fontSize: 12,
     letterSpacing: 0.3,
     color: WEROL_TOKENS.muted,
@@ -396,14 +645,46 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 2,
+    gap: 8,
     paddingHorizontal: SPACING.section,
   },
   tile: {
-    borderRadius: 4,
+    borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: WEROL_TOKENS.concrete,
   },
+  addTile: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: WEROL_TOKENS.concrete,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addTileText: { fontFamily: FONTS.manropeBold, fontSize: 26, color: '#3A3B40' },
+  // Orders — clean list rows (thumb · name/brand/when · price)
+  ordersList: { paddingHorizontal: SPACING.section },
+  orderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderColor: WEROL_TOKENS.line,
+  },
+  orderThumbWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: WEROL_TOKENS.frame,
+  },
+  orderThumb: { width: '100%', height: '100%' },
+  orderInfo: { flex: 1, gap: 2 },
+  orderName: { fontFamily: FONTS.manropeSemibold, fontSize: 15, color: WEROL_TOKENS.paper },
+  orderMeta: { fontFamily: FONTS.manropeSemibold, fontSize: 11, letterSpacing: 0.6, color: WEROL_TOKENS.muted2 },
+  orderPrice: { fontFamily: FONTS.manropeExtraBold, fontSize: 15, color: WEROL_TOKENS.paper },
   tileImg: { width: '100%', height: '100%', backgroundColor: WEROL_TOKENS.concrete },
   empty: {
     paddingVertical: 48,
@@ -411,7 +692,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.section,
   },
   emptyText: {
-    fontFamily: FONTS.inter,
+    fontFamily: FONTS.archivoRegular,
     fontSize: 14,
     color: WEROL_TOKENS.muted,
     textAlign: 'center',
@@ -421,7 +702,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.section,
   },
   settingsTitle: {
-    fontFamily: FONTS.spaceGroteskBold,
+    fontFamily: FONTS.archivoSemibold,
     fontSize: 16,
     color: WEROL_TOKENS.paper,
     marginBottom: 6,
@@ -436,14 +717,15 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     flex: 1,
-    fontFamily: FONTS.inter,
+    fontFamily: FONTS.archivoRegular,
     fontSize: 15,
     color: WEROL_TOKENS.paper,
   },
   settingTrailing: {
-    fontFamily: FONTS.inter,
+    fontFamily: FONTS.archivoRegular,
     fontSize: 14,
     color: WEROL_TOKENS.muted,
+    maxWidth: 180,
   },
   logoutBtn: {
     flexDirection: 'row',
@@ -457,8 +739,136 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(230,57,70,0.4)',
   },
   logoutText: {
-    fontFamily: FONTS.spaceGroteskBold,
+    fontFamily: FONTS.archivoSemibold,
     fontSize: 14,
-    color: '#E63946',
+    color: WEROL_TOKENS.tintRed,
+  },
+
+  // edit-profile sheet
+  sheetBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: WEROL_TOKENS.pitch,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderTopWidth: 1,
+    borderTopColor: WEROL_TOKENS.line,
+    paddingHorizontal: SPACING.section,
+    paddingTop: SPACING.lg,
+    gap: 8,
+  },
+  sheetHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  sheetLabel: {
+    fontFamily: FONTS.jetbrainsMonoBold,
+    fontSize: 10,
+    letterSpacing: 2,
+    color: WEROL_TOKENS.muted,
+  },
+  fieldLabel: {
+    fontFamily: FONTS.jetbrainsMono,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    color: WEROL_TOKENS.muted2,
+    marginTop: 6,
+  },
+  input: {
+    backgroundColor: WEROL_TOKENS.concrete,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: WEROL_TOKENS.paper,
+    fontFamily: FONTS.archivoRegular,
+    fontSize: 15,
+    borderWidth: 1,
+    borderColor: WEROL_TOKENS.line,
+  },
+  inputMultiline: { minHeight: 72, textAlignVertical: 'top' },
+  sheetError: {
+    fontFamily: FONTS.jetbrainsMono,
+    fontSize: 11,
+    color: WEROL_TOKENS.tintRed,
+    letterSpacing: 0.5,
+  },
+  saveBtn: {
+    marginTop: 10,
+    alignItems: 'center',
+    backgroundColor: WEROL_TOKENS.lime,
+    borderRadius: 9999,
+    paddingVertical: 15,
+  },
+  saveText: {
+    fontFamily: FONTS.archivoBold,
+    fontSize: 13,
+    letterSpacing: 0.5,
+    color: WEROL_TOKENS.pitch,
+  },
+
+  // outfit viewer
+  viewerRoot: { flex: 1, backgroundColor: WEROL_TOKENS.pitch },
+  viewerScrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10,10,12,0.25)',
+  },
+  viewerTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.section,
+    paddingBottom: 10,
+  },
+  viewerBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(22,22,26,0.7)',
+    borderWidth: 1,
+    borderColor: WEROL_TOKENS.line,
+  },
+  viewerTitle: {
+    fontFamily: FONTS.archivoSemibold,
+    fontSize: 15,
+    color: WEROL_TOKENS.paper,
+    letterSpacing: 0.2,
+  },
+  viewerPieces: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  viewerStrip: { gap: 8, paddingHorizontal: SPACING.section },
+  viewerTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.94)',
+    borderRadius: 10,
+    paddingRight: 12,
+    paddingVertical: 5,
+    paddingLeft: 5,
+    maxWidth: 220,
+  },
+  viewerThumb: { width: 34, height: 34, borderRadius: 7, backgroundColor: WEROL_TOKENS.frame },
+  viewerBrand: {
+    fontFamily: FONTS.jetbrainsMonoBold,
+    fontSize: 8,
+    letterSpacing: 1,
+    color: WEROL_TOKENS.muted2,
+  },
+  viewerName: {
+    fontFamily: FONTS.archivoSemibold,
+    fontSize: 12,
+    color: WEROL_TOKENS.pitch,
+    maxWidth: 150,
   },
 });

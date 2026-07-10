@@ -21,23 +21,37 @@ type Props = {
 
 export function SignInScreen({ onBack, onSignUp }: Props) {
   const signIn = useUserStore((s) => s.signIn);
+  const resetPassword = useUserStore((s) => s.resetPassword);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const canSubmit = emailValid && password.length >= 4 && !loading;
+  const canSubmit = emailValid && password.length >= 6 && !loading;
 
   const handleSignIn = async () => {
     if (!canSubmit) {
-      setError(emailValid ? 'Heslo musí mať aspoň 4 znaky' : 'Neplatný email');
+      setError(emailValid ? 'Password must be at least 6 characters' : 'Invalid email');
       return;
     }
     setLoading(true);
     const { error: err } = await signIn(email, password);
     setLoading(false);
     if (err) setError(err);
+  };
+
+  const handleForgot = async () => {
+    setInfo(null);
+    if (!emailValid) {
+      setError('Enter your email above and try again');
+      return;
+    }
+    setError(null);
+    const { error: err } = await resetPassword(email);
+    if (err) setError(err);
+    else setInfo(`Poslali sme ti link na obnovu hesla na ${email.trim()}`);
   };
 
   return (
@@ -78,6 +92,7 @@ export function SignInScreen({ onBack, onSignUp }: Props) {
         />
 
         {error && <Text style={styles.error}>{error}</Text>}
+        {info && <Text style={styles.info}>{info}</Text>}
 
         <Pressable
           onPress={handleSignIn}
@@ -88,7 +103,7 @@ export function SignInScreen({ onBack, onSignUp }: Props) {
             pressed && canSubmit && { opacity: 0.85 },
           ]}
         >
-          <Text style={styles.ctaText}>{loading ? 'PRIHLASUJEM…' : 'SIGN IN →'}</Text>
+          <Text style={styles.ctaText}>{loading ? 'SIGNING IN…' : 'SIGN IN →'}</Text>
         </Pressable>
 
         <Pressable
@@ -98,7 +113,7 @@ export function SignInScreen({ onBack, onSignUp }: Props) {
           <Text style={styles.secondaryText}>← BACK TO ALL METHODS</Text>
         </Pressable>
 
-        <Pressable hitSlop={8} style={styles.forgot}>
+        <Pressable onPress={handleForgot} hitSlop={8} style={({ pressed }) => [styles.forgot, pressed && { opacity: 0.6 }]}>
           <Text style={styles.forgotText}>FORGOT PASSWORD?</Text>
         </Pressable>
 
@@ -122,7 +137,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 16,
     color: WEROL_TOKENS.paper,
-    fontFamily: FONTS.inter,
+    fontFamily: FONTS.archivoRegular,
     fontSize: 15,
     borderWidth: 1,
     borderColor: WEROL_TOKENS.line,
@@ -130,7 +145,14 @@ const styles = StyleSheet.create({
   error: {
     fontFamily: FONTS.jetbrainsMono,
     fontSize: 11,
-    color: '#FF6B6B',
+    color: WEROL_TOKENS.tintRed,
+    letterSpacing: 1,
+    marginTop: -4,
+  },
+  info: {
+    fontFamily: FONTS.jetbrainsMono,
+    fontSize: 11,
+    color: WEROL_TOKENS.lime,
     letterSpacing: 1,
     marginTop: -4,
   },
@@ -183,7 +205,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   swapText: {
-    fontFamily: FONTS.inter,
+    fontFamily: FONTS.archivoRegular,
     fontSize: 13,
     color: WEROL_TOKENS.muted,
   },

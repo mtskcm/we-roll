@@ -18,14 +18,14 @@ export type Category = {
 };
 
 export const CATEGORIES: Category[] = [
-  { id: 'sneakers', label: 'Obuv', icon: 'walk', tint: '#2ec4a0' },
-  { id: 'hoodies', label: 'Mikiny', icon: 'shirt', tint: '#e8c84a' },
-  { id: 'tshirts', label: 'Tričká', icon: 'shirt-outline', tint: '#4a90e2' },
-  { id: 'pants', label: 'Nohavice', icon: 'man', tint: '#8b8fa3' },
-  { id: 'jackets', label: 'Bundy', icon: 'snow', tint: '#c8e87a' },
-  { id: 'shorts', label: 'Šortky', icon: 'fitness', tint: '#e57373' },
-  { id: 'caps', label: 'Čiapky', icon: 'baseball', tint: '#d59cff' },
-  { id: 'accessories', label: 'Doplnky', icon: 'sparkles', tint: '#f4a261' },
+  { id: 'sneakers', label: 'Shoes', icon: 'walk', tint: '#2ec4a0' },
+  { id: 'hoodies', label: 'Hoodies', icon: 'shirt', tint: '#e8c84a' },
+  { id: 'tshirts', label: 'Tees', icon: 'shirt-outline', tint: '#4a90e2' },
+  { id: 'pants', label: 'Pants', icon: 'man', tint: '#8b8fa3' },
+  { id: 'jackets', label: 'Jackets', icon: 'snow', tint: '#c8e87a' },
+  { id: 'shorts', label: 'Shorts', icon: 'fitness', tint: '#e57373' },
+  { id: 'caps', label: 'Caps', icon: 'baseball', tint: '#d59cff' },
+  { id: 'accessories', label: 'Accessories', icon: 'sparkles', tint: '#f4a261' },
 ];
 
 export const PRIMARY_CATEGORIES: CategoryId[] = ['sneakers', 'hoodies', 'tshirts', 'pants'];

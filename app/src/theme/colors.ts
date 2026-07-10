@@ -1,72 +1,32 @@
-// WEROL — Brand color tokens (Edition 01 · 2026 · Maroš)
-// Keys preserved for backward-compat with existing components.
-// New canonical names available via `WEROL_TOKENS` for explicit usage.
+// WEROL — Brand color tokens (Edition 03 — "Streetwear app UI kit design-3")
+// Single API: WEROL_TOKENS. Dark-only: pure black base, volt signal, soft
+// surfaces. Token KEYS are stable (legacy names kept as aliases) so screens
+// restyle themselves without mass renames.
 
-export const DARK_COLORS = {
-  // Mapped to new Maroš tokens
-  ink: '#0A0A0C',          // pitch — primary canvas
-  ink2: '#0A0A0C',          // pitch (alias)
-  ink3: '#1F1F22',          // line — hairline / divider
-  ink4: '#2A2A2E',          // line2 — emphasized hairline
-  stone: '#16161A',         // concrete — secondary surface
-  cream: '#FFFFFF',         // paper — primary light text
-  cream2: '#A0A0A6',        // muted — body on dark
-  cream3: '#6E6E73',        // muted2 — caption / chrome
-  teal: '#D6FF3D',          // lime — signal · CTA · accent
-  teal2: '#B8DD1A',         // lime pressed
-  liveGreen: '#22C55E',     // live indicator (separate from CTA)
-  dim: '#4A4A4E',
-  dimmer: '#1A1A1C',
-  likeRed: '#FF4757',
-  glassBg: 'rgba(10,10,12,0.65)',
-  glassBorder: 'rgba(255,255,255,0.08)',
-  glassActive: 'rgba(214,255,61,0.18)',
-  imagePlaceholder: '#16161A', // concrete (dark frame, replaces old cream bg)
-} as const;
-
-export const LIGHT_COLORS = {
-  // Light mode (paper canvas) — for future use, not active yet
-  ink: '#FFFFFF',
-  ink2: '#FFFFFF',
-  ink3: '#E8E3D8',
-  ink4: '#D6CFBF',
-  stone: '#F5F1EA',
-  cream: '#0A0A0C',
-  cream2: '#4A4A4E',
-  cream3: '#6E6E73',
-  teal: '#5BB000',          // darker lime for light mode contrast
-  teal2: '#3F8800',
-  liveGreen: '#16A34A',
-  dim: '#8B8780',
-  dimmer: '#C4BFB4',
-  likeRed: '#D44848',
-  glassBg: 'rgba(255,255,255,0.75)',
-  glassBorder: 'rgba(0,0,0,0.08)',
-  glassActive: 'rgba(91,176,0,0.18)',
-  imagePlaceholder: '#FFFFFF',
-} as const;
-
-export const COLORS = DARK_COLORS;
-
-// Canonical WEROL tokens (use directly when adding new code)
 export const WEROL_TOKENS = {
-  pitch: '#0A0A0C',
-  paper: '#FFFFFF',
-  lime: '#D6FF3D',
-  limePressed: '#B8DD1A',
-  concrete: '#16161A',
-  line: '#1F1F22',
-  line2: '#2A2A2E',
-  muted: '#A0A0A6',
-  muted2: '#6E6E73',
-  // Partner tints
+  pitch: '#000000',        // base / canvas (kit: Base #000)
+  paper: '#FFFFFF',        // primary text
+  lime: '#C9F73E',         // volt — primary / accent (kit: Volt)
+  limePressed: '#B4E22A',  // volt pressed
+  concrete: '#131417',     // surface 1 — card / chip
+  surface2: '#1B1C20',     // surface 2 — sheet / input
+  line: 'rgba(255,255,255,0.08)',  // hairline / divider / card border
+  line2: 'rgba(255,255,255,0.12)', // emphasized hairline
+  muted: '#9A9BA1',        // secondary text
+  muted2: '#6A6B71',       // faint text / chrome
+  body: '#D6D7DB',         // body copy on dark
+  danger: '#FF5147',       // destructive
+  scrim: 'rgba(0,0,0,0.55)', // modal / sheet backdrop
+  frame: '#F3F3F5',        // light product-image frame
+  liveGreen: '#22C55E',    // live indicator (separate from CTA)
+  // Avatar pops / partner tints
+  tintCyan: '#34D6E8',
+  tintViolet: '#A855F7',
   tintOrange: '#FF6B2C',
-  tintRed: '#E63946',
+  tintRed: '#FF5147',      // = danger
   tintYellow: '#F2C94C',
   tintSunset: '#FF7A2B',
   tintMagenta: '#FF3D8A',
-  tintViolet: '#A78BFA',
-  tintCyan: '#22D3EE',
 } as const;
 
 export type ShopKey =
@@ -79,20 +39,20 @@ export type ShopKey =
   | 'Hervis'
   | 'StockX';
 
-// Mapped to Maroš's partner tint palette (accent-only)
+// Mapped to the partner tint palette (accent-only)
 export const SHOP_COLORS: Record<ShopKey, { bg: string; text: string }> = {
-  Footshop: { bg: '#FF6B2C', text: '#0A0A0C' },    // T-01 orange
-  'Queens.sk': { bg: '#E63946', text: '#FFFFFF' }, // T-02 red
-  Freshment: { bg: '#F2C94C', text: '#0A0A0C' },   // T-03 yellow
-  Sizeer: { bg: '#FF7A2B', text: '#0A0A0C' },      // T-04 sunset
-  Zalando: { bg: '#FF3D8A', text: '#FFFFFF' },     // T-05 magenta
-  'About You': { bg: '#A78BFA', text: '#0A0A0C' }, // T-06 violet
-  Hervis: { bg: '#22D3EE', text: '#0A0A0C' },      // T-07 cyan
-  StockX: { bg: '#FFFFFF', text: '#0A0A0C' },      // paper
+  Footshop: { bg: WEROL_TOKENS.tintOrange, text: WEROL_TOKENS.pitch },
+  'Queens.sk': { bg: WEROL_TOKENS.tintRed, text: WEROL_TOKENS.paper },
+  Freshment: { bg: WEROL_TOKENS.tintYellow, text: WEROL_TOKENS.pitch },
+  Sizeer: { bg: WEROL_TOKENS.tintSunset, text: WEROL_TOKENS.pitch },
+  Zalando: { bg: WEROL_TOKENS.tintMagenta, text: WEROL_TOKENS.paper },
+  'About You': { bg: WEROL_TOKENS.tintViolet, text: WEROL_TOKENS.pitch },
+  Hervis: { bg: WEROL_TOKENS.tintCyan, text: WEROL_TOKENS.pitch },
+  StockX: { bg: WEROL_TOKENS.paper, text: WEROL_TOKENS.pitch },
 };
 
 // Safe accessor — real feed shops aren't in the fixed map above; fall back to
 // a neutral chip so SHOP_COLORS[name] never returns undefined.
 export function getShopColor(name: string): { bg: string; text: string } {
-  return SHOP_COLORS[name as ShopKey] ?? { bg: '#2A2A2E', text: '#FFFFFF' };
+  return SHOP_COLORS[name as ShopKey] ?? { bg: WEROL_TOKENS.line2, text: WEROL_TOKENS.paper };
 }

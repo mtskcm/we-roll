@@ -29,6 +29,10 @@ const SUPABASE_URL = process.env.SUPABASE_URL || 'https://hcrccagnnjeslnpmfdky.s
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
 const FEED_URL = process.env.FEED_URL || '';
 const FEED_FILE = process.env.FEED_FILE || flagValue('--file');
+// Some feeds (e.g. migmig.eu comparators) sit behind HTTP Basic Auth. Pass
+// credentials via env only — NEVER hardcode/commit them.
+const FEED_USER = process.env.FEED_USER || '';
+const FEED_PASS = process.env.FEED_PASS || '';
 const SHOP_ENV = process.env.SHOP || '';
 const CURRENCY_ENV = process.env.CURRENCY || '';
 const BUY_FALLBACK = process.env.BUY_FALLBACK || ''; // e.g. "https://shop.sk/search?q={q}"
@@ -75,12 +79,24 @@ function slug(s) {
   return (s || 'shop').toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 24) || 'shop';
 }
 
+// Upgrade known low-res feed image variants to their full-size equivalent.
+// Sizeer's XML ships the 600×600 "gallery_xml" LiipImagine crop; the same path
+// with the "gallery" filter is 1500×1500 → sharp on a full-bleed card.
+function upgradeImage(url) {
+  if (!url) return url;
+  return url.replace('/media/cache/resolve/gallery_xml/', '/media/cache/resolve/gallery/');
+}
+
 // ── map one SHOPITEM → row ──────────────────────────────────────────────────
 function mapItem(item, shopName) {
   const extId = str(item.ITEM_ID) || str(item.PRODUCTNO) || str(item.EAN);
-  const name = str(item.PRODUCTNAME) || str(item.PRODUCT);
+  // Variant feeds append the size to PRODUCTNAME ("… Hnedá EUR 41,5",
+  // "… EUR 34-38", "… EUR 43 1/3"). We collapse variants → strip that trailing
+  // size so the product shows a clean name.
+  const nameRaw = str(item.PRODUCTNAME) || str(item.PRODUCT);
+  const name = nameRaw ? nameRaw.replace(/\s+EUR\s+[\d.,/\s-]+$/i, '').trim() : nameRaw;
   const buyUrl = str(item.URL);
-  const img = str(item.IMGURL);
+  const img = upgradeImage(str(item.IMGURL));
   if (!extId || !name || !buyUrl) return null; // skip incomplete
 
   const categoryRaw = str(item.CATEGORYTEXT);
@@ -394,7 +410,11 @@ async function main() {
         process.exit(1);
       }
       console.log(`▶ fetching feed: ${FEED_URL}`);
-      const res = await fetch(FEED_URL, { headers: { 'User-Agent': 'WEROL-ingest/1.0' } });
+      const headers = { 'User-Agent': 'WEROL-ingest/1.0' };
+      if (FEED_USER || FEED_PASS) {
+        headers.Authorization = `Basic ${Buffer.from(`${FEED_USER}:${FEED_PASS}`).toString('base64')}`;
+      }
+      const res = await fetch(FEED_URL, { headers });
       if (!res.ok) {
         console.error(`✗ feed fetch failed: HTTP ${res.status}`);
         process.exit(1);

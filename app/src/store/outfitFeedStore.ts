@@ -1,19 +1,26 @@
-// outfitFeedStore — persisted likes/saves/follows for community outfits (FITS tab).
+// outfitFeedStore — persisted likes/saves/follows/comments for community
+// outfits (FITS tab). Local-first: everything lives on-device until the
+// Supabase publish pipeline (Phase 5) syncs it.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import type { OutfitComment } from '../data/outfits';
+
+const EMPTY_COMMENTS: OutfitComment[] = [];
 
 type State = {
   liked: string[];          // outfit IDs
   bookmarked: string[];     // outfit IDs
   followed: string[];       // user handles (without @)
+  comments: Record<string, OutfitComment[]>; // outfitId → my comments
 };
 
 type Actions = {
   toggleLike: (outfitId: string) => void;
   toggleBookmark: (outfitId: string) => void;
   toggleFollow: (handle: string) => void;
+  addComment: (outfitId: string, comment: OutfitComment) => void;
 };
 
 export const useOutfitFeedStore = create<State & Actions>()(
@@ -22,6 +29,7 @@ export const useOutfitFeedStore = create<State & Actions>()(
       liked: [],
       bookmarked: [],
       followed: [],
+      comments: {},
       toggleLike: (outfitId) =>
         set((s) => ({
           liked: s.liked.includes(outfitId)
@@ -40,6 +48,13 @@ export const useOutfitFeedStore = create<State & Actions>()(
             ? s.followed.filter((x) => x !== handle)
             : [...s.followed, handle],
         })),
+      addComment: (outfitId, comment) =>
+        set((s) => ({
+          comments: {
+            ...s.comments,
+            [outfitId]: [...(s.comments[outfitId] ?? []), comment],
+          },
+        })),
     }),
     {
       name: 'werol-outfit-feed-v1',
@@ -54,3 +69,5 @@ export const useIsOutfitBookmarked = (id: string) =>
   useOutfitFeedStore((s) => s.bookmarked.includes(id));
 export const useIsFollowed = (handle: string) =>
   useOutfitFeedStore((s) => s.followed.includes(handle));
+export const useMyOutfitComments = (id: string) =>
+  useOutfitFeedStore((s) => s.comments[id] ?? EMPTY_COMMENTS);

@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
-import { getBrandLogo } from './brandLogos';
+import { getBrandLogo, shopLogoKey } from './brandLogos';
 import { WEROL_TOKENS } from '../theme/colors';
 import { FONTS } from '../theme/typography';
 
@@ -23,16 +23,16 @@ export function BrandBadge({
       <View
         style={[
           styles.badge,
-          { height, width: height * 2.1, borderRadius: Math.round(height * 0.25), padding: Math.round(height * 0.13) },
+          { height, width: Math.round(height * logo.aspect), borderRadius: Math.round(height * 0.25), padding: Math.round(height * 0.13) },
         ]}
       >
-        <Image source={logo} style={styles.logo} resizeMode="cover" />
+        <Image source={logo.source} style={styles.logo} resizeMode={logo.fit ?? 'cover'} />
       </View>
     );
   }
   return (
     <Text style={[styles.text, { fontSize: Math.round(height * 0.5), color: textColor }]} numberOfLines={1}>
-      {(brand || '').toUpperCase()}
+      {(shopLogoKey(brand) || brand || '').toUpperCase()}
     </Text>
   );
 }

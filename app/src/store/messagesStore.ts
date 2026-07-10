@@ -28,7 +28,6 @@ export const useMessagesStore = create<State & Actions>()(
         set((s) => ({ messages: s.messages.map((m) => ({ ...m, read: true })) })),
       pushLiveMessage: () => {
         const { messages } = get();
-        if (messages.length >= MAX_MESSAGES) return false;
         const seedTitles = new Set(messages.map((m) => m.title));
         const candidates = LIVE_MESSAGE_POOL.filter((p) => !seedTitles.has(p.title));
         if (candidates.length === 0) return false;
@@ -43,7 +42,9 @@ export const useMessagesStore = create<State & Actions>()(
           read: false,
           productId: pick.productId,
         };
-        set({ messages: [newMsg, ...messages] });
+        // Keep the newest MAX_MESSAGES — pruning the oldest lets titles rotate
+        // back in, so the inbox never permanently stops receiving messages.
+        set({ messages: [newMsg, ...messages].slice(0, MAX_MESSAGES) });
         return true;
       },
     }),

@@ -33,10 +33,13 @@ type Actions = {
   signIn: (email: string, password: string) => Promise<AuthResult>;
   signInWithGoogle: () => Promise<AuthResult>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<AuthResult>;
   loadProfile: (userId: string) => Promise<void>;
+  updateProfile: (fields: { name?: string; handle?: string; bio?: string }) => Promise<AuthResult>;
   savePreferences: (prefs: Record<string, unknown>) => Promise<void>;
   setSize: (key: keyof Sizes, value: string | null) => void;
   toggleBrand: (brand: string) => void;
+  setFollowedBrands: (brands: string[]) => void;
   setSlot: (slot: OutfitSlotId, productId: string | undefined) => void;
   clearDraftOutfit: () => void;
   saveOutfit: (name?: string, image?: string) => void;
@@ -44,6 +47,7 @@ type Actions = {
 };
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+let authListenerAttached = false;
 const initialsOf = (name: string) =>
   name.trim().split(/\s+/).slice(0, 2).map((p) => p.charAt(0).toUpperCase()).join('') ||
   name.slice(0, 2).toUpperCase() || 'WE';
@@ -78,17 +82,55 @@ export const useUserStore = create<State & Actions>()(
         } finally {
           set({ authReady: true });
         }
+        // Keep the store in sync when supabase-js drops/refreshes the session
+        // internally (expired refresh token, remote sign-out).
+        if (!authListenerAttached) {
+          authListenerAttached = true;
+          supabase.auth.onAuthStateChange((_event, session) => {
+            const authed = !!session?.user;
+            if (authed !== get().isAuthenticated) {
+              if (authed) {
+                set({ isAuthenticated: true, userId: session!.user.id, email: session!.user.email ?? null });
+                get().loadProfile(session!.user.id);
+              } else {
+                set({ isAuthenticated: false, userId: null, email: null, profile: USER });
+              }
+            }
+          });
+        }
       },
 
       signUp: async (email, password, name) => {
         const trimmed = name.trim();
-        const handle = slug(trimmed || email.split('@')[0] || 'user');
+        const baseHandle = slug(trimmed || email.split('@')[0] || 'user');
         const initials = initialsOf(trimmed || email.split('@')[0] || 'WE');
-        const { data, error } = await supabase.auth.signUp({
+        // profiles.handle is UNIQUE and the DB trigger inserts the metadata
+        // handle verbatim — a taken handle would abort the whole signup. Check
+        // first and de-collide with a numeric suffix (public read allows this).
+        let handle = baseHandle;
+        try {
+          const { data: taken } = await supabase
+            .from('profiles')
+            .select('handle')
+            .eq('handle', baseHandle)
+            .maybeSingle();
+          if (taken) handle = `${baseHandle}${Math.floor(100 + Math.random() * 900)}`;
+        } catch {}
+        let res = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: { data: { name: trimmed, handle, initials } },
         });
+        if (res.error && /database error/i.test(res.error.message)) {
+          // Handle collision race — retry without a handle; the trigger then
+          // falls back to its own unique email-prefix + uuid handle.
+          res = await supabase.auth.signUp({
+            email: email.trim(),
+            password,
+            options: { data: { name: trimmed, initials } },
+          });
+        }
+        const { data, error } = res;
         if (error) return { error: error.message };
         if (data.session?.user) {
           set({ isAuthenticated: true, userId: data.session.user.id, email: data.session.user.email ?? null });
@@ -142,6 +184,14 @@ export const useUserStore = create<State & Actions>()(
         set({ isAuthenticated: false, userId: null, email: null, profile: USER, preferences: {}, needsOnboarding: false });
       },
 
+      resetPassword: async (email) => {
+        const trimmed = email.trim();
+        if (!trimmed) return { error: 'Zadaj svoj email' };
+        const { error } = await supabase.auth.resetPasswordForEmail(trimmed);
+        if (error) return { error: error.message };
+        return {};
+      },
+
       loadProfile: async (userId) => {
         const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
         if (!data) return;
@@ -152,10 +202,30 @@ export const useUserStore = create<State & Actions>()(
             handle: '@' + data.handle,
             initials: data.initials,
             joinedAt: (data.joined_at ?? '').slice(0, 10),
+            bio: data.bio ?? undefined,
           },
           preferences: prefs,
           needsOnboarding: Object.keys(prefs).length === 0,
         });
+      },
+
+      updateProfile: async ({ name, handle, bio }) => {
+        const id = get().userId;
+        if (!id) return { error: 'Nie si prihlásený' };
+        const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+        if (name !== undefined) {
+          patch.name = name.trim();
+          patch.initials = initialsOf(name.trim() || 'WE');
+        }
+        if (handle !== undefined) patch.handle = slug(handle);
+        if (bio !== undefined) patch.bio = bio.trim() || null;
+        const { error } = await supabase.from('profiles').update(patch).eq('id', id);
+        if (error) {
+          if (/unique|duplicate/i.test(error.message)) return { error: 'Tento handle už niekto používa' };
+          return { error: error.message };
+        }
+        await get().loadProfile(id);
+        return {};
       },
 
       savePreferences: async (prefs) => {
@@ -165,6 +235,7 @@ export const useUserStore = create<State & Actions>()(
       },
 
       setSize: (key, value) => set((s) => ({ sizes: { ...s.sizes, [key]: value } })),
+      setFollowedBrands: (brands) => set({ followedBrands: brands }),
       toggleBrand: (brand) =>
         set((s) => ({
           followedBrands: s.followedBrands.includes(brand)

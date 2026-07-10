@@ -1,7 +1,6 @@
 import { CATEGORIES, CATEGORY_LABEL, type CategoryId } from './categories';
-import { CREATORS } from './creators';
 import { PRODUCTS } from './products';
-import type { Product, Creator } from '../types';
+import type { Product } from '../types';
 import type { ShopKey } from '../theme/colors';
 
 function countBy<T extends string>(items: Array<T | undefined>): Map<T, number> {
@@ -86,26 +85,7 @@ export function buildRecommendations(
     }
   }
 
-  // 3. Creators you might like (creators behind your liked products)
-  const creatorCounts = countBy<string>(interactedProducts.map((p) => p.creatorId));
-  const topCreatorId = topKey(creatorCounts);
-  if (topCreatorId) {
-    const creator: Creator | undefined = CREATORS.find((c) => c.id === topCreatorId);
-    const items = catalog.filter(
-      (p) => p.creatorId === topCreatorId && !interactions.includes(p.id),
-    ).slice(0, 8);
-    if (creator && items.length > 0) {
-      buckets.push({
-        key: 'creator',
-        title: `Od ${creator.name}`,
-        subtitle: `${creator.handle} · ${creator.outfits} outfitov`,
-        products: items,
-        tint: creator.tint,
-      });
-    }
-  }
-
-  // 4. Discover by category — show a "Pozri tiež" with another category
+  // 3. Discover by category — show a "Pozri tiež" with another category
   const otherCategories = CATEGORIES.filter((c) => c.id !== topCategory);
   if (otherCategories.length > 0) {
     const pick = otherCategories[0];

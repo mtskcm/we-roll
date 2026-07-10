@@ -3,24 +3,18 @@
 // share), bottom-left owner + caption, WEROL wordmark + add on top.
 
 import { useNavigation } from '@react-navigation/native';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   Image,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
 } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddIcon from '../assets/icons/add.svg';
@@ -29,16 +23,22 @@ import HeartIcon from '../assets/icons/heart.svg';
 import SendIcon from '../assets/icons/send.svg';
 import ShareIcon from '../assets/icons/share.svg';
 import WordmarkOnDark from '../assets/logos/wordmark-on-dark.svg';
-import { OUTFITS, type UserOutfit } from '../data/outfits';
+import type { UserOutfit } from '../data/outfits';
+import { useOutfits, useOutfitsStore } from '../store/outfitsStore';
 import {
   useIsFollowed,
   useIsOutfitBookmarked,
   useIsOutfitLiked,
+  useMyOutfitComments,
   useOutfitFeedStore,
 } from '../store/outfitFeedStore';
+import { CommentsSheet } from '../components/CommentsSheet';
 import { useShareStore } from '../store/shareStore';
 import { useProducts } from '../store/productsStore';
-import { formatPrice } from '../lib/format';
+import { useUiStore } from '../store/uiStore';
+import { formatCount, formatPrice, relTime } from '../lib/format';
+import { resolveTaggedProducts } from '../lib/outfitTags';
+import { RailAction, RAIL_SHADOW } from '../components/RailAction';
 import type { Product } from '../types';
 import { WEROL_TOKENS } from '../theme/colors';
 import { SPACING } from '../theme/spacing';
@@ -46,24 +46,17 @@ import { FONTS } from '../theme/typography';
 
 const BOTTOM_NAV_HEIGHT = 78;
 
-function formatCount(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K`;
-  return String(n);
-}
-function relTime(ts: number): string {
-  const m = Math.floor((Date.now() - ts) / 60000);
-  if (m < 60) return `${Math.max(1, m)}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}d`;
-}
-
 export function OutfitsFeedScreen() {
   const insets = useSafeAreaInsets();
   const { width: winWidth, height: winHeight } = useWindowDimensions();
   const navigation = useNavigation<any>();
   const showToast = useShareStore((s) => s.showToast);
   const PRODUCTS = useProducts();
+  const setChromeHidden = useUiStore((s) => s.setChromeHidden);
+  const [commentsFor, setCommentsFor] = useState<UserOutfit | null>(null);
+  const outfits = useOutfits();
+  const hydrateOutfits = useOutfitsStore((s) => s.hydrate);
+  useEffect(() => { hydrateOutfits(); }, [hydrateOutfits]);
 
   const getItemLayout = useCallback(
     (_: ArrayLike<UserOutfit> | null | undefined, index: number) => ({
@@ -77,7 +70,7 @@ export function OutfitsFeedScreen() {
   return (
     <View style={styles.root}>
       <FlatList
-        data={OUTFITS}
+        data={outfits}
         keyExtractor={(o) => o.id}
         renderItem={({ item }) => (
           <OutfitCard
@@ -87,7 +80,7 @@ export function OutfitsFeedScreen() {
             bottomSafeArea={insets.bottom}
             products={PRODUCTS}
             onProduct={(id) => navigation.navigate('ProductDetails', { productId: id })}
-            onOpen={() => navigation.navigate('OutfitDetail', { outfitId: item.id })}
+            onComments={() => setCommentsFor(item)}
           />
         )}
         pagingEnabled
@@ -96,6 +89,9 @@ export function OutfitsFeedScreen() {
         decelerationRate="fast"
         showsVerticalScrollIndicator={false}
         getItemLayout={getItemLayout}
+        onScrollBeginDrag={() => setChromeHidden(true)}
+        onScrollEndDrag={() => setChromeHidden(false)}
+        onMomentumScrollEnd={() => setChromeHidden(false)}
         initialNumToRender={2}
         windowSize={3}
         maxToRenderPerBatch={2}
@@ -112,6 +108,9 @@ export function OutfitsFeedScreen() {
           <AddIcon width={24} height={24} stroke={WEROL_TOKENS.paper} strokeWidth={1.9} fill="none" />
         </Pressable>
       </View>
+
+      {/* IG-style comments bottom sheet */}
+      <CommentsSheet outfit={commentsFor} onClose={() => setCommentsFor(null)} />
     </View>
   );
 }
@@ -123,7 +122,7 @@ function OutfitCard({
   bottomSafeArea = 0,
   products,
   onProduct,
-  onOpen,
+  onComments,
 }: {
   outfit: UserOutfit;
   width: number;
@@ -131,16 +130,20 @@ function OutfitCard({
   bottomSafeArea?: number;
   products: Product[];
   onProduct: (id: string) => void;
-  onOpen: () => void;
+  onComments: () => void;
 }) {
   const infoBottomOffset = BOTTOM_NAV_HEIGHT + bottomSafeArea + 8;
-  const tagged = outfit.taggedProductIds
-    .map((id) => products.find((p) => p.id === id))
-    .filter((p): p is Product => !!p)
-    .slice(0, 6);
+  const tagged = resolveTaggedProducts(outfit, products).slice(0, 6);
+  const shareOutfit = () => {
+    Share.share({
+      message: `Fit od @${outfit.ownerHandle} na WEROL${outfit.caption ? ` — ${outfit.caption}` : ''}\nhttps://werol.app`,
+    }).catch(() => {});
+  };
   const liked = useIsOutfitLiked(outfit.id);
   const bookmarked = useIsOutfitBookmarked(outfit.id);
   const followed = useIsFollowed(outfit.ownerHandle);
+  const myComments = useMyOutfitComments(outfit.id);
+  const commentCount = outfit.comments.length + myComments.length;
   const toggleLike = useOutfitFeedStore((s) => s.toggleLike);
   const toggleBookmark = useOutfitFeedStore((s) => s.toggleBookmark);
   const toggleFollow = useOutfitFeedStore((s) => s.toggleFollow);
@@ -148,7 +151,6 @@ function OutfitCard({
   return (
     <View style={[styles.card, { width, height }]}>
       <Image source={outfit.image} style={{ width, height }} resizeMode="cover" />
-      <Pressable style={StyleSheet.absoluteFill} onPress={onOpen} />
 
       <LinearGradient
         colors={['rgba(10,10,12,0.55)', 'rgba(10,10,12,0)']}
@@ -180,15 +182,15 @@ function OutfitCard({
           label={formatCount(outfit.likes + (liked ? 1 : 0))}
           onPress={() => toggleLike(outfit.id)}
         />
-        <RailAction Icon={SendIcon} label={String(outfit.comments.length)} onPress={onOpen} />
+        <RailAction Icon={SendIcon} label={String(commentCount)} onPress={onComments} />
         <RailAction Icon={BookmarkIcon} active={bookmarked} onPress={() => toggleBookmark(outfit.id)} />
-        <RailAction Icon={ShareIcon} onPress={() => {}} />
+        <RailAction Icon={ShareIcon} onPress={shareOutfit} />
       </View>
 
       {/* Bottom-left: owner + caption + shop the look */}
       <View style={[styles.info, { bottom: infoBottomOffset }]} pointerEvents="box-none">
         <Text style={styles.handle}>@{outfit.ownerHandle}</Text>
-        <Text style={styles.meta}>{relTime(outfit.createdAt)} · {outfit.taggedProductIds.length} kúskov</Text>
+        <Text style={styles.meta}>{relTime(outfit.createdAt)} · {tagged.length} kúskov</Text>
         {!!outfit.caption && (
           <Text style={styles.caption} numberOfLines={2}>{outfit.caption}</Text>
         )}
@@ -209,45 +211,17 @@ function OutfitCard({
             ))}
           </ScrollView>
         )}
-        {outfit.comments.length > 0 && (
-          <Pressable onPress={onOpen} hitSlop={6}>
-            <Text style={styles.viewComments}>Zobraziť všetkých {outfit.comments.length} komentárov</Text>
-          </Pressable>
-        )}
+        <Pressable onPress={onComments} hitSlop={6}>
+          <Text style={styles.viewComments}>
+            {commentCount > 0 ? `Zobraziť všetkých ${commentCount} komentárov` : 'Pridaj komentár…'}
+          </Text>
+        </Pressable>
       </View>
     </View>
   );
 }
 
-function RailAction({
-  Icon,
-  label,
-  active = false,
-  onPress,
-}: {
-  Icon: React.FC<{ width?: number; height?: number; stroke?: string; fill?: string; strokeWidth?: number }>;
-  label?: string;
-  active?: boolean;
-  onPress: () => void;
-}) {
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-  const handle = () => {
-    scale.value = withSequence(withTiming(0.8, { duration: 90 }), withSpring(1, { damping: 6, stiffness: 220 }));
-    onPress();
-  };
-  const color = active ? WEROL_TOKENS.lime : WEROL_TOKENS.paper;
-  return (
-    <Pressable onPress={handle} hitSlop={8} style={styles.railItem}>
-      <Animated.View style={animStyle}>
-        <Icon width={29} height={29} stroke={color} fill={active ? color : 'none'} strokeWidth={1.7} />
-      </Animated.View>
-      {label ? <Text style={styles.railLabel}>{label}</Text> : null}
-    </Pressable>
-  );
-}
-
-const SHADOW = { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.45, shadowRadius: 4 };
+const SHADOW = RAIL_SHADOW;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: WEROL_TOKENS.pitch },
@@ -267,8 +241,6 @@ const styles = StyleSheet.create({
   topGradient: { position: 'absolute', left: 0, right: 0, top: 0, height: 130 },
   bottomGradient: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   rail: { position: 'absolute', right: 12, gap: 20, alignItems: 'center' },
-  railItem: { alignItems: 'center', gap: 5, ...SHADOW },
-  railLabel: { fontFamily: FONTS.archivoBold, fontSize: 12, color: WEROL_TOKENS.paper, letterSpacing: 0.2, ...SHADOW },
   avatarWrap: { alignItems: 'center', marginBottom: 4 },
   avatar: {
     width: 46,
@@ -292,10 +264,10 @@ const styles = StyleSheet.create({
   },
   followPlus: { fontFamily: FONTS.archivoBold, fontSize: 14, lineHeight: 16, color: WEROL_TOKENS.pitch },
   info: { position: 'absolute', left: 0, right: 0, paddingHorizontal: SPACING.lg, paddingRight: 76 },
-  handle: { fontFamily: FONTS.spaceGroteskBold, fontSize: 16, color: WEROL_TOKENS.paper, ...SHADOW },
-  meta: { fontFamily: FONTS.inter, fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2, ...SHADOW },
-  caption: { fontFamily: FONTS.inter, fontSize: 14, lineHeight: 19, color: 'rgba(255,255,255,0.92)', marginTop: 8, ...SHADOW },
-  viewComments: { fontFamily: FONTS.inter, fontSize: 13, color: 'rgba(255,255,255,0.6)', marginTop: 6 },
+  handle: { fontFamily: FONTS.archivoSemibold, fontSize: 16, color: WEROL_TOKENS.paper, ...SHADOW },
+  meta: { fontFamily: FONTS.archivoRegular, fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2, ...SHADOW },
+  caption: { fontFamily: FONTS.archivoRegular, fontSize: 14, lineHeight: 19, color: 'rgba(255,255,255,0.92)', marginTop: 8, ...SHADOW },
+  viewComments: { fontFamily: FONTS.archivoRegular, fontSize: 13, color: 'rgba(255,255,255,0.6)', marginTop: 6 },
   shopStrip: { gap: 8, paddingTop: 12, paddingRight: 8 },
   shopTag: {
     flexDirection: 'row',
@@ -307,7 +279,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingLeft: 5,
   },
-  shopThumb: { width: 34, height: 34, borderRadius: 7, backgroundColor: '#F3F3F5' },
+  shopThumb: { width: 34, height: 34, borderRadius: 7, backgroundColor: WEROL_TOKENS.frame },
   shopInfo: { gap: 1 },
   shopBrand: { fontFamily: FONTS.jetbrainsMonoBold, fontSize: 8, letterSpacing: 1, color: WEROL_TOKENS.muted2 },
   shopPrice: { fontFamily: FONTS.archivoBold, fontSize: 13, color: WEROL_TOKENS.pitch },

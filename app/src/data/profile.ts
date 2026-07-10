@@ -1,8 +1,10 @@
 import type { UserProfile } from '../types';
 
+// Neutral placeholder shown only until the real profile loads (or if the
+// profiles read fails) — never another person's identity.
 export const USER: UserProfile = {
-  name: 'Matúš Kačmár',
-  handle: '@matus',
-  initials: 'MK',
-  joinedAt: '2026-04-12',
+  name: 'WEROL člen',
+  handle: '@werol',
+  initials: 'W',
+  joinedAt: '',
 };

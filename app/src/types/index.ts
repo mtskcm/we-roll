@@ -53,6 +53,7 @@ export type UserProfile = {
   handle: string;
   initials: string;
   joinedAt: string;
+  bio?: string;
 };
 
 export type Friend = {

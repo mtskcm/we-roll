@@ -40,19 +40,25 @@ export function SignUpScreen({ onSignIn }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [confirmSent, setConfirmSent] = useState(false);
+
+  // Supabase's default password minimum is 6 — match it client-side.
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const canSubmit = name.trim().length >= 2 && emailValid && password.length >= 4 && !loading;
+  const canSubmit = name.trim().length >= 2 && emailValid && password.length >= 6 && !loading;
 
   const handleRegister = async () => {
     if (!canSubmit) {
-      setError('Vyplň meno, platný email a heslo (min 4 znaky)');
+      setError('Fill in your name, a valid email and a password (min 6 characters)');
       return;
     }
     setLoading(true);
     const { error: err, needsConfirm } = await signUp(email, password, name);
     setLoading(false);
     if (err) setError(err);
-    else if (needsConfirm) showToast('Skontroluj email na potvrdenie účtu');
+    else if (needsConfirm) {
+      setConfirmSent(true);
+      showToast('Check your email to confirm the account');
+    }
   };
 
   return (
@@ -116,7 +122,7 @@ export function SignUpScreen({ onSignIn }: Props) {
                 setPassword(v);
                 setError(null);
               }}
-              placeholder="password (min 4)"
+              placeholder="password (min 6)"
               placeholderTextColor={WEROL_TOKENS.muted2}
               style={styles.input}
               secureTextEntry
@@ -125,6 +131,9 @@ export function SignUpScreen({ onSignIn }: Props) {
             />
 
             {error && <Text style={styles.error}>{error}</Text>}
+            {confirmSent && (
+              <Text style={styles.info}>Account created — confirm it via the link we sent to {email.trim()}</Text>
+            )}
 
             <Pressable
               onPress={handleRegister}
@@ -135,7 +144,7 @@ export function SignUpScreen({ onSignIn }: Props) {
                 pressed && canSubmit && { opacity: 0.85 },
               ]}
             >
-              <Text style={styles.ctaText}>CREATE ACCOUNT →</Text>
+              <Text style={styles.ctaText}>{loading ? 'CREATING ACCOUNT…' : 'CREATE ACCOUNT →'}</Text>
             </Pressable>
 
             <Pressable
@@ -212,7 +221,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 16,
     color: WEROL_TOKENS.paper,
-    fontFamily: FONTS.inter,
+    fontFamily: FONTS.archivoRegular,
     fontSize: 15,
     borderWidth: 1,
     borderColor: WEROL_TOKENS.line,
@@ -220,7 +229,14 @@ const styles = StyleSheet.create({
   error: {
     fontFamily: FONTS.jetbrainsMono,
     fontSize: 11,
-    color: '#FF6B6B',
+    color: WEROL_TOKENS.tintRed,
+    letterSpacing: 1,
+    marginTop: -4,
+  },
+  info: {
+    fontFamily: FONTS.jetbrainsMono,
+    fontSize: 11,
+    color: WEROL_TOKENS.lime,
     letterSpacing: 1,
     marginTop: -4,
   },
@@ -262,7 +278,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   swapText: {
-    fontFamily: FONTS.inter,
+    fontFamily: FONTS.archivoRegular,
     fontSize: 13,
     color: WEROL_TOKENS.muted,
   },

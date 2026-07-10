@@ -9,7 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import ArrowRightIcon from '../assets/icons/arrow_right.svg';
-import { COLORS } from '../theme/colors';
+import { WEROL_TOKENS } from '../theme/colors';
 import { FONTS } from '../theme/typography';
 
 export function SwipeHint() {
@@ -46,7 +46,7 @@ export function SwipeHint() {
     <Animated.View pointerEvents="none" style={[styles.root, animStyle]}>
       <View style={styles.circle}>
         <View style={styles.iconRotate}>
-          <ArrowRightIcon width={14} height={14} stroke={COLORS.cream} strokeWidth={2} fill="none" />
+          <ArrowRightIcon width={14} height={14} stroke={WEROL_TOKENS.paper} strokeWidth={2} fill="none" />
         </View>
       </View>
       <Text style={styles.label}>Scroll</Text>
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.jetbrainsMono,
     fontSize: 9,
     letterSpacing: 1.5,
-    color: COLORS.cream2,
+    color: WEROL_TOKENS.muted,
     textTransform: 'uppercase',
   },
 });
