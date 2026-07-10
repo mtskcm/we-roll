@@ -35,8 +35,9 @@ const WEIGHTS: Record<EngagementType, number> = {
   dwell: 0, // computed from seconds
 };
 
-/** Dwell weight: 0 under 2s, then +1 per ~4s, capped at 3. */
-const dwellWeight = (seconds: number) => (seconds < 2 ? 0 : Math.min(3, seconds / 4));
+/** Dwell weight: 0 under 3s, then gentle growth capped at 1.5 — passive
+ * scrolling must not drown out explicit signals (like/save/buy). */
+const dwellWeight = (seconds: number) => (seconds < 3 ? 0 : Math.min(1.5, seconds / 8));
 
 type State = {
   categoryScores: Record<string, number>;

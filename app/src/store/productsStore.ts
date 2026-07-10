@@ -46,16 +46,44 @@ function rankForUser(products: Product[]): Product[] {
     Object.keys(categoryScores).length > 0 || Object.keys(brandScores).length > 0;
   if (!hasSignals) return shuffle(products);
 
-  return products
+  // sqrt-dampened scores — a hot category can't run away with the whole feed
+  const damp = (v: number) => Math.sign(v) * Math.sqrt(Math.abs(v));
+  const ranked = products
     .map((p) => ({
       p,
       score:
-        (categoryScores[p.category] ?? 0) +
-        (brandScores[(p.brand || '').trim()] ?? 0) * 1.2 +
-        Math.random() * 6, // exploration — keeps the feed from becoming a bubble
+        damp(categoryScores[p.category] ?? 0) * 2 +
+        damp(brandScores[(p.brand || '').trim()] ?? 0) * 2.4 +
+        Math.random() * 8, // exploration — keeps the feed from becoming a bubble
     }))
     .sort((a, b) => b.score - a.score)
     .map((x) => x.p);
+
+  return diversify(ranked);
+}
+
+/** Diversity pass — never more than 2 of the same category in a row, so a
+ * strong taste boosts a category without flooding the feed with it. */
+function diversify(sorted: Product[], maxRun = 2): Product[] {
+  const pool = sorted.slice();
+  const out: Product[] = [];
+  let runCat = '';
+  let runLen = 0;
+  while (pool.length) {
+    let idx = 0;
+    if (runLen >= maxRun) {
+      const alt = pool.findIndex((p) => p.category !== runCat);
+      if (alt !== -1) idx = alt;
+    }
+    const p = pool.splice(idx, 1)[0];
+    if (p.category === runCat) runLen++;
+    else {
+      runCat = p.category;
+      runLen = 1;
+    }
+    out.push(p);
+  }
+  return out;
 }
 
 function applyFilter(products: Product[], filter: FeedFilter | null): Product[] {
