@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Linking, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { FlatList, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import type { ViewToken } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FilterSheet } from '../components/FilterSheet';
@@ -8,7 +8,6 @@ import { ProductCard } from '../components/ProductCard';
 import { SwipeHint } from '../components/SwipeHint';
 import { TopNav } from '../components/TopNav';
 import { useEngagementStore } from '../store/engagementStore';
-import { useOrdersStore } from '../store/ordersStore';
 import {
   getAllProducts,
   useFeedFilter,
@@ -17,7 +16,6 @@ import {
 } from '../store/productsStore';
 import { FONTS } from '../theme/typography';
 import { useFeedStore } from '../store/feedStore';
-import { useShareStore } from '../store/shareStore';
 import { useUiStore } from '../store/uiStore';
 import { WEROL_TOKENS } from '../theme/colors';
 import type { Product } from '../types';
@@ -31,6 +29,13 @@ export function FeedScreen() {
   const feedFilter = useFeedFilter();
   const [filterOpen, setFilterOpen] = useState(false);
 
+  // IG-style windowing: the list only ever holds a small page of the ranked
+  // catalog; more is appended as you approach the end. Keeps VirtualizedList
+  // updates cheap even with a 4k-product catalog.
+  const PAGE = 24;
+  const [visibleCount, setVisibleCount] = useState(PAGE);
+  const data = useMemo(() => PRODUCTS.slice(0, visibleCount), [PRODUCTS, visibleCount]);
+
   // Full-bleed: each card fills the whole screen; the image runs edge-to-edge
   // to the very top (behind the status bar) and the TopNav floats over it.
   const itemHeight = winHeight;
@@ -42,7 +47,6 @@ export function FeedScreen() {
   const consumePendingFeedIndex = useFeedStore((s) => s.consumePendingFeedIndex);
   const setChromeHidden = useUiStore((s) => s.setChromeHidden);
   const zenMode = useUiStore((s) => s.zenMode);
-  const showToast = useShareStore((s) => s.showToast);
 
   useEffect(() => {
     const unsubFocus = navigation.addListener('focus', () => {
@@ -52,6 +56,7 @@ export function FeedScreen() {
       const catalog = getAllProducts();
       if (idx !== null && idx >= 0 && idx < catalog.length) {
         setCurrentIndex(idx);
+        setVisibleCount((c) => Math.max(c, idx + PAGE)); // make the target renderable
         requestAnimationFrame(() => {
           listRef.current?.scrollToIndex({ index: idx, animated: false });
         });
@@ -101,6 +106,20 @@ export function FeedScreen() {
 
   const viewabilityConfig = useMemo(() => ({ itemVisiblePercentThreshold: 60 }), []);
 
+  // Stable renderItem + memoized ProductCard → mounted cards don't re-render
+  // when the screen updates (IG-style cheap cells).
+  const renderItem = useCallback(
+    ({ item }: { item: Product }) => (
+      <ProductCard
+        product={item}
+        height={itemHeight}
+        bottomSafeArea={insets.bottom}
+        topSafeArea={insets.top}
+      />
+    ),
+    [itemHeight, insets.bottom, insets.top],
+  );
+
   const getItemLayout = useCallback(
     (_: ArrayLike<Product> | null | undefined, index: number) => ({
       length: itemHeight,
@@ -114,21 +133,11 @@ export function FeedScreen() {
     <View style={styles.root}>
       <FlatList
         ref={listRef}
-        data={PRODUCTS}
+        data={data}
         keyExtractor={(p) => p.id}
-        renderItem={({ item }) => (
-          <ProductCard
-            product={item}
-            height={itemHeight}
-            bottomSafeArea={insets.bottom}
-            topSafeArea={insets.top}
-            onBuy={() => {
-              useEngagementStore.getState().record(item, 'buy');
-              useOrdersStore.getState().addOrder(item); // bought-through-WEROL history
-              Linking.openURL(item.takeItUrl).catch(() => showToast("Couldn't open the shop"));
-            }}
-          />
-        )}
+        renderItem={renderItem}
+        onEndReached={() => setVisibleCount((c) => Math.min(c + PAGE, PRODUCTS.length))}
+        onEndReachedThreshold={4}
         pagingEnabled
         snapToInterval={itemHeight}
         snapToAlignment="start"
@@ -143,7 +152,7 @@ export function FeedScreen() {
         }}
         onScrollEndDrag={() => setChromeHidden(false)}
         onMomentumScrollEnd={() => setChromeHidden(false)}
-        initialScrollIndex={Math.min(Math.max(currentIndex, 0), Math.max(PRODUCTS.length - 1, 0))}
+        initialScrollIndex={Math.min(Math.max(currentIndex, 0), Math.max(data.length - 1, 0))}
         initialNumToRender={2}
         windowSize={3}
         maxToRenderPerBatch={2}

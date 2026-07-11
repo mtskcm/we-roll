@@ -11,6 +11,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Image,
   type ImageSourcePropType,
+  Linking,
   Pressable,
   StyleSheet,
   Text,
@@ -34,6 +35,8 @@ import { shopLogoKey } from './brandLogos';
 import { RailAction } from './RailAction';
 import { useEngagementStore } from '../store/engagementStore';
 import { useFeedStore, useIsLiked, useIsSaved } from '../store/feedStore';
+import { useOrdersStore } from '../store/ordersStore';
+import { useShareStore } from '../store/shareStore';
 import { useUiStore } from '../store/uiStore';
 import { formatCount, formatPrice } from '../lib/format';
 import { shareProduct } from '../lib/shareProduct';
@@ -96,7 +99,7 @@ function useImageAspect(source: ImageSourcePropType): number {
   return ratio;
 }
 
-export function ProductCard({ product, height, bottomSafeArea = 0, topSafeArea = 0, onBuy }: Props) {
+function ProductCardInner({ product, height, bottomSafeArea = 0, topSafeArea = 0, onBuy }: Props) {
   const { width: winWidth } = useWindowDimensions();
   const infoBottomOffset = BOTTOM_NAV_HEIGHT + bottomSafeArea + 8;
   const isApparel = !CONTAIN_CATEGORIES.has(product.category);
@@ -106,6 +109,15 @@ export function ProductCard({ product, height, bottomSafeArea = 0, topSafeArea =
   const toggleSaved = useFeedStore((s) => s.toggleSaved);
   const recordEngagement = useEngagementStore((s) => s.record);
   const setZenMode = useUiStore((s) => s.setZenMode);
+  const showToast = useShareStore((s) => s.showToast);
+
+  // Default BUY: engagement + order history + affiliate deeplink. Living
+  // inside the card keeps FeedScreen's renderItem props stable (memo works).
+  const handleBuy = () => {
+    recordEngagement(product, 'buy');
+    useOrdersStore.getState().addOrder(product);
+    Linking.openURL(product.takeItUrl).catch(() => showToast("Couldn't open the shop"));
+  };
 
   // Long-press "zen" — clean photo while held.
   const [zen, setZen] = useState(false);
@@ -283,7 +295,7 @@ export function ProductCard({ product, height, bottomSafeArea = 0, topSafeArea =
                   )}
                 </View>
                 <Pressable
-                  onPress={onBuy}
+                  onPress={onBuy ?? handleBuy}
                   style={({ pressed }) => [styles.buyBtn, pressed && { opacity: 0.88 }]}
                 >
                   <CartIcon width={20} height={20} stroke={WEROL_TOKENS.pitch} strokeWidth={2.8} fill="none" />
@@ -300,6 +312,9 @@ export function ProductCard({ product, height, bottomSafeArea = 0, topSafeArea =
   );
 }
 
+// Memoized cell — with stable props from FeedScreen's renderItem, mounted
+// cards skip re-renders entirely while the list updates around them.
+export const ProductCard = React.memo(ProductCardInner);
 
 const styles = StyleSheet.create({
   card: {
