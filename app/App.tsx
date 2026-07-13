@@ -1,15 +1,4 @@
 import 'react-native-gesture-handler';
-import { Archivo_900Black } from '@expo-google-fonts/archivo';
-import { CactusClassicalSerif_400Regular } from '@expo-google-fonts/cactus-classical-serif';
-import { JetBrainsMono_700Bold } from '@expo-google-fonts/jetbrains-mono';
-import { ProstoOne_400Regular } from '@expo-google-fonts/prosto-one';
-import {
-  Manrope_400Regular,
-  Manrope_500Medium,
-  Manrope_600SemiBold,
-  Manrope_700Bold,
-  Manrope_800ExtraBold,
-} from '@expo-google-fonts/manrope';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
@@ -60,18 +49,22 @@ function BootSplash() {
 
 export default function App() {
   const [loaded, fontError] = useFonts({
-    // Brand — Manrope, the single family (UI kit Edition 03)
-    Manrope_400Regular,
-    Manrope_500Medium,
-    Manrope_600SemiBold,
-    Manrope_700Bold,
-    Manrope_800ExtraBold,
-    // Product name + price (serif accent) and buttons (Prosto One)
-    CactusClassicalSerif_400Regular,
-    ProstoOne_400Regular,
-    // Splash-only brand moment (original launch logo look)
-    Archivo_900Black,
-    JetBrainsMono_700Bold,
+    // Display — Archivo (headings, prices, big numbers, buttons)
+    'Archivo-Regular': require('./src/assets/fonts/Archivo-Regular.ttf'),
+    'Archivo-Medium': require('./src/assets/fonts/Archivo-Medium.ttf'),
+    'Archivo-SemiBold': require('./src/assets/fonts/Archivo-SemiBold.ttf'),
+    'Archivo-Bold': require('./src/assets/fonts/Archivo-Bold.ttf'),
+    'Archivo-ExtraBold': require('./src/assets/fonts/Archivo-ExtraBold.ttf'),
+    'Archivo-Black': require('./src/assets/fonts/Archivo-Black.ttf'),
+    // Body / UI — Inter
+    'Inter-Regular': require('./src/assets/fonts/Inter-Regular.ttf'),
+    'Inter-Medium': require('./src/assets/fonts/Inter-Medium.ttf'),
+    'Inter-SemiBold': require('./src/assets/fonts/Inter-SemiBold.ttf'),
+    'Inter-Bold': require('./src/assets/fonts/Inter-Bold.ttf'),
+    'Inter-ExtraBold': require('./src/assets/fonts/Inter-ExtraBold.ttf'),
+    // Technical labels — JetBrains Mono
+    'JetBrainsMono-Medium': require('./src/assets/fonts/JetBrainsMono-Medium.ttf'),
+    'JetBrainsMono-Bold': require('./src/assets/fonts/JetBrainsMono-Bold.ttf'),
   });
 
   // Never hang on black: show the logo while loading, and if a font fails,

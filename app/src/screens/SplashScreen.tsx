@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   },
   backdropAR: {
     position: 'absolute',
-    fontFamily: 'Archivo_900Black', // original launch-logo look (kept on purpose)
+    fontFamily: 'Archivo-Black', // original launch-logo look (kept on purpose)
     fontSize: 320,
     letterSpacing: -16,
     lineHeight: 320,
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   wordmark: {
-    fontFamily: 'Archivo_900Black', // original launch-logo look (kept on purpose)
+    fontFamily: 'Archivo-Black', // original launch-logo look (kept on purpose)
     fontSize: 72,
     letterSpacing: -3.5,
     lineHeight: 72,
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sloganChar: {
-    fontFamily: 'JetBrainsMono_700Bold', // original launch look (kept on purpose)
+    fontFamily: 'JetBrainsMono-Bold', // original launch look (kept on purpose)
     fontSize: 13,
     letterSpacing: 4,
     color: WEROL_TOKENS.lime,

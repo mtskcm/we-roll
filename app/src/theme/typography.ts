@@ -1,90 +1,102 @@
-// WEROL — Typography (Edition 03 — "Streetwear app UI kit design-3")
-// ONE family: Manrope, weights 400–800. Legacy FONT keys are kept as aliases
-// (archivo* / jetbrainsMono*) so every screen restyles itself without renames;
-// new code should prefer the manrope* keys.
+// WEROL — Typography (Edition 04). THREE families, strict roles:
+//   Archivo        — display: headings, prices, big numbers, buttons.
+//   Inter          — body/UI: product names, captions, inputs, settings, handles.
+//   JetBrains Mono — technical accent: eyebrows, SKUs, timestamps, micro-labels.
 //
-// Kit scale: Display/logo 800·52/-3.5% · Screen title 700·34/-2% ·
-// Heading/product 600·22 · Body 500·17 (#D6D7DB) · Technical label 700·13/+20% UPPER.
+// Bundled locally (src/assets/fonts). Legacy FONT keys are kept as aliases and
+// mapped BY ROLE, so every screen restyles itself without edits.
 
 import type { TextStyle } from 'react-native';
 import { WEROL_TOKENS } from './colors';
 
 export const FONTS = {
-  // Canonical Manrope keys
-  manrope: 'Manrope_400Regular',
-  manropeMedium: 'Manrope_500Medium',
-  manropeSemibold: 'Manrope_600SemiBold',
-  manropeBold: 'Manrope_700Bold',
-  manropeExtraBold: 'Manrope_800ExtraBold',
+  // Display — Archivo
+  display: 'Archivo-Black',
+  archivo: 'Archivo-ExtraBold',
+  archivoBold: 'Archivo-Bold',
+  archivoSemibold: 'Archivo-SemiBold',
+  archivoMedium: 'Archivo-Medium',
+  archivoRegular: 'Archivo-Regular',
 
-  // Accents (per Matúš): serif for product name + price, Prosto One for buttons
-  serif: 'CactusClassicalSerif_400Regular',
-  button: 'ProstoOne_400Regular',
+  // Body / UI — Inter
+  inter: 'Inter-Regular',
+  interMedium: 'Inter-Medium',
+  interSemibold: 'Inter-SemiBold',
+  interBold: 'Inter-Bold',
+  interExtraBold: 'Inter-ExtraBold',
 
-  // Legacy aliases — value swap restyles the whole app in one move
-  archivo: 'Manrope_800ExtraBold',        // display / big numbers
-  archivoBold: 'Manrope_700Bold',         // headings, CTAs, prices
-  archivoSemibold: 'Manrope_600SemiBold', // subheads, product names, handles
-  archivoMedium: 'Manrope_500Medium',     // emphasized body
-  archivoRegular: 'Manrope_400Regular',   // body copy, captions, inputs
-  jetbrainsMono: 'Manrope_600SemiBold',   // ex-technical accent → gray label
-  jetbrainsMonoBold: 'Manrope_700Bold',   // ex-technical bold → label 700
+  // Technical labels — JetBrains Mono
+  mono: 'JetBrainsMono-Medium',
+  monoBold: 'JetBrainsMono-Bold',
+  jetbrainsMono: 'JetBrainsMono-Medium',
+  jetbrainsMonoBold: 'JetBrainsMono-Bold',
+
+  // --- Legacy aliases (from the Manrope edition) → remapped by ROLE ---
+  // Base/body weights → Inter; heavy weights → Archivo display.
+  manrope: 'Inter-Regular',
+  manropeMedium: 'Inter-Medium',
+  manropeSemibold: 'Inter-SemiBold',
+  manropeBold: 'Archivo-Bold',
+  manropeExtraBold: 'Archivo-ExtraBold',
+  // Retired accents → Archivo display.
+  serif: 'Archivo-ExtraBold',
+  button: 'Archivo-Bold',
 } as const;
 
 export const TEXT_STYLES = {
-  /** Display / wordmark-weight statements (kit: 800 · 52 · -3.5%) */
+  /** Display / wordmark-weight statements */
   display: {
-    fontFamily: FONTS.manropeExtraBold,
-    fontSize: 52,
-    letterSpacing: -1.8,
-    lineHeight: 52,
+    fontFamily: FONTS.display,
+    fontSize: 48,
+    letterSpacing: -1.5,
+    lineHeight: 50,
     color: WEROL_TOKENS.paper,
   } satisfies TextStyle,
-  /** Screen title (kit: 700 · 34 · -2%) */
+  /** Screen title */
   heading: {
-    fontFamily: FONTS.manropeBold,
-    fontSize: 34,
-    letterSpacing: -0.7,
-    lineHeight: 38,
+    fontFamily: FONTS.archivo,
+    fontSize: 32,
+    letterSpacing: -0.6,
+    lineHeight: 36,
     color: WEROL_TOKENS.paper,
   } satisfies TextStyle,
-  /** Section / product heading (kit: 600 · 22) */
+  /** Section / product heading */
   subheading: {
-    fontFamily: FONTS.manropeSemibold,
-    fontSize: 22,
+    fontFamily: FONTS.interSemibold,
+    fontSize: 20,
     letterSpacing: -0.2,
     color: WEROL_TOKENS.paper,
   } satisfies TextStyle,
-  /** Body copy (kit: 500 · 17 · #D6D7DB) */
+  /** Body copy */
   body: {
-    fontFamily: FONTS.manropeMedium,
-    fontSize: 17,
-    lineHeight: 24,
+    fontFamily: FONTS.inter,
+    fontSize: 16,
+    lineHeight: 23,
     color: WEROL_TOKENS.body,
   } satisfies TextStyle,
-  /** Technical label (kit: 700 · 13 · +20% · UPPER) */
+  /** Technical label */
   label: {
-    fontFamily: FONTS.manropeBold,
-    fontSize: 13,
-    letterSpacing: 2.6,
+    fontFamily: FONTS.monoBold,
+    fontSize: 12,
+    letterSpacing: 2,
     textTransform: 'uppercase',
     color: WEROL_TOKENS.muted2,
   } satisfies TextStyle,
   productBrand: {
-    fontFamily: FONTS.manropeBold,
+    fontFamily: FONTS.monoBold,
     fontSize: 11,
     letterSpacing: 1.8,
     color: WEROL_TOKENS.lime,
     textTransform: 'uppercase',
   } satisfies TextStyle,
   productPrice: {
-    fontFamily: FONTS.manropeExtraBold,
+    fontFamily: FONTS.archivo,
     fontSize: 18,
     letterSpacing: -0.4,
     color: WEROL_TOKENS.paper,
   } satisfies TextStyle,
   priceOld: {
-    fontFamily: FONTS.manrope,
+    fontFamily: FONTS.inter,
     fontSize: 13,
     color: WEROL_TOKENS.muted2,
     textDecorationLine: 'line-through',

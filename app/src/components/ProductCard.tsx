@@ -71,7 +71,7 @@ const SHOT_BG = '#EFEEF0';
 const CONTAIN_CATEGORIES = new Set(['sneakers', 'accessories', 'caps']);
 // How far studio shots (shoes/accessories) sit above the black info panel
 // (the gradient transition zone lives in this gap — per design reference).
-const PHOTO_LIFT = 84;
+const PHOTO_LIFT = 118;
 // Vertical-only edge melt: the photo's TOP and BOTTOM edges fade into the
 // backdrop so they're invisible; sides stay sharp (no "blurry photo" look).
 const SHOT_BG_T = 'rgba(239,238,240,0)';
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    height: 230, // tall, soft light→black transition (design ref)
+    height: 180, // soft light→black transition (a touch shorter)
   },
   // Vertical-only photo edge melts (top/bottom invisible, sides sharp)
   meltTop: { position: 'absolute', top: 0, left: 0, right: 0, height: EDGE_MELT },
@@ -392,10 +392,11 @@ const styles = StyleSheet.create({
   },
   name: {
     flex: 1,
-    fontFamily: FONTS.serif,
-    fontSize: 18,
-    lineHeight: 23,
+    fontFamily: FONTS.interSemibold,
+    fontSize: 16,
+    lineHeight: 21,
     color: WEROL_TOKENS.paper,
+    letterSpacing: -0.2,
   },
   // Price sits beside the BUY pill
   buyRow: {
