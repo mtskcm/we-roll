@@ -46,6 +46,8 @@ type State = {
   record: (product: Product, type: EngagementType, seconds?: number) => void;
   /** Seed brand taste from onboarding picks. */
   seedBrands: (brands: string[]) => void;
+  /** Wipe all learned taste (Settings → Reset recommendations). */
+  reset: () => void;
 };
 
 export const useEngagementStore = create<State>()(
@@ -84,6 +86,8 @@ export const useEngagementStore = create<State>()(
           }
           return { brandScores: next };
         }),
+
+      reset: () => set({ categoryScores: {}, brandScores: {}, eventCount: 0 }),
     }),
     {
       name: 'werol-engagement-v1',

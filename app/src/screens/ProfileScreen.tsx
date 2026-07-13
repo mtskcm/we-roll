@@ -23,7 +23,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import WordmarkOnDark from '../assets/logos/wordmark-on-dark.svg';
 import { LanguageSheet } from '../components/LanguageSheet';
 import { formatPrice, relTime } from '../lib/format';
-import { useProducts } from '../store/productsStore';
+import { useEngagementStore } from '../store/engagementStore';
+import { useProducts, useProductsStore } from '../store/productsStore';
 import { useOrders } from '../store/ordersStore';
 import { useFeedStore } from '../store/feedStore';
 import { useSettingsStore } from '../store/settingsStore';
@@ -258,6 +259,15 @@ export function ProfileScreen() {
             onPress={() => setLangOpen(true)}
           />
           <SettingRow icon="key-outline" label="Change password" onPress={handlePasswordReset} />
+          <SettingRow
+            icon="sparkles-outline"
+            label="Reset recommendations"
+            onPress={() => {
+              useEngagementStore.getState().reset();
+              useProductsStore.getState().hydrate();
+              showToast('Recommendations reset — feed refreshed');
+            }}
+          />
           <Pressable
             onPress={() => signOut()}
             style={({ pressed }) => [styles.logoutBtn, pressed && { opacity: 0.7 }]}

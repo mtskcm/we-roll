@@ -46,49 +46,48 @@ function rankForUser(products: Product[]): Product[] {
     Object.keys(categoryScores).length > 0 || Object.keys(brandScores).length > 0;
   if (!hasSignals) return shuffle(products);
 
-  // sqrt-dampened scores — a hot category can't run away with the whole feed
-  const damp = (v: number) => Math.sign(v) * Math.sqrt(Math.abs(v));
+  // Normalize to a bounded 0..1 AFFINITY relative to the strongest signal —
+  // otherwise raw scores grow without limit and one category (e.g. sneakers)
+  // lifts its ENTIRE set above everything, segregating the feed. With
+  // affinity, preference only shifts the odds; exploration dominates the score
+  // so every category/shop keeps showing up.
+  const maxCat = Math.max(1, ...Object.values(categoryScores).map((v) => Math.max(0, v)));
+  const maxBrand = Math.max(1, ...Object.values(brandScores).map((v) => Math.max(0, v)));
+  const catAff = (c: string) => Math.max(0, categoryScores[c] ?? 0) / maxCat;
+  const brandAff = (b: string) => Math.max(0, brandScores[b] ?? 0) / maxBrand;
+
+  const PREF = 5;      // max boost a loved category/brand can get
+  const EXPLORE = 12;  // random jitter — kept larger than PREF on purpose
   const ranked = products
     .map((p) => ({
       p,
-      score:
-        damp(categoryScores[p.category] ?? 0) * 2 +
-        damp(brandScores[(p.brand || '').trim()] ?? 0) * 2.4 +
-        Math.random() * 8, // exploration — keeps the feed from becoming a bubble
+      score: catAff(p.category) * PREF + brandAff((p.brand || '').trim()) * PREF + Math.random() * EXPLORE,
     }))
     .sort((a, b) => b.score - a.score)
     .map((x) => x.p);
 
-  // Diversify only the head of the feed — it's what people actually scroll,
-  // and the O(n²) pass over the full 4k catalog would block the JS thread
-  // at startup (~200ms). The tail keeps its ranked order.
+  // Final safety net: never more than 2 same-category / 3 same-shop in a row.
+  // Applied to the head only (what people actually scroll) to keep it cheap.
   const HEAD = 400;
   return [...diversify(ranked.slice(0, HEAD)), ...ranked.slice(HEAD)];
 }
 
-/** Diversity pass — max 2 same-category and max 3 same-shop posts in a row.
- * A strong taste boosts what you love without flooding the feed, and every
- * shop keeps surfacing even when your favourite brands live elsewhere. */
-function diversify(sorted: Product[], maxCatRun = 2, maxShopRun = 3): Product[] {
+/** Diversity pass — rolling-window caps so no single category or shop can
+ * dominate even when engagement scores are heavily skewed: at most `maxCat`
+ * of one category and `maxShop` of one shop within any `window` consecutive
+ * posts. Picks the highest-ranked candidate that fits; relaxes if none does. */
+function diversify(sorted: Product[], window = 5, maxCat = 2, maxShop = 3): Product[] {
   const pool = sorted.slice();
   const out: Product[] = [];
-  let runCat = '';
-  let catLen = 0;
-  let runShop = '';
-  let shopLen = 0;
   while (pool.length) {
+    const recent = out.slice(-window);
     let idx = pool.findIndex((p) => {
-      const catOk = p.category !== runCat || catLen < maxCatRun;
-      const shopOk = p.shop.name !== runShop || shopLen < maxShopRun;
-      return catOk && shopOk;
+      const catCount = recent.filter((r) => r.category === p.category).length;
+      const shopCount = recent.filter((r) => r.shop.name === p.shop.name).length;
+      return catCount < maxCat && shopCount < maxShop;
     });
-    if (idx === -1) idx = 0; // nothing satisfies both — relax rather than stall
-    const p = pool.splice(idx, 1)[0];
-    catLen = p.category === runCat ? catLen + 1 : 1;
-    runCat = p.category;
-    shopLen = p.shop.name === runShop ? shopLen + 1 : 1;
-    runShop = p.shop.name;
-    out.push(p);
+    if (idx === -1) idx = 0; // nothing fits the window — take the best available
+    out.push(pool.splice(idx, 1)[0]);
   }
   return out;
 }
