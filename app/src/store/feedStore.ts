@@ -14,6 +14,7 @@ type State = {
 type Actions = {
   toggleLike: (id: string) => void;
   toggleSaved: (id: string) => void;
+  setSaved: (id: string, saved: boolean) => void;
   setCurrentIndex: (idx: number) => void;
   dismissSwipeHint: () => void;
   requestFeedIndex: (idx: number) => void;
@@ -46,6 +47,12 @@ export const useFeedStore = create<State & Actions>()(
       toggleSaved: (id) =>
         set((s) => ({
           saved: s.saved.includes(id) ? s.saved.filter((x) => x !== id) : [...s.saved, id],
+        })),
+      setSaved: (id, saved) =>
+        set((s) => ({
+          saved: saved
+            ? s.saved.includes(id) ? s.saved : [...s.saved, id]
+            : s.saved.filter((x) => x !== id),
         })),
       setCurrentIndex: (idx) => set({ currentIndex: idx }),
       dismissSwipeHint: () => {

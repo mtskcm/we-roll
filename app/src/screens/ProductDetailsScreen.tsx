@@ -12,6 +12,7 @@ import ShareIcon from '../assets/icons/share.svg';
 import { BrandBadge } from '../components/BrandBadge';
 import { useEngagementStore } from '../store/engagementStore';
 import { useOrdersStore } from '../store/ordersStore';
+import { useSaveSheetStore } from '../store/saveSheetStore';
 import { useProducts } from '../store/productsStore';
 import { useFeedStore, useIsLiked, useIsSaved } from '../store/feedStore';
 import { useShareStore } from '../store/shareStore';
@@ -34,7 +35,6 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
   const liked = useIsLiked(product?.id ?? '');
   const saved = useIsSaved(product?.id ?? '');
   const toggleLike = useFeedStore((s) => s.toggleLike);
-  const toggleSaved = useFeedStore((s) => s.toggleSaved);
   const recordEngagement = useEngagementStore((s) => s.record);
   const showToast = useShareStore((s) => s.showToast);
 
@@ -147,8 +147,8 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
         </Pressable>
         <Pressable
           onPress={() => {
-            recordEngagement(product, saved ? 'unsave' : 'save');
-            toggleSaved(product.id);
+            if (!saved) recordEngagement(product, 'save');
+            useSaveSheetStore.getState().openFor(product);
           }}
           style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.7 }]}
         >

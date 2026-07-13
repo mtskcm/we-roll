@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     backgroundColor: WEROL_TOKENS.lime,
-    marginBottom: 8,
+    marginBottom: 18, // sit the dot on the letter baseline (was too low)
   },
   sloganRow: {
     flexDirection: 'row',

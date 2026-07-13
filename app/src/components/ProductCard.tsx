@@ -36,8 +36,8 @@ import { RailAction } from './RailAction';
 import { useEngagementStore } from '../store/engagementStore';
 import { useFeedStore, useIsLiked, useIsSaved } from '../store/feedStore';
 import { useOrdersStore } from '../store/ordersStore';
+import { useSaveSheetStore } from '../store/saveSheetStore';
 import { useShareStore } from '../store/shareStore';
-import { useUiStore } from '../store/uiStore';
 import { formatCount, formatPrice } from '../lib/format';
 import { shareProduct } from '../lib/shareProduct';
 import { WEROL_TOKENS } from '../theme/colors';
@@ -106,7 +106,6 @@ function ProductCardInner({ product, height, bottomSafeArea = 0, topSafeArea = 0
   const liked = useIsLiked(product.id);
   const saved = useIsSaved(product.id);
   const toggleLike = useFeedStore((s) => s.toggleLike);
-  const toggleSaved = useFeedStore((s) => s.toggleSaved);
   const recordEngagement = useEngagementStore((s) => s.record);
   const showToast = useShareStore((s) => s.showToast);
 
@@ -235,8 +234,8 @@ function ProductCardInner({ product, height, bottomSafeArea = 0, topSafeArea = 0
                 color={WEROL_TOKENS.paper}
                 strokeWidth={2}
                 onPress={() => {
-                  recordEngagement(product, saved ? 'unsave' : 'save');
-                  toggleSaved(product.id);
+                  if (!saved) recordEngagement(product, 'save');
+                  useSaveSheetStore.getState().openFor(product); // pick a collection
                 }}
               />
               <RailAction

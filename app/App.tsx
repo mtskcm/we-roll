@@ -6,6 +6,7 @@ import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import WordmarkOnDark from './src/assets/logos/wordmark-on-dark.svg';
+import { SaveToCollectionSheet } from './src/components/SaveToCollectionSheet';
 import { Toast } from './src/components/Toast';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { SplashScreen } from './src/screens/SplashScreen';
@@ -31,6 +32,7 @@ function AppShell() {
   return (
     <>
       <RootNavigator />
+      <SaveToCollectionSheet />
       <Toast visible={!!toastMessage} message={toastMessage ?? ''} onHide={hideToast} />
       {!splashDone && <SplashScreen onFinish={() => setSplashDone(true)} />}
     </>

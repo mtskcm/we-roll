@@ -34,7 +34,6 @@ import { useUserStore } from '../store/userStore';
 import { WEROL_TOKENS } from '../theme/colors';
 import { RADII } from '../theme/spacing';
 import { FONTS } from '../theme/typography';
-import { SegmentedControl } from '../ui/SegmentedControl';
 import { Sheet } from '../ui/Sheet';
 import type { Product } from '../types';
 
@@ -68,7 +67,9 @@ export function FigureBuilderScreen() {
   const saved = useFeedStore((s) => s.saved);
   const showToast = useShareStore((sh) => sh.showToast);
 
-  const [gender, setGender] = useState<Gender>('female');
+  // Mannequin gender comes from the profile (onboarding choice) — no toggle.
+  const prefGender = useUserStore((u) => u.preferences.gender);
+  const gender: Gender = prefGender === 'male' ? 'male' : 'female';
   const [activeType, setActiveType] = useState<string>('tshirts');
   const [figureImg, setFigureImg] = useState<string | null>(null);
   const [appliedTop, setAppliedTop] = useState<string | null>(null);
@@ -154,22 +155,13 @@ export function FigureBuilderScreen() {
       {/* Full-bleed figure — exactly as the original CREATE (cover, whole screen) */}
       <Image source={figureSource} style={StyleSheet.absoluteFill} resizeMode="cover" />
 
-      {/* Floating header: logo + gender segmented on a dark top gradient */}
+      {/* Floating header: logo on a dark top gradient */}
       <LinearGradient
         colors={['rgba(0,0,0,0.9)', 'rgba(0,0,0,0.35)', 'transparent']}
         style={[styles.topGrad, { paddingTop: insets.top + 8 }]}
       >
         <View style={styles.topBar}>
           <WordmarkOnDark width={104} height={19} />
-          <SegmentedControl
-            compact
-            options={[
-              { key: 'female', label: 'Women' },
-              { key: 'male', label: 'Men' },
-            ]}
-            value={gender}
-            onChange={(g) => setGender(g as Gender)}
-          />
         </View>
       </LinearGradient>
 

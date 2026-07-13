@@ -4,7 +4,7 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import WordmarkOnDark from '../assets/logos/wordmark-on-dark.svg';
 import { LanguageSheet } from '../components/LanguageSheet';
 import { formatPrice, relTime } from '../lib/format';
+import { useCollections } from '../store/collectionsStore';
 import { useEngagementStore } from '../store/engagementStore';
 import { useProducts, useProductsStore } from '../store/productsStore';
 import { useOrders } from '../store/ordersStore';
@@ -48,6 +49,8 @@ export function ProfileScreen() {
 
   const saved = useFeedStore((s) => s.saved);
   const orders = useOrders();
+  const collections = useCollections();
+  const [openCollection, setOpenCollection] = useState<string | 'all' | null>(null);
   const profile = useUserStore((s) => s.profile);
   const email = useUserStore((s) => s.email);
   const savedOutfits = useUserStore((s) => s.savedOutfits);
@@ -62,6 +65,8 @@ export function ProfileScreen() {
   const toggleNotifications = useSettingsStore((s) => s.toggleNotifications);
 
   const [segment, setSegment] = useState<Segment>('fits');
+  // Leaving/returning to a segment resets the open collection to the grid.
+  useEffect(() => setOpenCollection(null), [segment]);
   const [langOpen, setLangOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [viewedOutfit, setViewedOutfit] = useState<Outfit | null>(null);
@@ -223,19 +228,61 @@ export function ProfileScreen() {
               })}
             </View>
           )
-        ) : gridProducts.length === 0 ? (
-          <Empty text="Nothing saved yet — save pieces from the feed (🔖)." />
+        ) : openCollection ? (
+          /* Inside a collection → its products */
+          (() => {
+            const coll = openCollection === 'all'
+              ? { name: 'All saved', productIds: saved }
+              : collections.find((c) => c.id === openCollection);
+            const items = (coll?.productIds ?? [])
+              .map((id) => PRODUCTS.find((p) => p.id === id))
+              .filter((p): p is Product => !!p);
+            return (
+              <View>
+                <Pressable onPress={() => setOpenCollection(null)} style={styles.collBack} hitSlop={8}>
+                  <Text style={styles.collBackText}>‹ {coll?.name ?? 'Collection'}</Text>
+                </Pressable>
+                {items.length === 0 ? (
+                  <Empty text="This collection is empty." />
+                ) : (
+                  <View style={styles.grid}>
+                    {items.map((p) => (
+                      <Pressable key={p.id} onPress={() => openProduct(p)} style={[styles.tile, { width: tile, height: tileH }]}>
+                        <Image source={p.image} style={styles.tileImg} resizeMode="cover" />
+                      </Pressable>
+                    ))}
+                  </View>
+                )}
+              </View>
+            );
+          })()
+        ) : saved.length === 0 && collections.length === 0 ? (
+          <Empty text="Nothing saved yet — tap the bookmark on a piece." />
         ) : (
+          /* Collections grid: All + your collections (cover = first item) */
           <View style={styles.grid}>
-            {gridProducts.map((p) => (
-              <Pressable
-                key={p.id}
-                onPress={() => openProduct(p)}
-                style={[styles.tile, { width: tile, height: tileH }]}
-              >
-                <Image source={p.image} style={styles.tileImg} resizeMode="cover" />
-              </Pressable>
-            ))}
+            <CollectionTile
+              name="All saved"
+              count={saved.length}
+              cover={savedProducts[0]?.image}
+              width={tile}
+              height={tileH}
+              onPress={() => setOpenCollection('all')}
+            />
+            {collections.map((c) => {
+              const coverP = c.productIds.map((id) => PRODUCTS.find((p) => p.id === id)).find(Boolean);
+              return (
+                <CollectionTile
+                  key={c.id}
+                  name={c.name}
+                  count={c.productIds.length}
+                  cover={coverP?.image}
+                  width={tile}
+                  height={tileH}
+                  onPress={() => setOpenCollection(c.id)}
+                />
+              );
+            })}
           </View>
         )}
 
@@ -482,6 +529,36 @@ function Empty({ text }: { text: string }) {
   );
 }
 
+function CollectionTile({
+  name,
+  count,
+  cover,
+  width,
+  height,
+  onPress,
+}: {
+  name: string;
+  count: number;
+  cover?: Product['image'];
+  width: number;
+  height: number;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={[styles.tile, { width, height }]}>
+      {cover ? (
+        <Image source={cover} style={styles.tileImg} resizeMode="cover" />
+      ) : (
+        <View style={[styles.tileImg, styles.collEmpty]} />
+      )}
+      <View style={styles.collOverlay} pointerEvents="none">
+        <Text style={styles.collName} numberOfLines={1}>{name}</Text>
+        <Text style={styles.collCount}>{count}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
 function SettingRow({
   icon,
   label,
@@ -673,6 +750,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addTileText: { fontFamily: FONTS.manropeBold, fontSize: 26, color: '#3A3B40' },
+  // Collections
+  collEmpty: { backgroundColor: WEROL_TOKENS.concrete },
+  collOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    padding: 10,
+    backgroundColor: 'rgba(0,0,0,0.28)',
+  },
+  collName: { fontFamily: FONTS.interSemibold, fontSize: 14, color: WEROL_TOKENS.paper },
+  collCount: { fontFamily: FONTS.inter, fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 1 },
+  collBack: { paddingHorizontal: SPACING.section, paddingBottom: 12 },
+  collBackText: { fontFamily: FONTS.interSemibold, fontSize: 16, color: WEROL_TOKENS.paper },
   // Orders — clean list rows (thumb · name/brand/when · price)
   ordersList: { paddingHorizontal: SPACING.section },
   orderRow: {
