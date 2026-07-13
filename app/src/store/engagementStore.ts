@@ -90,7 +90,9 @@ export const useEngagementStore = create<State>()(
       reset: () => set({ categoryScores: {}, brandScores: {}, eventCount: 0 }),
     }),
     {
-      name: 'werol-engagement-v1',
+      // v2: bumped to wipe the early, heavily skewed test taste for everyone —
+      // a new key means old persisted scores are ignored on next launch.
+      name: 'werol-engagement-v2',
       storage: createJSONStorage(() => AsyncStorage),
     },
   ),
