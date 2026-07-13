@@ -54,6 +54,7 @@ export function ProfileScreen() {
   const collections = useCollections();
   const [openCollection, setOpenCollection] = useState<string | 'all' | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const onPickAvatar = async () => {
     if (uploadingAvatar) return;
@@ -82,8 +83,6 @@ export function ProfileScreen() {
   const [langOpen, setLangOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [viewedOutfit, setViewedOutfit] = useState<Outfit | null>(null);
-  const scrollRef = useRef<ScrollView>(null);
-  const settingsY = useRef(0);
 
   const savedProducts = useMemo(
     () => PRODUCTS.filter((p) => saved.includes(p.id)),
@@ -118,18 +117,13 @@ export function ProfileScreen() {
             <Ionicons name="notifications-outline" size={24} color={WEROL_TOKENS.paper} />
             {unread > 0 && <View style={styles.dot} />}
           </Pressable>
-          <Pressable
-            onPress={() => scrollRef.current?.scrollTo({ y: settingsY.current - 12, animated: true })}
-            hitSlop={8}
-            style={styles.topBtn}
-          >
+          <Pressable onPress={() => setSettingsOpen(true)} hitSlop={8} style={styles.topBtn}>
             <Ionicons name="settings-outline" size={23} color={WEROL_TOKENS.paper} />
           </Pressable>
         </View>
       </View>
 
       <ScrollView
-        ref={scrollRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: insets.top + 52, paddingBottom: insets.bottom + 110 }}
       >
@@ -301,44 +295,54 @@ export function ProfileScreen() {
           </View>
         )}
 
-        {/* Settings */}
-        <View onLayout={(e) => (settingsY.current = e.nativeEvent.layout.y)} style={styles.settings}>
-          <Text style={styles.settingsTitle}>Settings</Text>
-          {!!email && <SettingRow icon="mail-outline" label="Email" trailing={email} />}
-          <SettingRow icon="notifications-outline" label="Notifications">
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={toggleNotifications}
-              trackColor={{ false: WEROL_TOKENS.line2, true: WEROL_TOKENS.lime }}
-              thumbColor={WEROL_TOKENS.paper}
-              ios_backgroundColor={WEROL_TOKENS.line2}
-            />
-          </SettingRow>
-          <SettingRow
-            icon="globe-outline"
-            label="Language"
-            trailing={language === 'sk' ? 'Slovenčina' : 'English'}
-            onPress={() => setLangOpen(true)}
-          />
-          <SettingRow icon="key-outline" label="Change password" onPress={handlePasswordReset} />
-          <SettingRow
-            icon="sparkles-outline"
-            label="Reset recommendations"
-            onPress={() => {
-              useEngagementStore.getState().reset();
-              useProductsStore.getState().hydrate();
-              showToast('Recommendations reset — feed refreshed');
-            }}
-          />
-          <Pressable
-            onPress={() => signOut()}
-            style={({ pressed }) => [styles.logoutBtn, pressed && { opacity: 0.7 }]}
-          >
-            <Ionicons name="log-out-outline" size={18} color={WEROL_TOKENS.tintRed} />
-            <Text style={styles.logoutText}>Log out</Text>
-          </Pressable>
-        </View>
       </ScrollView>
+
+      {/* Settings — behind the gear (full-screen modal) */}
+      <Modal visible={settingsOpen} animationType="slide" onRequestClose={() => setSettingsOpen(false)} presentationStyle="pageSheet">
+        <View style={styles.settingsRoot}>
+          <View style={[styles.settingsBar, { paddingTop: insets.top + 6 }]}>
+            <Text style={styles.settingsBarTitle}>Settings</Text>
+            <Pressable onPress={() => setSettingsOpen(false)} hitSlop={10} style={styles.topBtn}>
+              <Ionicons name="close" size={24} color={WEROL_TOKENS.paper} />
+            </Pressable>
+          </View>
+          <ScrollView contentContainerStyle={styles.settings} showsVerticalScrollIndicator={false}>
+            {!!email && <SettingRow icon="mail-outline" label="Email" trailing={email} />}
+            <SettingRow icon="notifications-outline" label="Notifications">
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={toggleNotifications}
+                trackColor={{ false: WEROL_TOKENS.line2, true: WEROL_TOKENS.lime }}
+                thumbColor={WEROL_TOKENS.paper}
+                ios_backgroundColor={WEROL_TOKENS.line2}
+              />
+            </SettingRow>
+            <SettingRow
+              icon="globe-outline"
+              label="Language"
+              trailing={language === 'sk' ? 'Slovenčina' : 'English'}
+              onPress={() => setLangOpen(true)}
+            />
+            <SettingRow icon="key-outline" label="Change password" onPress={handlePasswordReset} />
+            <SettingRow
+              icon="sparkles-outline"
+              label="Reset recommendations"
+              onPress={() => {
+                useEngagementStore.getState().reset();
+                useProductsStore.getState().hydrate();
+                showToast('Recommendations reset — feed refreshed');
+              }}
+            />
+            <Pressable
+              onPress={() => { setSettingsOpen(false); signOut(); }}
+              style={({ pressed }) => [styles.logoutBtn, pressed && { opacity: 0.7 }]}
+            >
+              <Ionicons name="log-out-outline" size={18} color={WEROL_TOKENS.tintRed} />
+              <Text style={styles.logoutText}>Log out</Text>
+            </Pressable>
+          </ScrollView>
+        </View>
+      </Modal>
 
       <LanguageSheet visible={langOpen} onClose={() => setLangOpen(false)} />
       <EditProfileSheet visible={editOpen} onClose={() => setEditOpen(false)} />
@@ -798,15 +802,22 @@ const styles = StyleSheet.create({
     color: WEROL_TOKENS.muted,
     textAlign: 'center',
   },
-  settings: {
-    marginTop: 28,
+  // Settings modal
+  settingsRoot: { flex: 1, backgroundColor: WEROL_TOKENS.pitch },
+  settingsBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: SPACING.section,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderColor: WEROL_TOKENS.line,
   },
-  settingsTitle: {
-    fontFamily: FONTS.archivoSemibold,
-    fontSize: 16,
-    color: WEROL_TOKENS.paper,
-    marginBottom: 6,
+  settingsBarTitle: { fontFamily: FONTS.archivo, fontSize: 22, color: WEROL_TOKENS.paper },
+  settings: {
+    paddingTop: 8,
+    paddingHorizontal: SPACING.section,
+    paddingBottom: 40,
   },
   settingRow: {
     flexDirection: 'row',
