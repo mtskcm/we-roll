@@ -156,9 +156,6 @@ export function FeedScreen() {
             progressViewOffset={insets.top + 8}
           />
         }
-        {/* No pagingEnabled → a strong fling carries momentum across several
-            posts before snapping (TikTok-style), while a gentle swipe still
-            lands on the next one. */}
         snapToInterval={itemHeight}
         snapToAlignment="start"
         disableIntervalMomentum={false}
