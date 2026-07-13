@@ -59,7 +59,11 @@ function rankForUser(products: Product[]): Product[] {
     .sort((a, b) => b.score - a.score)
     .map((x) => x.p);
 
-  return diversify(ranked);
+  // Diversify only the head of the feed — it's what people actually scroll,
+  // and the O(n²) pass over the full 4k catalog would block the JS thread
+  // at startup (~200ms). The tail keeps its ranked order.
+  const HEAD = 400;
+  return [...diversify(ranked.slice(0, HEAD)), ...ranked.slice(HEAD)];
 }
 
 /** Diversity pass — max 2 same-category and max 3 same-shop posts in a row.
