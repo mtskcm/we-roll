@@ -3,7 +3,7 @@
 // Lives on the second tab (magnifier); tap a tile → ProductDetails.
 
 import { useNavigation } from '@react-navigation/native';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CATEGORIES, type CategoryId } from '../data/categories';
@@ -26,16 +26,23 @@ export function DiscoverScreen() {
   const navigation = useNavigation<any>();
   const PRODUCTS = useProducts();
   const profile = useUserStore((s) => s.profile);
+  const listRef = useRef<FlatList<Product>>(null);
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<CategoryId | 'all'>('all');
+  // Multi-select categories — mark all you want to see.
+  const [categories, setCategories] = useState<CategoryId[]>([]);
+
+  const toggleCategory = (id: CategoryId) => {
+    setCategories((a) => (a.includes(id) ? a.filter((x) => x !== id) : [...a, id]));
+    listRef.current?.scrollToOffset({ offset: 0, animated: true }); // jump to top
+  };
 
   const results = useMemo(
     () =>
       PRODUCTS.filter((p) => {
-        if (category !== 'all' && p.category !== category) return false;
+        if (categories.length > 0 && !categories.includes(p.category)) return false;
         return productMatchesQuery(p, query);
       }),
-    [PRODUCTS, query, category],
+    [PRODUCTS, query, categories],
   );
 
   const renderTile = ({ item }: { item: Product }) => (
@@ -59,7 +66,7 @@ export function DiscoverScreen() {
           <Text style={styles.count}>{results.length} products</Text>
         </View>
         <Pressable onPress={() => navigation.navigate('Profile')} hitSlop={6}>
-          <Avatar initials={profile.initials} size={42} />
+          <Avatar initials={profile.initials} uri={profile.avatarUrl} size={42} />
         </Pressable>
       </View>
 
@@ -80,13 +87,20 @@ export function DiscoverScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.chips}
         >
-          <Chip label="All" active={category === 'all'} onPress={() => setCategory('all')} />
+          <Chip
+            label="All"
+            active={categories.length === 0}
+            onPress={() => {
+              setCategories([]);
+              listRef.current?.scrollToOffset({ offset: 0, animated: true });
+            }}
+          />
           {CATEGORIES.map((c) => (
             <Chip
               key={c.id}
               label={c.label}
-              active={category === c.id}
-              onPress={() => setCategory(category === c.id ? 'all' : c.id)}
+              active={categories.includes(c.id)}
+              onPress={() => toggleCategory(c.id)}
             />
           ))}
         </ScrollView>
@@ -94,6 +108,7 @@ export function DiscoverScreen() {
 
       {/* Product grid */}
       <FlatList
+        ref={listRef}
         data={results}
         keyExtractor={(p) => p.id}
         renderItem={renderTile}

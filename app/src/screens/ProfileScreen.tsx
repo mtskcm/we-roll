@@ -23,6 +23,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import WordmarkOnDark from '../assets/logos/wordmark-on-dark.svg';
 import { LanguageSheet } from '../components/LanguageSheet';
 import { formatPrice, relTime } from '../lib/format';
+import { pickAndUploadAvatar } from '../lib/uploadAvatar';
+import { Avatar } from '../ui/Avatar';
 import { useCollections } from '../store/collectionsStore';
 import { useEngagementStore } from '../store/engagementStore';
 import { useProducts, useProductsStore } from '../store/productsStore';
@@ -51,6 +53,16 @@ export function ProfileScreen() {
   const orders = useOrders();
   const collections = useCollections();
   const [openCollection, setOpenCollection] = useState<string | 'all' | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const onPickAvatar = async () => {
+    if (uploadingAvatar) return;
+    setUploadingAvatar(true);
+    const r = await pickAndUploadAvatar();
+    setUploadingAvatar(false);
+    if (r.error) showToast(r.error);
+    else if (r.url) showToast('Photo updated');
+  };
   const profile = useUserStore((s) => s.profile);
   const email = useUserStore((s) => s.email);
   const savedOutfits = useUserStore((s) => s.savedOutfits);
@@ -121,25 +133,28 @@ export function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: insets.top + 52, paddingBottom: insets.bottom + 110 }}
       >
-        {/* Identity */}
+        {/* Identity — Instagram layout: avatar left, stats inline right */}
         <View style={styles.identity}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{profile.initials}</Text>
+          <View style={styles.idRow}>
+            <Pressable onPress={onPickAvatar} disabled={uploadingAvatar} style={styles.avatarWrap}>
+              <Avatar initials={profile.initials} uri={profile.avatarUrl} size={82} />
+              <View style={styles.avatarEdit}>
+                <Ionicons name="camera" size={13} color={WEROL_TOKENS.pitch} />
+              </View>
+            </Pressable>
+            <View style={styles.statsRow}>
+              <Stat value={savedOutfits.length} label="Outfits" onPress={() => setSegment('fits')} />
+              <Stat value={orders.length} label="Orders" onPress={() => setSegment('orders')} />
+              <Stat value={saved.length} label="Saved" onPress={() => setSegment('saved')} />
+            </View>
           </View>
+
           <Text style={styles.name}>{profile.name}</Text>
           <Text style={styles.handle}>@{profile.handle.replace(/^@/, '')}</Text>
           {!!profile.bio && <Text style={styles.bio}>{profile.bio}</Text>}
           {!!profile.joinedAt && (
             <Text style={styles.joined}>MEMBER SINCE {profile.joinedAt}</Text>
           )}
-
-          <View style={styles.stats}>
-            <Stat value={savedOutfits.length} label="Outfits" onPress={() => setSegment('fits')} />
-            <View style={styles.statDivider} />
-            <Stat value={orders.length} label="Orders" onPress={() => setSegment('orders')} />
-            <View style={styles.statDivider} />
-            <Stat value={saved.length} label="Saved" onPress={() => setSegment('saved')} />
-          </View>
 
           <Pressable
             onPress={() => setEditOpen(true)}
@@ -617,76 +632,63 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: WEROL_TOKENS.pitch,
   },
+  // Instagram identity: avatar left, stats inline, name/bio below
   identity: {
-    alignItems: 'center',
     paddingTop: 12,
     paddingBottom: 18,
     paddingHorizontal: SPACING.section,
   },
-  avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: WEROL_TOKENS.concrete,
-    borderWidth: 2,
-    borderColor: WEROL_TOKENS.lime,
+  idRow: { flexDirection: 'row', alignItems: 'center', gap: 20 },
+  avatarWrap: { position: 'relative' },
+  avatarEdit: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: WEROL_TOKENS.lime,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: WEROL_TOKENS.pitch,
   },
-  avatarText: {
-    fontFamily: FONTS.archivo,
-    fontSize: 30,
-    letterSpacing: -1,
-    color: WEROL_TOKENS.paper,
-  },
+  statsRow: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   name: {
-    fontFamily: FONTS.archivoSemibold,
-    fontSize: 21,
+    fontFamily: FONTS.interSemibold,
+    fontSize: 18,
     color: WEROL_TOKENS.paper,
-    marginTop: 12,
+    marginTop: 14,
   },
   handle: {
-    fontFamily: FONTS.archivoRegular,
+    fontFamily: FONTS.inter,
     fontSize: 14,
     color: WEROL_TOKENS.muted,
     marginTop: 2,
   },
   bio: {
-    fontFamily: FONTS.archivoRegular,
+    fontFamily: FONTS.inter,
     fontSize: 14,
     lineHeight: 19,
-    color: WEROL_TOKENS.paper,
-    textAlign: 'center',
-    marginTop: 10,
-    paddingHorizontal: 12,
+    color: WEROL_TOKENS.body,
+    marginTop: 8,
   },
   joined: {
-    fontFamily: FONTS.jetbrainsMono,
+    fontFamily: FONTS.mono,
     fontSize: 9,
     letterSpacing: 1.4,
     color: WEROL_TOKENS.muted2,
     marginTop: 8,
   },
-  // Stat block — kit: surface card, big 800 numbers, gray labels
-  stats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    marginTop: 18,
-    backgroundColor: WEROL_TOKENS.concrete,
-    borderRadius: 18,
-    paddingVertical: 16,
-    paddingHorizontal: 8,
-  },
   stat: { flex: 1, alignItems: 'center' },
   statValue: {
-    fontFamily: FONTS.manropeExtraBold,
-    fontSize: 23,
+    fontFamily: FONTS.archivo,
+    fontSize: 20,
     letterSpacing: -0.4,
     color: WEROL_TOKENS.paper,
   },
   statLabel: {
-    fontFamily: FONTS.manropeSemibold,
+    fontFamily: FONTS.inter,
     fontSize: 13,
     color: '#8A8B90',
     marginTop: 2,
@@ -694,7 +696,7 @@ const styles = StyleSheet.create({
   statDivider: { width: 1, alignSelf: 'stretch', backgroundColor: 'rgba(255,255,255,0.09)' },
   // Edit profile — kit secondary pill
   editBtn: {
-    marginTop: 14,
+    marginTop: 16,
     alignSelf: 'stretch',
     alignItems: 'center',
     paddingVertical: 14,

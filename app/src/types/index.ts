@@ -54,6 +54,7 @@ export type UserProfile = {
   initials: string;
   joinedAt: string;
   bio?: string;
+  avatarUrl?: string;
 };
 
 export type Friend = {

@@ -35,7 +35,7 @@ type Actions = {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<AuthResult>;
   loadProfile: (userId: string) => Promise<void>;
-  updateProfile: (fields: { name?: string; handle?: string; bio?: string }) => Promise<AuthResult>;
+  updateProfile: (fields: { name?: string; handle?: string; bio?: string; avatarUrl?: string }) => Promise<AuthResult>;
   savePreferences: (prefs: Record<string, unknown>) => Promise<void>;
   setSize: (key: keyof Sizes, value: string | null) => void;
   toggleBrand: (brand: string) => void;
@@ -203,15 +203,16 @@ export const useUserStore = create<State & Actions>()(
             initials: data.initials,
             joinedAt: (data.joined_at ?? '').slice(0, 10),
             bio: data.bio ?? undefined,
+            avatarUrl: data.avatar_url ?? undefined,
           },
           preferences: prefs,
           needsOnboarding: Object.keys(prefs).length === 0,
         });
       },
 
-      updateProfile: async ({ name, handle, bio }) => {
+      updateProfile: async ({ name, handle, bio, avatarUrl }) => {
         const id = get().userId;
-        if (!id) return { error: 'Nie si prihlásený' };
+        if (!id) return { error: 'Not signed in' };
         const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
         if (name !== undefined) {
           patch.name = name.trim();
@@ -219,6 +220,7 @@ export const useUserStore = create<State & Actions>()(
         }
         if (handle !== undefined) patch.handle = slug(handle);
         if (bio !== undefined) patch.bio = bio.trim() || null;
+        if (avatarUrl !== undefined) patch.avatar_url = avatarUrl || null;
         const { error } = await supabase.from('profiles').update(patch).eq('id', id);
         if (error) {
           if (/unique|duplicate/i.test(error.message)) return { error: 'Tento handle už niekto používa' };

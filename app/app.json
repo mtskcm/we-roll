@@ -30,7 +30,13 @@
     "plugins": [
       "expo-asset",
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "WEROL uses your photos so you can set a profile picture and post your fits."
+        }
+      ]
     ],
     "extra": {
       "eas": {
