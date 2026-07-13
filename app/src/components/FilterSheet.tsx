@@ -7,6 +7,7 @@
 import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { CATEGORIES, type CategoryId } from '../data/categories';
+import { STYLE_OPTIONS } from '../lib/productStyle';
 import {
   getAllProducts,
   useFeedFilter,
@@ -48,6 +49,7 @@ export function FilterSheet({ visible, onClose, onApplied }: Props) {
   const [query, setQuery] = useState(active?.query ?? '');
   const [categories, setCategories] = useState<CategoryId[]>(active?.categories ?? []);
   const [brands, setBrands] = useState<string[]>(active?.brands ?? []);
+  const [styles_, setStyles] = useState<string[]>(active?.styles ?? []);
 
   const brandOptions = useMemo(() => topBrands(), []);
 
@@ -61,6 +63,7 @@ export function FilterSheet({ visible, onClose, onApplied }: Props) {
     setQuery('');
     setCategories([]);
     setBrands([]);
+    setStyles([]);
     apply(null);
   };
 
@@ -86,6 +89,18 @@ export function FilterSheet({ visible, onClose, onApplied }: Props) {
           ))}
         </View>
 
+        <Text style={styles.label}>Style</Text>
+        <View style={styles.wrap}>
+          {STYLE_OPTIONS.map((s) => (
+            <Chip
+              key={s.key}
+              label={s.label}
+              active={styles_.includes(s.key)}
+              onPress={() => setStyles((a) => toggle(a, s.key))}
+            />
+          ))}
+        </View>
+
         <Text style={styles.label}>Brand</Text>
         <View style={styles.wrap}>
           {brandOptions.map((b) => (
@@ -98,7 +113,7 @@ export function FilterSheet({ visible, onClose, onApplied }: Props) {
         <Button label="Clear" variant="ghost" onPress={clear} style={styles.footerBtn} />
         <Button
           label="Show results"
-          onPress={() => apply({ query, categories, brands })}
+          onPress={() => apply({ query, categories, brands, styles: styles_ })}
           style={styles.footerBtnWide}
         />
       </View>

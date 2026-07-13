@@ -108,7 +108,6 @@ function ProductCardInner({ product, height, bottomSafeArea = 0, topSafeArea = 0
   const toggleLike = useFeedStore((s) => s.toggleLike);
   const toggleSaved = useFeedStore((s) => s.toggleSaved);
   const recordEngagement = useEngagementStore((s) => s.record);
-  const setZenMode = useUiStore((s) => s.setZenMode);
   const showToast = useShareStore((s) => s.showToast);
 
   // Default BUY: engagement + order history + affiliate deeplink. Living
@@ -118,12 +117,6 @@ function ProductCardInner({ product, height, bottomSafeArea = 0, topSafeArea = 0
     useOrdersStore.getState().addOrder(product);
     Linking.openURL(product.takeItUrl).catch(() => showToast("Couldn't open the shop"));
   };
-
-  // Long-press "zen" — clean photo while held.
-  const [zen, setZen] = useState(false);
-  const zenOn = () => { setZen(true); setZenMode(true); };
-  const zenOff = () => { setZen(false); setZenMode(false); };
-  useEffect(() => () => setZenMode(false), [setZenMode]); // never leave chrome hidden
 
   // Measured height of the info block → the photo area ends right above it.
   const [infoH, setInfoH] = useState(170);
@@ -203,21 +196,15 @@ function ProductCardInner({ product, height, bottomSafeArea = 0, topSafeArea = 0
           pointerEvents="none"
         />
 
-        {/* Media gestures: double-tap = like, hold = clean photo */}
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={onMediaPress}
-          onLongPress={zenOn}
-          delayLongPress={220}
-          onPressOut={zenOff}
-        />
+        {/* Media gestures: double-tap = like */}
+        <Pressable style={StyleSheet.absoluteFill} onPress={onMediaPress} />
 
         {/* Heart pop (double-tap feedback) */}
         <Animated.View pointerEvents="none" style={[styles.heartPop, heartStyle]}>
           <HeartIcon width={96} height={96} stroke={WEROL_TOKENS.paper} fill={WEROL_TOKENS.paper} strokeWidth={1.2} />
         </Animated.View>
 
-        {!zen && (
+        {(
           <>
             {/* Top gradient — keeps the WEROL logo + top icons legible on light shots */}
             <LinearGradient

@@ -49,6 +49,19 @@ function stableLikes(id: string): number {
   return 120 + (Math.abs(h) % 1800);
 }
 
+// Strip trailing size leftovers some feeds leave in the product name, e.g.
+// "… Čierna EUR 140-155 cm", "… Biela EUR 41,5", "… 44 2/3". Read-time so
+// existing DB rows display clean without a re-import.
+export function cleanName(name: string): string {
+  return (name || '')
+    // "… EUR 41,5" / "… EUR 140-155 cm" — everything from a trailing "EUR <size>".
+    .replace(/\s+EUR\s+[\d.,/\s-]+(cm|mm)?\s*$/i, '')
+    // A trailing explicit size range with a unit ("… 140-155 cm"), no model risk.
+    .replace(/\s+\d+[-–]\d+\s*(cm|mm)\s*$/i, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 function rowToProduct(r: ProductRow): Product {
   const current = r.price_current != null ? Number(r.price_current) : 0;
   const original = r.price_original != null ? Number(r.price_original) : undefined;
@@ -59,7 +72,7 @@ function rowToProduct(r: ProductRow): Product {
     id: r.id,
     shop: { name: r.shop as ShopKey, url: r.buy_url, initials: initialsOf(r.shop) },
     brand: r.brand ?? '',
-    name: r.name,
+    name: cleanName(r.name),
     price: { current, original, currency: r.currency ?? 'EUR' },
     image: r.image_url ? { uri: r.image_url } : require('../assets/images/product-1.jpg'),
     likes: stableLikes(r.id),

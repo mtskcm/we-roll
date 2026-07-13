@@ -94,7 +94,13 @@ function mapItem(item, shopName) {
   // "… EUR 34-38", "… EUR 43 1/3"). We collapse variants → strip that trailing
   // size so the product shows a clean name.
   const nameRaw = str(item.PRODUCTNAME) || str(item.PRODUCT);
-  const name = nameRaw ? nameRaw.replace(/\s+EUR\s+[\d.,/\s-]+$/i, '').trim() : nameRaw;
+  const name = nameRaw
+    ? nameRaw
+        .replace(/\s+EUR\s+[\d.,/\s-]+(cm|mm)?\s*$/i, '') // "… EUR 41,5" / "… EUR 140-155 cm"
+        .replace(/\s+\d+[-–]\d+\s*(cm|mm)\s*$/i, '')      // "… 140-155 cm"
+        .replace(/\s{2,}/g, ' ')
+        .trim()
+    : nameRaw;
   const buyUrl = str(item.URL);
   const img = upgradeImage(str(item.IMGURL));
   if (!extId || !name || !buyUrl) return null; // skip incomplete

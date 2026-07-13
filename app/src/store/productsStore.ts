@@ -19,6 +19,7 @@ export type FeedFilter = {
   query: string;
   categories: CategoryId[];
   brands: string[];
+  styles: string[];
 };
 
 /** Fisher–Yates shuffle (copy) so shops/categories interleave in the feed
@@ -41,32 +42,41 @@ function shuffle<T>(arr: T[]): T[] {
 function rankForUser(products: Product[]): Product[] {
   // lazy require to avoid a module-init import cycle with engagementStore
   const { getEngagement } = require('./engagementStore') as typeof import('./engagementStore');
-  const { categoryScores, brandScores } = getEngagement();
+  const { styleTags } = require('../lib/productStyle') as typeof import('../lib/productStyle');
+  const { categoryScores, brandScores, styleScores } = getEngagement();
   const hasSignals =
-    Object.keys(categoryScores).length > 0 || Object.keys(brandScores).length > 0;
+    Object.keys(categoryScores).length > 0 ||
+    Object.keys(brandScores).length > 0 ||
+    Object.keys(styleScores).length > 0;
   if (!hasSignals) return shuffle(products);
 
-  // Normalize to a bounded 0..1 AFFINITY relative to the strongest signal —
-  // otherwise raw scores grow without limit and one category (e.g. sneakers)
-  // lifts its ENTIRE set above everything, segregating the feed. With
-  // affinity, preference only shifts the odds; exploration dominates the score
-  // so every category/shop keeps showing up.
-  const maxCat = Math.max(1, ...Object.values(categoryScores).map((v) => Math.max(0, v)));
-  const maxBrand = Math.max(1, ...Object.values(brandScores).map((v) => Math.max(0, v)));
+  // Normalize each signal to a bounded 0..1 AFFINITY relative to its strongest
+  // value — otherwise raw scores grow without limit and one category lifts its
+  // ENTIRE set above everything, segregating the feed. Affinity shifts the odds;
+  // the diversity pass + exploration guarantee variety.
+  const maxOf = (m: Record<string, number>) => Math.max(1, ...Object.values(m).map((v) => Math.max(0, v)));
+  const maxCat = maxOf(categoryScores);
+  const maxBrand = maxOf(brandScores);
+  const maxStyle = maxOf(styleScores);
   const catAff = (c: string) => Math.max(0, categoryScores[c] ?? 0) / maxCat;
   const brandAff = (b: string) => Math.max(0, brandScores[b] ?? 0) / maxBrand;
+  const styleAff = (p: Product) =>
+    Math.max(0, ...styleTags(p).map((t) => Math.max(0, styleScores[t] ?? 0) / maxStyle), 0);
 
-  const PREF = 5;      // max boost a loved category/brand can get
-  const EXPLORE = 12;  // random jitter — kept larger than PREF on purpose
+  // ~60% taste / 40% exploration. `pref` is a weighted 0..1 blend of the three
+  // affinities; PREF (max preference weight) > EXPLORE (random) → taste-leaning,
+  // while the diversity pass keeps any one category ≤ ~40%.
+  const PREF = 9;
+  const EXPLORE = 6;
   const ranked = products
-    .map((p) => ({
-      p,
-      score: catAff(p.category) * PREF + brandAff((p.brand || '').trim()) * PREF + Math.random() * EXPLORE,
-    }))
+    .map((p) => {
+      const pref = 0.4 * catAff(p.category) + 0.3 * brandAff((p.brand || '').trim()) + 0.3 * styleAff(p);
+      return { p, score: pref * PREF + Math.random() * EXPLORE };
+    })
     .sort((a, b) => b.score - a.score)
     .map((x) => x.p);
 
-  // Final safety net: never more than 2 same-category / 3 same-shop in a row.
+  // Final safety net: rolling-window caps (≤2 category / ≤3 shop per 5).
   // Applied to the head only (what people actually scroll) to keep it cheap.
   const HEAD = 400;
   return [...diversify(ranked.slice(0, HEAD)), ...ranked.slice(HEAD)];
@@ -94,9 +104,11 @@ function diversify(sorted: Product[], window = 5, maxCat = 2, maxShop = 3): Prod
 
 function applyFilter(products: Product[], filter: FeedFilter | null): Product[] {
   if (!filter) return products;
+  const { matchesStyles } = require('../lib/productStyle') as typeof import('../lib/productStyle');
   return products.filter((p) => {
     if (filter.categories.length > 0 && !filter.categories.includes(p.category)) return false;
     if (filter.brands.length > 0 && !filter.brands.includes((p.brand || '').trim())) return false;
+    if (filter.styles.length > 0 && !matchesStyles(p, filter.styles)) return false;
     return productMatchesQuery(p, filter.query); // multi-word, diacritics-free
   });
 }
@@ -104,7 +116,8 @@ function applyFilter(products: Product[], filter: FeedFilter | null): Product[] 
 /** An all-empty filter means "no filter". */
 function normalize(f: FeedFilter | null): FeedFilter | null {
   if (!f) return null;
-  const empty = !f.query.trim() && f.categories.length === 0 && f.brands.length === 0;
+  const empty =
+    !f.query.trim() && f.categories.length === 0 && f.brands.length === 0 && f.styles.length === 0;
   return empty ? null : f;
 }
 

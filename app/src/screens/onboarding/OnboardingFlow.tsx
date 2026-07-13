@@ -7,6 +7,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInRight } from 'react-native-reanimated';
+import { STYLE_OPTIONS } from '../../lib/productStyle';
 import { useEngagementStore } from '../../store/engagementStore';
 import { getAllProducts } from '../../store/productsStore';
 import { useUserStore, type Sizes } from '../../store/userStore';
@@ -22,10 +23,8 @@ const GENDERS: Array<{ key: Gender; label: string }> = [
   { key: 'all', label: 'Everything' },
 ];
 
-const VIBES = [
-  'Streetwear', 'Minimal', 'Sporty', 'Vintage', 'Techwear', 'Y2K',
-  'Skate', 'Outdoor', 'Elegant', 'Casual', 'Grunge', 'Luxury',
-];
+// Same vocabulary the style filter + ranking use (STYLE_OPTIONS).
+const VIBES = STYLE_OPTIONS.map((s) => s.label);
 
 const SIZE_OPTIONS: Record<keyof Sizes, string[]> = {
   top: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
@@ -67,7 +66,8 @@ export function OnboardingFlow() {
   const [gender, setGender] = useState<Gender | null>(null);
   const [vibes, setVibes] = useState<string[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
-  const [sizes, setSizes] = useState<Sizes>({ top: null, bottom: null, shoes: null });
+  // Multi-select sizes — pick as many as you wear per type.
+  const [sizes, setSizes] = useState<Record<keyof Sizes, string[]>>({ top: [], bottom: [], shoes: [] });
   const [saving, setSaving] = useState(false);
 
   const brandOptions = useMemo(() => topBrands(24), []);
@@ -78,7 +78,9 @@ export function OnboardingFlow() {
     setSaving(true);
     setFollowedBrands(brands);
     useEngagementStore.getState().seedBrands(brands); // seed the algorithm's taste
-    (Object.keys(sizes) as Array<keyof Sizes>).forEach((k) => setSize(k, sizes[k]));
+    useEngagementStore.getState().seedStyles(vibes);  // vibes → style affinity
+    // Store's single-size slots stay compatible = first pick of each type.
+    (Object.keys(sizes) as Array<keyof Sizes>).forEach((k) => setSize(k, sizes[k][0] ?? null));
     // Always non-empty (onboarded flag) so a skipped step doesn't re-trigger
     // onboarding on the next launch.
     await savePreferences({ onboarded: true, gender, styles: vibes, brands, sizes });
@@ -161,8 +163,8 @@ export function OnboardingFlow() {
                     <Chip
                       key={s}
                       label={s}
-                      active={sizes[k] === s}
-                      onPress={() => setSizes((prev) => ({ ...prev, [k]: prev[k] === s ? null : s }))}
+                      active={sizes[k].includes(s)}
+                      onPress={() => setSizes((prev) => ({ ...prev, [k]: toggle(prev[k], s) }))}
                     />
                   ))}
                 </View>

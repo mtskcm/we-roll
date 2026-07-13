@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import type { ViewToken } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FilterSheet } from '../components/FilterSheet';
@@ -35,6 +35,7 @@ export function FeedScreen() {
   const PAGE = 24;
   const [visibleCount, setVisibleCount] = useState(PAGE);
   const data = useMemo(() => PRODUCTS.slice(0, visibleCount), [PRODUCTS, visibleCount]);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Full-bleed: each card fills the whole screen; the image runs edge-to-edge
   // to the very top (behind the status bar) and the TopNav floats over it.
@@ -46,7 +47,15 @@ export function FeedScreen() {
   const dismissSwipeHint = useFeedStore((s) => s.dismissSwipeHint);
   const consumePendingFeedIndex = useFeedStore((s) => s.consumePendingFeedIndex);
   const setChromeHidden = useUiStore((s) => s.setChromeHidden);
-  const zenMode = useUiStore((s) => s.zenMode);
+
+  // IG-style pull-to-refresh at the top → re-rank the feed.
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    setVisibleCount(PAGE);
+    await useProductsStore.getState().hydrate();
+    setCurrentIndex(0);
+    setRefreshing(false);
+  }, [setCurrentIndex]);
 
   useEffect(() => {
     const unsubFocus = navigation.addListener('focus', () => {
@@ -138,6 +147,15 @@ export function FeedScreen() {
         renderItem={renderItem}
         onEndReached={() => setVisibleCount((c) => Math.min(c + PAGE, PRODUCTS.length))}
         onEndReachedThreshold={4}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={WEROL_TOKENS.lime}
+            colors={[WEROL_TOKENS.lime]}
+            progressViewOffset={insets.top + 8}
+          />
+        }
         pagingEnabled
         snapToInterval={itemHeight}
         snapToAlignment="start"
@@ -164,12 +182,10 @@ export function FeedScreen() {
         }
       />
 
-      {/* TopNav floats transparently over the full-bleed image (hidden in zen mode) */}
-      {!zenMode && (
-        <View style={[styles.topOverlay, { paddingTop: insets.top }]} pointerEvents="box-none">
-          <TopNav onSearch={() => setFilterOpen(true)} filterActive={!!feedFilter} />
-        </View>
-      )}
+      {/* TopNav floats transparently over the full-bleed image */}
+      <View style={[styles.topOverlay, { paddingTop: insets.top }]} pointerEvents="box-none">
+        <TopNav onSearch={() => setFilterOpen(true)} filterActive={!!feedFilter} />
+      </View>
 
       {/* Feed filter (magnifier) — filtered browsing is excluded from the algorithm */}
       <FilterSheet

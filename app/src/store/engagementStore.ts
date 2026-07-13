@@ -42,10 +42,13 @@ const dwellWeight = (seconds: number) => (seconds < 3 ? 0 : Math.min(1.5, second
 type State = {
   categoryScores: Record<string, number>;
   brandScores: Record<string, number>;
+  styleScores: Record<string, number>;
   eventCount: number;
   record: (product: Product, type: EngagementType, seconds?: number) => void;
   /** Seed brand taste from onboarding picks. */
   seedBrands: (brands: string[]) => void;
+  /** Seed style taste from onboarding vibes. */
+  seedStyles: (styles: string[]) => void;
   /** Wipe all learned taste (Settings → Reset recommendations). */
   reset: () => void;
 };
@@ -55,12 +58,14 @@ export const useEngagementStore = create<State>()(
     (set, get) => ({
       categoryScores: {},
       brandScores: {},
+      styleScores: {},
       eventCount: 0,
 
       record: (product, type, seconds = 0) => {
         // Filter rule — filtered browsing never feeds the algorithm.
         // (lazy require to avoid a module-init import cycle)
         const { useProductsStore } = require('./productsStore') as typeof import('./productsStore');
+        const { styleTags } = require('../lib/productStyle') as typeof import('../lib/productStyle');
         if (useProductsStore.getState().filter !== null) return;
 
         const w = type === 'dwell' ? dwellWeight(seconds) : WEIGHTS[type];
@@ -68,13 +73,18 @@ export const useEngagementStore = create<State>()(
 
         const cat = product.category;
         const brand = (product.brand || '').trim();
-        set((s) => ({
-          categoryScores: { ...s.categoryScores, [cat]: (s.categoryScores[cat] ?? 0) + w },
-          brandScores: brand
-            ? { ...s.brandScores, [brand]: (s.brandScores[brand] ?? 0) + w }
-            : s.brandScores,
-          eventCount: s.eventCount + 1,
-        }));
+        set((s) => {
+          const styles = { ...s.styleScores };
+          for (const tag of styleTags(product)) styles[tag] = (styles[tag] ?? 0) + w;
+          return {
+            categoryScores: { ...s.categoryScores, [cat]: (s.categoryScores[cat] ?? 0) + w },
+            brandScores: brand
+              ? { ...s.brandScores, [brand]: (s.brandScores[brand] ?? 0) + w }
+              : s.brandScores,
+            styleScores: styles,
+            eventCount: s.eventCount + 1,
+          };
+        });
       },
 
       seedBrands: (brands) =>
@@ -87,12 +97,22 @@ export const useEngagementStore = create<State>()(
           return { brandScores: next };
         }),
 
-      reset: () => set({ categoryScores: {}, brandScores: {}, eventCount: 0 }),
+      seedStyles: (styles) =>
+        set((s) => {
+          const next = { ...s.styleScores };
+          for (const st of styles) {
+            const key = st.trim().toLowerCase();
+            if (key) next[key] = (next[key] ?? 0) + 4; // onboarding vibe = strong signal
+          }
+          return { styleScores: next };
+        }),
+
+      reset: () => set({ categoryScores: {}, brandScores: {}, styleScores: {}, eventCount: 0 }),
     }),
     {
-      // v2: bumped to wipe the early, heavily skewed test taste for everyone —
-      // a new key means old persisted scores are ignored on next launch.
-      name: 'werol-engagement-v2',
+      // v3: added styleScores + wipes the early skewed test taste for everyone
+      // (a new key means old persisted scores are ignored on next launch).
+      name: 'werol-engagement-v3',
       storage: createJSONStorage(() => AsyncStorage),
     },
   ),

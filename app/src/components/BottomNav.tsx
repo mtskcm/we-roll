@@ -42,7 +42,7 @@ const INACTIVE = '#8A8B90';
 
 export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const chromeHidden = useUiStore((s) => s.chromeHidden || s.zenMode);
+  const chromeHidden = useUiStore((s) => s.chromeHidden);
 
   const orderedRoutes = TAB_ORDER
     .map((name) => state.routes.find((r) => r.name === name))
